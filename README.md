@@ -3,7 +3,8 @@
 Pixel World clan tracker (@HGYinfo_bot) for clan HEGEMONY (team 5).
 
 - `index.html` – the Telegram Mini App (single file)
-- `worker/hegemony-members-worker.js` – Cloudflare Worker handler for `/api/clans/5/members?range=month|week`
+- `worker/hegemony-members-worker.js` – handler for `/api/clans/5/members?range=month|week`
+- `functions/api/[[path]].js` – Pages Function serving `/api` on the same site
 
 ## Yayınlama (Cloudflare Pages)
 
@@ -14,13 +15,18 @@ Pixel World clan tracker (@HGYinfo_bot) for clan HEGEMONY (team 5).
 
 ## API (/api)
 
-Uygulama verileri aynı alan adındaki `/api` yolundan çeker. Mevcut Cloudflare Worker'ını bu alan adına `/api/*` route'u ile bağla
-ve `worker/hegemony-members-worker.js` dosyasını içine ekle (dosyanın sonundaki kullanım notuna bak).
+`functions/api/[[path]].js` bir Pages Function'dır ve Pages ile birlikte otomatik yayınlanır:
+
+- `/api/clans/5/members` → pw.game (HEGEMONY haftalık/aylık puanlar)
+- diğer tüm `/api/...` istekleri → `https://mrktsticker.alwaysdata.net/api`
+
+pw.game puanları için Pages projesine secret ekle: Pages projesi → **Settings** → **Variables and Secrets** → **Add** →
+tür **Secret**, ad `PW_COOKIE`, değer pw.game Cookie'si → Save. Sonra **Deployments** → son deploy → **Retry deployment**.
 
 Gizli bilgiler **asla** bu repoya yazılmaz (repo herkese açık). pw.game oturumunu Worker secret olarak sakla:
 
 ```
-wrangler secret put PW_COOKIE
+npx wrangler pages secret put PW_COOKIE --project-name hgybot
 ```
 
 HAR dosyalarını da repoya koyma.
