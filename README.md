@@ -17,10 +17,12 @@ Pixel World clan tracker (@HGYinfo_bot) for clan HEGEMONY (team 5).
 
 `functions/api/[[path]].js` bir Pages Function'dır ve Pages ile birlikte otomatik yayınlanır:
 
-- `/api/clans/5/members` → pw.game (HEGEMONY haftalık/aylık puanlar)
+- `/api/clans/5/members` → HEGEMONY haftalık/aylık puanlar. Varsayılan olarak giriş gerektirmeyen
+  mrktsticker `global/clan-players` sıralamasından süzülür (`worker/hegemony-from-upstream.js`).
+  `PW_AUTHORIZATION` / `PW_COOKIE` secret'ı tanımlıysa doğrudan pw.game kullanılır.
 - diğer tüm `/api/...` istekleri → `https://mrktsticker.alwaysdata.net/api`
 
-pw.game puanları için Pages projesine secret ekle: Pages projesi → **Settings** → **Variables and Secrets** → **Add** →
+İsteğe bağlı: doğrudan pw.game kullanmak için Pages projesine secret ekle: Pages projesi → **Settings** → **Variables and Secrets** → **Add** →
 tür **Secret**, ad `PW_COOKIE`, değer pw.game Cookie'si → Save. Sonra **Deployments** → son deploy → **Retry deployment**.
 
 Gizli bilgiler **asla** bu repoya yazılmaz (repo herkese açık). pw.game oturumunu Worker secret olarak sakla:
