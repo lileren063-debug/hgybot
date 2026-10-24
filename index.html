@@ -3549,7 +3549,7 @@
       let lastErr = null;
       for (const candidateUrl of candidateUrls) {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 8000);
+        const timer = setTimeout(() => controller.abort(), options.timeoutMs || 8000);
         try {
           const res = await fetch(candidateUrl, {
             method: fetchMethod,
@@ -6392,7 +6392,8 @@
       st.fetching = true;
       if (range === 'month') isFetchingHegemonyRoster = true;
       try {
-        const res = await apiFetch(`${HEGEMONY_MEMBERS_ENDPOINT}?range=${range}`);
+        // The first build of the list can take ~20 s on the server
+        const res = await apiFetch(`${HEGEMONY_MEMBERS_ENDPOINT}?range=${range}`, { timeoutMs: 30000 });
         const items = res && (Array.isArray(res.items) ? res.items : (Array.isArray(res.members) ? res.members : null));
         if (items) {
           hegemonyRosters[range] = items;

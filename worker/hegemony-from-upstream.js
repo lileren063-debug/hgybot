@@ -9,7 +9,6 @@ const UPSTREAM_API = 'https://mrktsticker.alwaysdata.net/api';
 const HEGEMONY_TEAM_ID = 5;
 const CACHE_SECONDS = 120;
 const MAX_PAGES = 45;   // stays under the 50 subrequests a free Pages Function may make
-const BATCH_SIZE = 10;
 
 export async function handleClanMembersFromUpstream(request, env, ctx) {
   const url = new URL(request.url);
@@ -21,30 +20,35 @@ export async function handleClanMembersFromUpstream(request, env, ctx) {
 
   const range = url.searchParams.get('range') === 'week' ? 'week' : 'month';
 
+  // The last list is kept for a day and served at once; when it is older than
+  // CACHE_SECONDS it is rebuilt in the background (reading ~45 pages takes a while)
   const cache = caches.default;
   const cacheKey = new Request(`${url.origin}/__cache/clans/${HEGEMONY_TEAM_ID}/members-upstream/${range}`);
   const cached = await cache.match(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    const age = (Date.now() - Number(cached.headers.get('X-Built-At') || 0)) / 1000;
+    if (age > CACHE_SECONDS) ctx.waitUntil(buildAndStore(range, cache, cacheKey).catch(() => null));
+    return cached;
+  }
 
-  let first;
   try {
-    first = await fetchPage(range, 1);
+    return await buildAndStore(range, cache, cacheKey);
   } catch (err) {
     return json({ ok: false, error: 'Data API unreachable' }, 502);
   }
+}
 
+async function buildAndStore(range, cache, cacheKey) {
+  const first = await fetchPage(range, 1);
   const pageSize = Number(first.page_size) || (first.items || []).length || 20;
   const total = Number(first.total) || 0;
   const pageCount = Math.min(MAX_PAGES, Math.max(1, Math.ceil(total / pageSize)));
 
-  const pages = [first];
-  for (let start = 2; start <= pageCount; start += BATCH_SIZE) {
-    const batch = [];
-    for (let page = start; page < start + BATCH_SIZE && page <= pageCount; page++) {
-      batch.push(fetchPage(range, page).catch(() => null));
-    }
-    pages.push(...(await Promise.all(batch)));
+  const rest = [];
+  for (let page = 2; page <= pageCount; page++) {
+    rest.push(fetchPage(range, page).catch(() => null));
   }
+  const pages = [first, ...(await Promise.all(rest))];
 
   const seen = new Set();
   const items = [];
@@ -76,9 +80,9 @@ export async function handleClanMembersFromUpstream(request, env, ctx) {
     complete: pageCount * pageSize >= total,
     team: { id: HEGEMONY_TEAM_ID, name: 'HEGEMONY', avatar: clanAvatar },
     items
-  }, 200, { 'Cache-Control': `public, max-age=${CACHE_SECONDS}` });
+  }, 200, { 'Cache-Control': 'public, max-age=86400', 'X-Built-At': String(Date.now()) });
 
-  ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  await cache.put(cacheKey, response.clone());
   return response;
 }
 
