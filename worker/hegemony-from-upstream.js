@@ -62,7 +62,7 @@ async function buildAndStore(range, cache, cacheKey) {
         uuid: p.uuid,
         nickname: p.nickname,
         points: Number(p.points) || 0,
-        rank: Number(p.rank) || null,
+        global_rank: Number(p.rank) || null,
         clan_place: Number(p.clan_place) || null,
         avatar: p.avatar || p.mask_image_url || '',
         level: p.level,
@@ -71,6 +71,8 @@ async function buildAndStore(range, cache, cacheKey) {
     }
   }
   items.sort((a, b) => b.points - a.points);
+  // rank = place inside HEGEMONY (shown on the giveaway badge)
+  items.forEach((m, i) => { m.rank = i + 1; });
 
   const response = json({
     ok: true,
