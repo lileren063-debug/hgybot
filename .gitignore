@@ -1,0 +1,4 @@
+# Never commit game session data or secrets
+*.har
+.env
+.dev.vars
