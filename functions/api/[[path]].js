@@ -1,15 +1,20 @@
 // Cloudflare Pages Function: everything under /api on hgybot.pages.dev
 //   /api/clans/5/members -> public clan-players ranking (no login needed),
 //                           or pw.game directly when a PW_AUTHORIZATION / PW_COOKIE secret is set
+//   /api/giveaways, /api/rewards -> our own D1 store (worker/hgy-store.js)
 //   anything else        -> the existing data API (mrktsticker.alwaysdata.net)
 
 import { handleClanMembers } from '../../worker/hegemony-members-worker.js';
 import { handleClanMembersFromUpstream } from '../../worker/hegemony-from-upstream.js';
+import { handleStore } from '../../worker/hgy-store.js';
 
 const UPSTREAM_API = 'https://mrktsticker.alwaysdata.net/api';
 
 export async function onRequest(context) {
   const { request, env } = context;
+
+  const storeRes = await handleStore(request, env);
+  if (storeRes) return storeRes;
 
   const clanRes = (env.PW_AUTHORIZATION || env.PW_COOKIE)
     ? await handleClanMembers(request, env, context)

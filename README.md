@@ -25,6 +25,17 @@ Pixel World clan tracker (@HGYinfo_bot) for clan HEGEMONY (team 5).
 İsteğe bağlı: doğrudan pw.game kullanmak için Pages projesine secret ekle: Pages projesi → **Settings** → **Variables and Secrets** → **Add** →
 tür **Secret**, ad `PW_COOKIE`, değer pw.game Cookie'si → Save. Sonra **Deployments** → son deploy → **Retry deployment**.
 
+## Çekilişler ve ödüller (ortak depo)
+
+`/api/giveaways` ve `/api/rewards` kendi Cloudflare D1 veritabanımızda tutulur (`worker/hgy-store.js`).
+Yazma istekleri Telegram initData ile doğrulanır; çekiliş/ödül eklemek sadece adminlere açıktır.
+
+Kurulum (bir kez):
+1. Cloudflare → **Storage & Databases → D1** → **Create database** → ad: `hgy-db`.
+2. hgybot Pages projesi → **Settings → Bindings → Add → D1 database** → Variable name `DB`, database `hgy-db` → Save.
+3. Aynı sayfada **Variables and Secrets → Add** → Type **Secret**, Name `BOT_TOKEN`, Value: BotFather'daki bot token'ı → Save.
+4. **Deployments** → son deploy → **Retry deployment**. Tablolar ilk istekte kendiliğinden oluşur.
+
 Gizli bilgiler **asla** bu repoya yazılmaz (repo herkese açık). pw.game oturumunu Worker secret olarak sakla:
 
 ```

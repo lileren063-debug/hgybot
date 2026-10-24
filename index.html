@@ -6515,6 +6515,23 @@
     // =========================================================================
     // 16C. REWARDS SHOP (CLAIM A REWARD FOR A FIXED POINT COST)
     // =========================================================================
+    // Giveaways and rewards live in the app's own server store (D1); writes are signed with Telegram initData
+    async function storeRequest(path, body) {
+      const tgInitData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || '';
+      try {
+        const res = await fetch(`${API_BASE}${path}`, body ? {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': tgInitData },
+          body: JSON.stringify(body)
+        } : { cache: 'no-store' });
+        const data = await res.json().catch(() => null);
+        if (data && data.ok && Array.isArray(data.items)) return { ok: true, items: data.items };
+        return { ok: false, error: (data && data.error) || `Server error (${res.status})` };
+      } catch (e) {
+        return { ok: false, error: 'Server unreachable, try again' };
+      }
+    }
+
     const REWARDS_STORAGE_KEY = 'cyber_wolf_rewards_v1';
     let rewardsList = [];
     let rwUploadedImageDataUrl = '';
@@ -6550,14 +6567,11 @@
         if (raw) rewardsList = JSON.parse(raw) || [];
       } catch (e) { rewardsList = []; }
 
-      try {
-        const res = await fetch(`${API_BASE}/rewards`);
-        const data = await res.json();
-        if (data && Array.isArray(data.items)) {
-          rewardsList = data.items;
-          saveRewardsLocal();
-        }
-      } catch (e) {}
+      const res = await storeRequest('/rewards');
+      if (res.ok) {
+        rewardsList = res.items;
+        saveRewardsLocal();
+      }
 
       renderRewardsList();
       renderGiveawayClanPointsBadge();
@@ -6605,15 +6619,13 @@
         claims: [],
         createdAt: Date.now()
       };
-      rewardsList.unshift(newReward);
+      const res = await storeRequest('/rewards', { action: 'create', reward: newReward });
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        return;
+      }
+      rewardsList = res.items;
       saveRewardsLocal();
-      try {
-        await fetch(`${API_BASE}/rewards`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'create', reward: newReward })
-        });
-      } catch (e) {}
 
       rwUploadedImageDataUrl = '';
       ['rw-name-input', 'rw-image-input', 'rw-stock-input', 'rw-file-input'].forEach(id => {
@@ -6630,16 +6642,14 @@
       if (!rw) return;
       const ok = await askUserConfirm(`Delete "${rw.name}" from the shop?\nPoints already paid for it stay spent.`);
       if (!ok) return;
-      // Keep claims so spent points stay counted; just hide the reward
-      rw.deleted = true;
+      // The server keeps the claims so spent points stay counted; it only hides the reward
+      const res = await storeRequest('/rewards', { action: 'delete', reward_id: rewardId });
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        return;
+      }
+      rewardsList = res.items;
       saveRewardsLocal();
-      try {
-        await fetch(`${API_BASE}/rewards`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', reward_id: rewardId })
-        });
-      } catch (e) {}
       renderRewardsList();
     }
 
@@ -6673,17 +6683,14 @@
         paidPoints: cost,
         claimedAt: Date.now()
       };
-      if (!Array.isArray(rw.claims)) rw.claims = [];
-      rw.claims.push(claim);
+      const res = await storeRequest('/rewards', { action: 'claim', reward_id: rewardId, claim });
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        loadRewardsData();
+        return;
+      }
+      rewardsList = res.items;
       saveRewardsLocal();
-
-      try {
-        await fetch(`${API_BASE}/rewards`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'claim', reward_id: rewardId, claim })
-        });
-      } catch (e) {}
 
       renderRewardsList();
       renderGiveawayClanPointsBadge();
@@ -6767,40 +6774,10 @@
         if (raw) giveawaysList = JSON.parse(raw) || [];
       } catch (e) { giveawaysList = []; }
 
-      try {
-        const res = await fetch(`${API_BASE}/giveaways`);
-        const data = await res.json();
-        if (data && Array.isArray(data.items) && data.items.length > 0) {
-          giveawaysList = data.items;
-          localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList));
-        }
-      } catch (e) {}
-
-      if (!giveawaysList.length) {
-        giveawaysList = [
-          {
-            id: 'gw_sample_1',
-            title: '🎁 Rare Cyber Mask & Telegram Gift',
-            description: 'Official Clan War Giveaway! Join before the timer ends for a random draw.',
-            entryMode: 'free',
-            minPoints: 0,
-            eligibleClan: 'ALL',
-            prizes: [
-              {
-                name: 'Cyber Wolf Mask',
-                tag: '#MASK-01',
-                image: 'https://not-platform.fra1.cdn.digitaloceanspaces.com/customitem/f51abaf0-27a6-4c31-a5ca-97a4dbcf5ad6.jpg'
-              }
-            ],
-            endsAtMs: Date.now() + 7200 * 1000,
-            participants: [
-              { id: 'u1', name: '@HGY-TiRO', clan: 'HEGEMONY' },
-              { id: 'u2', name: '@OL_Domino', clan: 'OLD_LEGION' }
-            ],
-            winner: null,
-            ended: false
-          }
-        ];
+      const res = await storeRequest('/giveaways');
+      if (res.ok) {
+        giveawaysList = res.items;
+        try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
       }
 
       renderGiveawaysList();
@@ -6975,16 +6952,13 @@
         ended: false
       };
 
-      giveawaysList.unshift(newGw);
+      const res = await storeRequest('/giveaways', { action: 'create', giveaway: newGw });
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        return;
+      }
+      giveawaysList = res.items;
       try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
-
-      try {
-        await fetch(`${API_BASE}/giveaways`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'create', giveaway: newGw })
-        });
-      } catch (e) {}
 
       draftGiveawayPrizes = [];
       document.getElementById('gw-title-input').value = '';
@@ -7097,17 +7071,14 @@
       userInfo.paidPoints = cost;
       userInfo.joinedAt = Date.now();
 
-      if (!Array.isArray(gw.participants)) gw.participants = [];
-      gw.participants.push(userInfo);
+      const res = await storeRequest('/giveaways', { action: 'join', giveaway_id: gwId, participant: userInfo });
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        loadGiveawaysData();
+        return;
+      }
+      giveawaysList = res.items;
       try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
-
-      try {
-        await fetch(`${API_BASE}/giveaways`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'join', giveaway_id: gwId, participant: userInfo })
-        });
-      } catch (e) {}
 
       renderGiveawaysList();
       renderGiveawayClanPointsBadge();
@@ -7151,24 +7122,21 @@
       } catch (e) {}
     }
 
+    // The server picks the winner (once), so every member sees the same result
+    const lastDrawAttemptAt = {};
     async function triggerRandomGiveawayWinner(gw) {
       if (!gw || gw.ended) return;
-      gw.ended = true;
-      if (Array.isArray(gw.participants) && gw.participants.length > 0) {
-        const randIdx = Math.floor(Math.random() * gw.participants.length);
-        gw.winner = gw.participants[randIdx];
-        showCyberToast(`🎉 Giveaway Winner Selected: ${gw.winner.name}!`);
-      } else {
-        gw.winner = { name: 'No Participants', clan: '—' };
+      // The list is re-rendered every second; ask the server at most every 15 s per giveaway
+      if (Date.now() - (lastDrawAttemptAt[gw.id] || 0) < 15000) return;
+      lastDrawAttemptAt[gw.id] = Date.now();
+      const res = await storeRequest('/giveaways', { action: 'draw', giveaway_id: gw.id });
+      const list = res.ok ? res.items : (await storeRequest('/giveaways')).items;
+      if (Array.isArray(list)) {
+        giveawaysList = list;
+        try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
+        const done = giveawaysList.find(g => g.id === gw.id);
+        if (done && done.winner && done.winner.id) showCyberToast(`🎉 Giveaway Winner Selected: ${done.winner.name}!`);
       }
-      try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
-      try {
-        await fetch(`${API_BASE}/giveaways`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'draw', giveaway_id: gw.id })
-        });
-      } catch (e) {}
       renderGiveawaysList();
     }
 
