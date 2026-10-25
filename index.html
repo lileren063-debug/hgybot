@@ -342,6 +342,29 @@
   }
 
   /* ==================== 5. Views Wrapper & Cards ==================== */
+  #tg-fullscreen-btn {
+    position: fixed;
+    top: calc(10px + var(--tg-top-inset, 0px));
+    right: 12px;
+    z-index: 60;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #e6ecf5;
+    background: rgba(26, 35, 51, 0.85);
+    border: 1px solid rgba(91, 141, 239, 0.45);
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+  }
+  #tg-fullscreen-btn:hover {
+    border-color: #5b8def;
+  }
+  body.tg-fullscreen .views-wrapper {
+    padding-top: calc(18px + var(--tg-top-inset, 0px));
+  }
   .views-wrapper {
     position: relative;
     z-index: 5;
@@ -3103,6 +3126,9 @@
       </svg>
     </div>
 
+    <!-- Full screen toggle (Telegram desktop only, shown by setupTelegramFullscreen) -->
+    <button type="button" id="tg-fullscreen-btn" onclick="toggleTelegramFullscreen()" title="Full screen" style="display:none;">⛶</button>
+
     <!-- Views Container -->
     <div class="views-wrapper">
       
@@ -4775,11 +4801,49 @@
       } catch (e) {}
     }
 
+    // Full screen toggle for Telegram on PC/Mac/Web (Bot API 8.0+); phones already open the app full height
+    const TG_DESKTOP_PLATFORMS = ['tdesktop', 'macos', 'web', 'weba', 'webk', 'unigram'];
+
+    function setupTelegramFullscreen() {
+      const wa = window.Telegram && window.Telegram.WebApp;
+      const btn = document.getElementById('tg-fullscreen-btn');
+      if (!wa || !btn || typeof wa.requestFullscreen !== 'function') return;
+      if (!(wa.isVersionAtLeast && wa.isVersionAtLeast('8.0'))) return;
+      if (!TG_DESKTOP_PLATFORMS.includes(wa.platform)) return;
+      btn.style.display = 'flex';
+      const sync = () => {
+        const on = Boolean(wa.isFullscreen);
+        document.body.classList.toggle('tg-fullscreen', on);
+        btn.innerHTML = on ? '🗗' : '⛶';
+        btn.title = on ? 'Exit full screen' : 'Full screen';
+        // Keep content clear of Telegram's own buttons drawn over the app in full screen
+        const top = on ? ((wa.safeAreaInset && wa.safeAreaInset.top) || 0) + ((wa.contentSafeAreaInset && wa.contentSafeAreaInset.top) || 0) : 0;
+        document.documentElement.style.setProperty('--tg-top-inset', top + 'px');
+      };
+      wa.onEvent('fullscreenChanged', sync);
+      wa.onEvent('safeAreaChanged', sync);
+      wa.onEvent('contentSafeAreaChanged', sync);
+      wa.onEvent('fullscreenFailed', (e) => showCyberToast(`⚠️ Full screen is not available here${e && e.error ? ' (' + e.error + ')' : ''}`));
+      sync();
+    }
+
+    function toggleTelegramFullscreen() {
+      const wa = window.Telegram && window.Telegram.WebApp;
+      if (!wa) return;
+      try {
+        if (wa.isFullscreen) wa.exitFullscreen();
+        else wa.requestFullscreen();
+      } catch (e) {
+        showCyberToast('⚠️ Update Telegram to use full screen');
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       try {
         if (window.Telegram && window.Telegram.WebApp) {
           window.Telegram.WebApp.ready();
           window.Telegram.WebApp.expand();
+          setupTelegramFullscreen();
         }
       } catch (e) {}
 
