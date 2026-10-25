@@ -3222,6 +3222,21 @@
       </div>
 
       <!-- ==================== VIEW 5: PROFILE (BOT USER PERSONAL PROFILE) ==================== -->
+      <!-- Points leaderboard: who has how many Points, per clan -->
+      <div id="view-points-lb" class="view-panel">
+        <div class="glass-card" style="padding:14px;">
+          <div class="section-header" style="margin-bottom:10px;">
+            <span class="section-title">🏆 Points Leaderboard</span>
+          </div>
+          <div class="tabs-bar" style="margin-bottom:10px;">
+            <div class="tab-pill active" id="plb-tab-clans" onclick="setPointsLbTab('clans')">🛡 Clans</div>
+            <div class="tab-pill" id="plb-tab-players" onclick="setPointsLbTab('players')">👤 Players</div>
+          </div>
+          <div id="plb-filter" style="display:none; gap:6px; flex-wrap:wrap; margin-bottom:10px;"></div>
+          <div id="plb-list"><div style="color:#8faac4; font-size:12px; padding:10px;">Loading…</div></div>
+        </div>
+      </div>
+
       <div id="view-profile" class="view-panel">
         <div class="glass-card" style="text-align:center; padding: 24px 18px; position:relative;">
                     <!-- Top-Left Corner: Player Clan War Points Dropdown (Daily / Weekly / Monthly) -->
@@ -3581,6 +3596,17 @@
             <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
           </svg>
           <span class="nav-label">Giveaway</span>
+        </button>
+
+        <button class="button" id="nav-points-lb-btn" onclick="switchTab('points-lb', this)">
+          <svg class="icon" stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 21h8"></path>
+            <path d="M12 17v4"></path>
+            <path d="M7 4h10v5a5 5 0 0 1-10 0V4z"></path>
+            <path d="M17 5h3v2a3 3 0 0 1-3 3"></path>
+            <path d="M7 5H4v2a3 3 0 0 0 3 3"></path>
+          </svg>
+          <span class="nav-label">Leaderboard</span>
         </button>
 
         <button class="button" id="nav-profile-btn" onclick="switchTab('profile', this)">
@@ -5971,6 +5997,74 @@
       });
       document.getElementById('view-' + tabName).classList.add('active');
       if (tabName === 'giveaways') refreshGiveawayClanPoints();
+      if (tabName === 'points-lb') loadPointsLeaderboard();
+    }
+
+    // =========================================================================
+    // 14B. POINTS LEADERBOARD (bot Points per player and per clan)
+    // =========================================================================
+    let pointsLb = { items: [], clans: [] };
+    let pointsLbTab = 'clans';
+    let pointsLbClan = null; // team_id filter on the Players tab, null = all
+
+    async function loadPointsLeaderboard() {
+      const res = await storeRequest('/leaderboard');
+      if (res.ok) pointsLb = { items: res.items, clans: res.data.clans || [] };
+      else if (!pointsLb.items.length) {
+        document.getElementById('plb-list').innerHTML = `<div style="color:#e05a5a; font-size:12px; padding:10px;">⚠️ ${escapeHtml(res.error)}</div>`;
+        return;
+      }
+      renderPointsLeaderboard();
+    }
+
+    function setPointsLbTab(tab, clanId) {
+      pointsLbTab = tab;
+      if (clanId !== undefined) pointsLbClan = clanId;
+      document.getElementById('plb-tab-clans').classList.toggle('active', tab === 'clans');
+      document.getElementById('plb-tab-players').classList.toggle('active', tab === 'players');
+      renderPointsLeaderboard();
+    }
+
+    function renderPointsLeaderboard() {
+      const list = document.getElementById('plb-list');
+      const filter = document.getElementById('plb-filter');
+      if (!list) return;
+      const medal = i => ['🥇', '🥈', '🥉'][i] || `<span style="color:#8faac4; font-weight:900;">#${i + 1}</span>`;
+      const avatar = (src, size) => src ? `<img src="${escapeHtml(src)}" alt="" style="width:${size}px; height:${size}px; border-radius:50%; object-fit:cover; flex-shrink:0;" onerror="this.style.display='none'">` : '';
+      const fmt = n => Number(n || 0).toLocaleString('en-US');
+
+      if (pointsLbTab === 'clans') {
+        filter.style.display = 'none';
+        list.innerHTML = pointsLb.clans.length ? pointsLb.clans.map((c, i) => `
+          <div class="pf-row" style="cursor:pointer;" onclick="setPointsLbTab('players', ${c.team_id})">
+            <div class="pf-row-main" style="gap:9px;">
+              <div style="width:26px; text-align:center;">${medal(i)}</div>
+              ${avatar(c.clan_avatar, 26)}
+              <div style="min-width:0;">
+                <div class="pf-row-name">${escapeHtml(c.clan_name)}</div>
+                <div class="pf-row-sub">${c.players} player${c.players === 1 ? '' : 's'} • earned ${fmt(c.earned)}</div>
+              </div>
+            </div>
+            <div style="font-weight:900; color:#d4af37; white-space:nowrap;">${fmt(c.points)} <span style="font-size:10px; color:#8faac4;">Points</span></div>
+          </div>`).join('') : '<div style="color:#8faac4; font-size:12px; padding:10px;">No points earned yet. Complete tasks to get on the board!</div>';
+        return;
+      }
+
+      filter.style.display = 'flex';
+      const chip = (id, label) => `<button type="button" class="pf-chip ${pointsLbClan === id ? 'active' : ''}" onclick="setPointsLbTab('players', ${id === null ? 'null' : id})">${escapeHtml(label)}</button>`;
+      filter.innerHTML = chip(null, 'All') + pointsLb.clans.map(c => chip(c.team_id, c.clan_name)).join('');
+      const rows = pointsLb.items.filter(p => pointsLbClan === null || (p.team_id || 0) === pointsLbClan);
+      list.innerHTML = rows.length ? rows.map((p, i) => `
+        <div class="pf-row" style="${p.me ? 'border-color:rgba(91,141,239,0.6); background:rgba(91,141,239,0.1);' : ''}">
+          <div class="pf-row-main" style="gap:9px;">
+            <div style="width:26px; text-align:center;">${medal(i)}</div>
+            <div style="min-width:0;">
+              <div class="pf-row-name">${escapeHtml(p.name)}${p.me ? ' <span style="color:#5b8def; font-size:10.5px;">(you)</span>' : ''}</div>
+              <div class="pf-row-sub" style="display:flex; align-items:center; gap:4px;">${avatar(p.clan_avatar, 13)}${escapeHtml(p.clan_name || 'No clan')} • ${p.tasks} task${p.tasks === 1 ? '' : 's'}</div>
+            </div>
+          </div>
+          <div style="font-weight:900; color:#d4af37; white-space:nowrap;">${fmt(p.points)} <span style="font-size:10px; color:#8faac4;">Points</span></div>
+        </div>`).join('') : '<div style="color:#8faac4; font-size:12px; padding:10px;">Nobody here yet.</div>';
     }
 
     // =========================================================================
@@ -6781,10 +6875,11 @@
 
       // Bottom Navigation labels
       const navLabels = document.querySelectorAll('.button-container .nav-label');
-      if (navLabels.length >= 3) {
+      if (navLabels.length >= 4) {
         navLabels[0].textContent = t.navHome;
         navLabels[1].textContent = 'Giveaway';
-        navLabels[2].textContent = t.navProfile;
+        navLabels[2].textContent = 'Leaderboard';
+        navLabels[3].textContent = t.navProfile;
       }
 
       // Home headers
@@ -7881,6 +7976,9 @@
           // Buttons under the bot's chat commands
           if (gwBtn) switchTab('giveaways', gwBtn);
           switchGiveawaySubTab(startParam);
+        } else if (startParam === 'leaderboard') {
+          const lbBtn = document.getElementById('nav-points-lb-btn');
+          if (lbBtn) switchTab('points-lb', lbBtn);
         } else if (startParam === 'profile') {
           const pfBtn = document.getElementById('nav-profile-btn');
           if (pfBtn) switchTab('profile', pfBtn);

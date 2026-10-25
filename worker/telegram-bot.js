@@ -31,6 +31,7 @@ const TEXT = {
       ['giveaways', 'Active giveaways'],
       ['tasks', 'Tasks that earn Points'],
       ['rewards', 'Rewards shop'],
+      ['leaderboard', 'Points leaderboard by clan'],
       ['profile', 'Your Points and linked player'],
       ['help', 'How the bot works']
     ],
@@ -57,16 +58,17 @@ const TEXT = {
       '3️⃣ Clan tasks and clan-only giveaways need your Pixel World player: link it in Profile.',
       '4️⃣ Giveaway winners are picked by the server when the timer ends, so everyone sees the same result.',
       '',
-      'Commands: /giveaways /tasks /rewards /profile'
+      'Commands: /giveaways /tasks /rewards /leaderboard /profile'
     ].join('\n'),
     pages: {
       giveaways: '🎁 See the active giveaways of all clans:',
       tasks: '🎯 Finish tasks to earn Points:',
       rewards: '🏆 Spend your Points in the rewards shop:',
+      leaderboard: '🏅 Who has the most Points, per clan:',
       profile: '💎 Your Points, clan and linked player:'
     },
     other: 'Tap <b>Open App</b> to use the bot, or send /help.',
-    btn: { open: '🚀 Open App', giveaways: '🎁 Giveaways', tasks: '🎯 Tasks', rewards: '🏆 Rewards', profile: '💎 Profile', channel: '📢 @HegemonyGames' }
+    btn: { open: '🚀 Open App', giveaways: '🎁 Giveaways', tasks: '🎯 Tasks', rewards: '🏆 Rewards', leaderboard: '🏅 Leaderboard', profile: '💎 Profile', channel: '📢 @HegemonyGames' }
   },
   tr: {
     name: 'Klan Çekilişleri & Ödüller',
@@ -88,6 +90,7 @@ const TEXT = {
       ['giveaways', 'Aktif çekilişler'],
       ['tasks', 'Puan kazandıran görevler'],
       ['rewards', 'Ödül mağazası'],
+      ['leaderboard', 'Klanlara göre puan sıralaması'],
       ['profile', 'Puanların ve bağlı oyuncun'],
       ['help', 'Bot nasıl çalışır']
     ],
@@ -114,20 +117,21 @@ const TEXT = {
       '3️⃣ Klan görevleri ve klana özel çekilişler için Profil\'den Pixel World oyuncunu bağla.',
       '4️⃣ Çekiliş süresi bitince kazananı sunucu seçer, herkes aynı sonucu görür.',
       '',
-      'Komutlar: /giveaways /tasks /rewards /profile'
+      'Komutlar: /giveaways /tasks /rewards /leaderboard /profile'
     ].join('\n'),
     pages: {
       giveaways: '🎁 Tüm klanların aktif çekilişleri:',
       tasks: '🎯 Görevleri bitir, Puan kazan:',
       rewards: '🏆 Puanlarını ödül mağazasında harca:',
+      leaderboard: '🏅 Klanlara göre en çok Puanı olanlar:',
       profile: '💎 Puanların, klanın ve bağlı oyuncun:'
     },
     other: 'Botu kullanmak için <b>Uygulamayı Aç</b>\'a dokun ya da /help yaz.',
-    btn: { open: '🚀 Uygulamayı Aç', giveaways: '🎁 Çekilişler', tasks: '🎯 Görevler', rewards: '🏆 Ödüller', profile: '💎 Profil', channel: '📢 @HegemonyGames' }
+    btn: { open: '🚀 Uygulamayı Aç', giveaways: '🎁 Çekilişler', tasks: '🎯 Görevler', rewards: '🏆 Ödüller', leaderboard: '🏅 Sıralama', profile: '💎 Profil', channel: '📢 @HegemonyGames' }
   }
 };
 
-const PAGES = ['giveaways', 'tasks', 'rewards', 'profile'];
+const PAGES = ['giveaways', 'tasks', 'rewards', 'leaderboard', 'profile'];
 
 export async function handleTelegram(request, env) {
   const url = new URL(request.url);

@@ -52,7 +52,7 @@ let schemaReady = false;
 export async function handleStore(request, env, ctx) {
   const url = new URL(request.url);
   const kind = url.pathname.replace(/\/+$/, '');
-  const handlers = { '/api/platform': platform, '/api/giveaways': giveaways, '/api/rewards': rewards, '/api/tasks': tasks, '/api/cron/daily': cronDaily };
+  const handlers = { '/api/platform': platform, '/api/giveaways': giveaways, '/api/rewards': rewards, '/api/tasks': tasks, '/api/cron/daily': cronDaily, '/api/leaderboard': leaderboard };
   const handler = handlers[kind];
   if (kind === '/api/announce-image' && env.DB) return serveAnnouncementImage(env.DB);
   if (!handler) return null;
@@ -378,6 +378,58 @@ async function postPlatform(app, body) {
   }
 
   return { error: 'Unknown action' };
+}
+
+// Points leaderboard: every user's Points (same formula as the wallet), grouped by their linked clan
+async function leaderboard(app) {
+  const db = app.db;
+  const since = HGY_SPEND_SINCE;
+  const rows = (await db.prepare(`
+    WITH ids AS (
+      SELECT user_id FROM task_claims WHERE status = 'done'
+      UNION SELECT user_id FROM giveaway_participants
+      UNION SELECT user_id FROM reward_claims
+    )
+    SELECT ids.user_id AS user_id,
+      (SELECT COALESCE(SUM(points), 0) FROM task_claims t WHERE t.user_id = ids.user_id AND t.status = 'done') AS earned,
+      (SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) FROM giveaway_participants g WHERE g.user_id = ids.user_id AND g.joined_at >= ?) +
+      (SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) FROM reward_claims r WHERE r.user_id = ids.user_id AND r.claimed_at >= ?) AS spent,
+      (SELECT COUNT(*) FROM task_claims t WHERE t.user_id = ids.user_id AND t.status = 'done') AS tasks,
+      l.nickname AS nickname, l.team_id AS team_id, l.clan_name AS clan_name, s.data AS tg
+    FROM ids
+    LEFT JOIN user_links l ON l.user_id = ids.user_id
+    LEFT JOIN users_seen s ON s.user_id = ids.user_id
+  `).bind(since, since).all()).results;
+
+  const clans = new Map((await listClans(db)).map(c => [c.team_id, c]));
+  const players = rows.map(r => {
+    let tg = {};
+    try { tg = JSON.parse(r.tg || '{}'); } catch (e) { /* ignore */ }
+    const teamId = Number(r.team_id) || 0;
+    const clan = clans.get(teamId);
+    return {
+      name: r.nickname || tg.first_name || (tg.username ? '@' + tg.username : 'Player'),
+      team_id: teamId,
+      clan_name: clan ? clan.name : (r.clan_name || ''),
+      clan_avatar: clan ? clan.avatar : '',
+      points: (Number(r.earned) || 0) - (Number(r.spent) || 0),
+      earned: Number(r.earned) || 0,
+      tasks: Number(r.tasks) || 0,
+      me: Boolean(app.user && app.user.id === r.user_id)
+    };
+  }).filter(p => p.earned > 0).sort((a, b) => b.points - a.points || b.earned - a.earned);
+
+  const byClan = new Map();
+  for (const p of players) {
+    const key = p.team_id || 0;
+    const c = byClan.get(key) || { team_id: key, clan_name: p.clan_name || 'No clan', clan_avatar: p.clan_avatar, points: 0, earned: 0, players: 0 };
+    c.points += p.points;
+    c.earned += p.earned;
+    c.players += 1;
+    byClan.set(key, c);
+  }
+  const clanTotals = [...byClan.values()].sort((a, b) => b.points - a.points);
+  return { items: players.slice(0, 300), clans: clanTotals };
 }
 
 // Main admin support tool: everything the server knows about one player (UUID, Telegram id or @username)
