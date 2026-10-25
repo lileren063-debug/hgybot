@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Pixel World Tracker - Cyber Wolf UI</title>
+<title>Clan Giveaways & Rewards</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
     /* Mystic Night Background Colors */
-    --bg-glow-cyan: rgba(38, 178, 214, 0.35);
-    --bg-royal-blue: rgba(16, 78, 150, 0.45);
-    --bg-slate-teal: #153c52;
-    --bg-deep-night: #081521;
-    --bg-dark-edge: #040a10;
+    --bg-glow-cyan: rgba(70, 100, 150, 0.16);
+    --bg-royal-blue: rgba(35, 52, 85, 0.35);
+    --bg-slate-teal: #1a2333;
+    --bg-deep-night: #0e1420;
+    --bg-dark-edge: #080c14;
 
     /* Cyber Wolf & UI Accent Colors */
     --wolf-fill: #000000;
     --track: #2c3540;
-    --blue: #078efb;
-    --cyan: #00f0ff;
-    --card-bg: rgba(8, 20, 34, 0.76);
-    --card-border: rgba(0, 240, 255, 0.22);
+    --blue: #3f6fd8;
+    --cyan: #5b8def;
+    --card-bg: rgba(17, 24, 38, 0.76);
+    --card-border: rgba(91, 141, 239, 0.22);
     --duration: 2.5s;
   }
 
@@ -44,7 +44,7 @@
   /* Custom Scrollbar */
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-  ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.35); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(91, 141, 239, 0.35); border-radius: 10px; }
 
   /* ==================== 1. Moving Stars Background (Mystic BG) ==================== */
   .mystic-bg-container {
@@ -255,7 +255,7 @@
   .loading-wolf-wrapper {
     width: 280px;
     height: 280px;
-    filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 45px rgba(0, 240, 255, 0.25));
+    filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 45px rgba(91, 141, 239, 0.25));
     animation: floatWolf 3s ease-in-out infinite alternate;
   }
 
@@ -270,7 +270,7 @@
     font-weight: 800;
     letter-spacing: 5px;
     color: var(--cyan);
-    text-shadow: 0 0 14px rgba(0, 240, 255, 0.7);
+    text-shadow: 0 0 14px rgba(91, 141, 239, 0.7);
   }
 
   .progress-bar-box {
@@ -280,7 +280,7 @@
     border-radius: 10px;
     margin-top: 14px;
     overflow: hidden;
-    border: 1px solid rgba(0, 240, 255, 0.25);
+    border: 1px solid rgba(91, 141, 239, 0.25);
   }
 
   .progress-bar-fill {
@@ -319,6 +319,8 @@
   }
 
   /* Dimmed Glowing Wolf in the Center of Screen */
+  .bg-wolf-center { display: none !important; }
+  .mystic-bg-container { opacity: 0.35; }
   .bg-wolf-center {
     position: fixed;
     inset: 0;
@@ -394,7 +396,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    text-shadow: 0 0 10px rgba(0, 240, 255, 0.35);
+    text-shadow: none;
   }
 
   /* ---------- HOME VIEW: Upcoming War Banner ---------- */
@@ -402,17 +404,17 @@
     position: relative;
     overflow: hidden;
     background: linear-gradient(135deg, rgba(12, 34, 58, 0.88) 0%, rgba(5, 14, 24, 0.92) 100%);
-    border: 1px solid rgba(0, 240, 255, 0.4);
+    border: 1px solid rgba(91, 141, 239, 0.4);
     border-radius: 18px;
     padding: 18px;
     margin-bottom: 14px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(7, 142, 251, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(63, 111, 216, 0.2);
   }
 
   .war-tag {
     display: inline-block;
-    background: rgba(0, 240, 255, 0.15);
-    border: 1px solid rgba(0, 240, 255, 0.4);
+    background: rgba(91, 141, 239, 0.15);
+    border: 1px solid rgba(91, 141, 239, 0.4);
     color: var(--cyan);
     font-size: 10px;
     font-weight: 800;
@@ -440,17 +442,17 @@
   .war-map-info p {
     margin: 0;
     font-size: 12px;
-    color: #8ab4f8;
+    color: #9fb3cf;
   }
 
   .war-countdown-box {
     background: rgba(0, 0, 0, 0.55);
-    border: 1px solid rgba(0, 240, 255, 0.35);
+    border: 1px solid rgba(91, 141, 239, 0.35);
     border-radius: 14px;
     padding: 10px 14px;
     text-align: center;
     min-width: 125px;
-    box-shadow: inset 0 0 12px rgba(0, 240, 255, 0.12);
+    box-shadow: inset 0 0 12px rgba(91, 141, 239, 0.12);
   }
 
   .war-countdown-label {
@@ -467,13 +469,13 @@
     font-size: 18px;
     font-weight: 800;
     color: var(--cyan);
-    text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+    text-shadow: 0 0 10px rgba(91, 141, 239, 0.6);
   }
 
   /* ---------- HOME VIEW: Recent Battles (10 Maps Dropdown) ---------- */
   .dropdown-toggle-btn {
-    background: rgba(0, 240, 255, 0.12);
-    border: 1px solid rgba(0, 240, 255, 0.35);
+    background: rgba(91, 141, 239, 0.12);
+    border: 1px solid rgba(91, 141, 239, 0.35);
     color: var(--cyan);
     font-size: 11px;
     font-weight: 700;
@@ -487,7 +489,7 @@
   }
 
   .dropdown-toggle-btn:hover {
-    background: rgba(0, 240, 255, 0.25);
+    background: rgba(91, 141, 239, 0.25);
   }
 
   .rank-list {
@@ -513,14 +515,14 @@
   }
 
   .rank-row.clickable-item:hover {
-    background: rgba(0, 240, 255, 0.09);
-    border-color: rgba(0, 240, 255, 0.4);
+    background: rgba(91, 141, 239, 0.09);
+    border-color: rgba(91, 141, 239, 0.4);
     transform: translateY(-1px);
   }
 
   .rank-row.top-1 {
-    background: linear-gradient(90deg, rgba(255, 215, 0, 0.14), rgba(255, 255, 255, 0.04));
-    border-color: rgba(255, 215, 0, 0.45);
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.14), rgba(255, 255, 255, 0.04));
+    border-color: rgba(212, 175, 55, 0.45);
   }
   .rank-row.top-2 {
     border-color: rgba(192, 192, 192, 0.35);
@@ -539,7 +541,7 @@
     width: 26px;
     height: 26px;
     border-radius: 7px;
-    background: rgba(0, 240, 255, 0.12);
+    background: rgba(91, 141, 239, 0.12);
     color: var(--cyan);
     font-weight: 800;
     font-size: 12px;
@@ -550,8 +552,8 @@
   }
 
   .score-badge {
-    background: rgba(7, 142, 251, 0.16);
-    border: 1px solid rgba(0, 240, 255, 0.3);
+    background: rgba(63, 111, 216, 0.16);
+    border: 1px solid rgba(91, 141, 239, 0.3);
     padding: 4px 10px;
     border-radius: 14px;
     color: var(--cyan);
@@ -587,13 +589,13 @@
     width: 100%;
     max-width: 460px;
     max-height: 88vh;
-    background: rgba(8, 20, 34, 0.95);
-    border: 1px solid rgba(0, 240, 255, 0.45);
+    background: rgba(17, 24, 38, 0.95);
+    border: 1px solid rgba(91, 141, 239, 0.45);
     border-radius: 20px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 240, 255, 0.22);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.9), 0 0 30px rgba(91, 141, 239, 0.22);
   }
 
   /* Large Map Image Banner inside Modal */
@@ -605,7 +607,7 @@
     flex-direction: column;
     justify-content: flex-end;
     padding: 16px;
-    border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+    border-bottom: 1px solid rgba(91, 141, 239, 0.3);
   }
 
   .modal-close-btn {
@@ -616,7 +618,7 @@
     height: 34px;
     border-radius: 50%;
     background: rgba(0, 0, 0, 0.65);
-    border: 1px solid rgba(0, 240, 255, 0.4);
+    border: 1px solid rgba(91, 141, 239, 0.4);
     color: #fff;
     font-size: 16px;
     font-weight: 800;
@@ -656,8 +658,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(90deg, rgba(7, 142, 251, 0.22), rgba(0, 240, 255, 0.08));
-    border: 1px solid rgba(0, 240, 255, 0.4);
+    background: linear-gradient(90deg, rgba(63, 111, 216, 0.22), rgba(91, 141, 239, 0.08));
+    border: 1px solid rgba(91, 141, 239, 0.4);
     border-radius: 14px;
     padding: 12px 14px;
   }
@@ -670,7 +672,7 @@
     margin-top: 6px;
     padding: 10px 12px;
     background: rgba(3, 9, 16, 0.9);
-    border: 1px dashed rgba(0, 240, 255, 0.35);
+    border: 1px dashed rgba(91, 141, 239, 0.35);
     border-radius: 10px;
   }
 
@@ -698,7 +700,7 @@
     width: 100%;
     background: rgba(6, 16, 28, 0.82);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 240, 255, 0.4);
+    border: 1px solid rgba(91, 141, 239, 0.4);
     border-radius: 14px;
     padding: 14px 16px 14px 42px;
     color: #fff;
@@ -710,7 +712,7 @@
 
   .search-input:focus {
     border-color: var(--cyan);
-    box-shadow: 0 0 18px rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 18px rgba(91, 141, 239, 0.3);
   }
 
   .search-icon {
@@ -754,7 +756,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+    border-bottom: 1px solid rgba(91, 141, 239, 0.15);
   }
 
   .map-slot-badge {
@@ -762,7 +764,7 @@
     top: 8px;
     left: 8px;
     background: rgba(0, 0, 0, 0.65);
-    border: 1px solid rgba(0, 240, 255, 0.3);
+    border: 1px solid rgba(91, 141, 239, 0.3);
     color: var(--cyan);
     font-size: 10px;
     font-weight: 700;
@@ -809,8 +811,8 @@
 
   .tab-pill {
     flex: 1;
-    background: rgba(8, 20, 34, 0.75);
-    border: 1px solid rgba(0, 240, 255, 0.2);
+    background: rgba(17, 24, 38, 0.75);
+    border: 1px solid rgba(91, 141, 239, 0.2);
     color: #8faac4;
     padding: 11px;
     border-radius: 12px;
@@ -823,10 +825,10 @@
   }
 
   .tab-pill.active {
-    background: linear-gradient(135deg, rgba(7, 142, 251, 0.35), rgba(0, 240, 255, 0.2));
+    background: linear-gradient(135deg, rgba(63, 111, 216, 0.35), rgba(91, 141, 239, 0.2));
     border-color: var(--cyan);
     color: #fff;
-    box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
+    box-shadow: 0 0 14px rgba(91, 141, 239, 0.25);
   }
 
   .sub-filters {
@@ -849,7 +851,7 @@
   }
 
   .filter-btn.active {
-    background: rgba(0, 240, 255, 0.16);
+    background: rgba(91, 141, 239, 0.16);
     border-color: var(--cyan);
     color: var(--cyan);
   }
@@ -879,18 +881,18 @@
 
   .podium-card.rank-1 {
     padding: 16px 8px;
-    background: linear-gradient(180deg, rgba(255, 215, 0, 0.16) 0%, rgba(8, 20, 34, 0.85) 100%);
-    border-color: rgba(255, 215, 0, 0.6);
-    box-shadow: 0 10px 28px rgba(255, 215, 0, 0.15);
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.16) 0%, rgba(17, 24, 38, 0.85) 100%);
+    border-color: rgba(212, 175, 55, 0.6);
+    box-shadow: 0 10px 28px rgba(212, 175, 55, 0.15);
   }
 
   .podium-card.rank-2 {
-    background: linear-gradient(180deg, rgba(192, 192, 192, 0.14) 0%, rgba(8, 20, 34, 0.85) 100%);
+    background: linear-gradient(180deg, rgba(192, 192, 192, 0.14) 0%, rgba(17, 24, 38, 0.85) 100%);
     border-color: rgba(192, 192, 192, 0.5);
   }
 
   .podium-card.rank-3 {
-    background: linear-gradient(180deg, rgba(205, 127, 50, 0.14) 0%, rgba(8, 20, 34, 0.85) 100%);
+    background: linear-gradient(180deg, rgba(205, 127, 50, 0.14) 0%, rgba(17, 24, 38, 0.85) 100%);
     border-color: rgba(205, 127, 50, 0.5);
   }
 
@@ -912,8 +914,8 @@
   .podium-card.rank-1 .podium-avatar {
     width: 54px;
     height: 54px;
-    border-color: #ffd700;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.45);
+    border-color: #d4af37;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.45);
     font-size: 19px;
   }
 
@@ -938,13 +940,13 @@
 
   .podium-sub {
     font-size: 10px;
-    color: #8ab4f8;
+    color: #9fb3cf;
     margin-bottom: 6px;
   }
 
   .podium-stat {
-    background: rgba(0, 240, 255, 0.14);
-    border: 1px solid rgba(0, 240, 255, 0.35);
+    background: rgba(91, 141, 239, 0.14);
+    border: 1px solid rgba(91, 141, 239, 0.35);
     color: var(--cyan);
     font-size: 11px;
     font-weight: 800;
@@ -970,7 +972,7 @@
     font-size: 12.5px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 0 12px rgba(7, 142, 251, 0.35);
+    box-shadow: 0 0 12px rgba(63, 111, 216, 0.35);
     transition: opacity 0.2s, transform 0.2s;
   }
 
@@ -993,7 +995,7 @@
     border-radius: 50%;
     background: linear-gradient(135deg, #0b2239, #153c52);
     border: 2.5px solid var(--cyan);
-    box-shadow: 0 0 22px rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 22px rgba(91, 141, 239, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1012,7 +1014,7 @@
     border-radius: 50%;
     background: #06101a;
     border: 2px solid var(--cyan);
-    box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+    box-shadow: 0 0 12px rgba(91, 141, 239, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1022,8 +1024,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(7, 142, 251, 0.18);
-    border: 1px solid rgba(0, 240, 255, 0.4);
+    background: rgba(63, 111, 216, 0.18);
+    border: 1px solid rgba(91, 141, 239, 0.4);
     color: var(--cyan);
     padding: 5px 14px;
     border-radius: 20px;
@@ -1041,7 +1043,7 @@
 
   .stat-box {
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(0, 240, 255, 0.2);
+    border: 1px solid rgba(91, 141, 239, 0.2);
     border-radius: 13px;
     padding: 12px 8px;
     text-align: center;
@@ -1058,7 +1060,7 @@
     font-size: 17px;
     font-weight: 800;
     color: var(--cyan);
-    text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+    text-shadow: 0 0 8px rgba(91, 141, 239, 0.4);
   }
 
   .tg-connect-btn {
@@ -1101,10 +1103,10 @@
     align-items: center;
     justify-content: space-around;
     border-radius: 18px;
-    border: 1px solid rgba(0, 240, 255, 0.28);
+    border: 1px solid rgba(91, 141, 239, 0.28);
     box-shadow: 
       0 12px 32px rgba(0, 0, 0, 0.85),
-      0 0 22px rgba(7, 142, 251, 0.22),
+      0 0 22px rgba(63, 111, 216, 0.22),
       inset 0 1px 1px rgba(255, 255, 255, 0.12);
     padding: 0 8px;
   }
@@ -1136,7 +1138,7 @@
   .button.active {
     color: var(--cyan);
     transform: translateY(-3px);
-    background: radial-gradient(circle at 50% 40%, rgba(0, 240, 255, 0.16) 0%, transparent 75%);
+    background: radial-gradient(circle at 50% 40%, rgba(91, 141, 239, 0.16) 0%, transparent 75%);
   }
 
   .button.active .icon {
@@ -1145,7 +1147,7 @@
 
   .button.active .nav-label {
     color: var(--cyan);
-    text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+    text-shadow: 0 0 8px rgba(91, 141, 239, 0.5);
     font-weight: 700;
   }
 
@@ -1174,8 +1176,8 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    border: 1.5px solid rgba(0, 240, 255, 0.55);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 22px rgba(7, 142, 251, 0.25);
+    border: 1.5px solid rgba(91, 141, 239, 0.55);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 22px rgba(63, 111, 216, 0.25);
   }
   .upcoming-war-box::before,
   .upcoming-war-box::after {
@@ -1190,7 +1192,7 @@
     align-self: flex-start;
     background: rgba(4, 12, 22, 0.78);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(0, 240, 255, 0.55);
+    border: 1px solid rgba(91, 141, 239, 0.55);
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
   }
   .war-map-info h3 {
@@ -1209,7 +1211,7 @@
   .war-countdown-box {
     background: rgba(4, 12, 22, 0.78);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 240, 255, 0.5);
+    border: 1px solid rgba(91, 141, 239, 0.5);
   }
 
   /* 2. Home Recent Battles: Map Image fills each battle row banner */
@@ -1219,7 +1221,7 @@
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
-    border: 1px solid rgba(0, 240, 255, 0.32) !important;
+    border: 1px solid rgba(91, 141, 239, 0.32) !important;
     padding: 14px 15px !important;
     min-height: 68px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
@@ -1248,7 +1250,7 @@
     position: relative;
     overflow: hidden;
     background: #071320;
-    border-bottom: 1px solid rgba(0, 240, 255, 0.22);
+    border-bottom: 1px solid rgba(91, 141, 239, 0.22);
   }
   .map-img-placeholder img.map-full-cover-img {
     width: 100%;
@@ -1268,7 +1270,7 @@
     z-index: 3;
     background: rgba(4, 12, 22, 0.8);
     backdrop-filter: blur(6px);
-    border: 1px solid rgba(0, 240, 255, 0.45);
+    border: 1px solid rgba(91, 141, 239, 0.45);
     color: var(--cyan);
     font-size: 9.5px;
     font-weight: 800;
@@ -1345,7 +1347,7 @@
     height: 34px;
     border-radius: 50%;
     object-fit: cover;
-    border: 1.5px solid rgba(0, 240, 255, 0.45);
+    border: 1.5px solid rgba(91, 141, 239, 0.45);
     background: #0d2236;
     flex-shrink: 0;
   }
@@ -1354,7 +1356,7 @@
     height: 20px;
     border-radius: 50%;
     object-fit: cover;
-    border: 1px solid rgba(0, 240, 255, 0.6);
+    border: 1px solid rgba(91, 141, 239, 0.6);
     background: #0d2236;
     flex-shrink: 0;
     vertical-align: middle;
@@ -1385,9 +1387,9 @@
   }
   .podium-card.rank-1 {
     padding: 22px 10px 14px;
-    background: radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.28) 0%, rgba(10, 24, 40, 0.94) 70%);
-    border: 1.5px solid rgba(255, 215, 0, 0.75);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0 25px rgba(255, 215, 0, 0.22);
+    background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.28) 0%, rgba(10, 24, 40, 0.94) 70%);
+    border: 1.5px solid rgba(212, 175, 55, 0.75);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0 25px rgba(212, 175, 55, 0.22);
   }
   .podium-card.rank-2 {
     background: radial-gradient(circle at 50% 0%, rgba(224, 236, 255, 0.22) 0%, rgba(10, 24, 40, 0.92) 70%);
@@ -1413,7 +1415,7 @@
     top: -21px;
     width: 36px;
     height: 28px;
-    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.75));
+    filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.75));
   }
   @keyframes floatCrown {
     0% { transform: translateX(-50%) translateY(0px); }
@@ -1440,8 +1442,8 @@
   .podium-card.rank-1 .podium-avatar {
     width: 64px;
     height: 64px;
-    border: 3px solid #ffd700;
-    box-shadow: 0 0 18px rgba(255, 215, 0, 0.5);
+    border: 3px solid #d4af37;
+    box-shadow: 0 0 18px rgba(212, 175, 55, 0.5);
     font-size: 20px;
   }
   .podium-card.rank-2 .podium-avatar {
@@ -1491,9 +1493,9 @@
     white-space: nowrap;
   }
   .podium-card.rank-1 .podium-rank-pill {
-    background: linear-gradient(90deg, #ffd700, #ffae00);
+    background: linear-gradient(90deg, #d4af37, #ffae00);
     color: #050c14;
-    box-shadow: 0 2px 10px rgba(255, 215, 0, 0.6);
+    box-shadow: 0 2px 10px rgba(212, 175, 55, 0.6);
   }
   .podium-card.rank-2 .podium-rank-pill {
     background: linear-gradient(90deg, #e6eef8, #9ab0c7);
@@ -1510,8 +1512,8 @@
     margin-top: 8px;
   }
   .podium-card.rank-1 .podium-pedestal-bar {
-    background: linear-gradient(90deg, transparent, #ffd700, transparent);
-    box-shadow: 0 0 8px #ffd700;
+    background: linear-gradient(90deg, transparent, #d4af37, transparent);
+    box-shadow: 0 0 8px #d4af37;
   }
   .podium-card.rank-2 .podium-pedestal-bar {
     background: linear-gradient(90deg, transparent, #d8e6f8, transparent);
@@ -1529,7 +1531,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(6, 15, 26, 0.15) 0%, rgba(8, 20, 34, 0.85) 100%);
+    background: linear-gradient(180deg, rgba(13, 19, 31, 0.15) 0%, rgba(17, 24, 38, 0.85) 100%);
     z-index: 1;
   }
   .modal-close-btn {
@@ -1554,7 +1556,7 @@
     width: 46px;
     height: 46px;
     border-radius: 14px;
-    background: rgba(0, 240, 255, 0.14);
+    background: rgba(91, 141, 239, 0.14);
     border: 1.5px solid var(--cyan);
     color: var(--cyan);
     font-size: 20px;
@@ -1564,16 +1566,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+    box-shadow: 0 0 15px rgba(91, 141, 239, 0.25);
     transition: all 0.2s ease;
   }
   .pw-help-icon-btn:hover {
-    background: rgba(0, 240, 255, 0.28);
+    background: rgba(91, 141, 239, 0.28);
     transform: translateY(-2px);
   }
   .tg-connect-btn.connected-dimmed {
     background: rgba(8, 22, 36, 0.55) !important;
-    border: 1px solid rgba(0, 240, 255, 0.16) !important;
+    border: 1px solid rgba(91, 141, 239, 0.16) !important;
     color: rgba(154, 179, 201, 0.52) !important;
     box-shadow: none !important;
     opacity: 0.45;
@@ -1589,7 +1591,7 @@
     align-items: flex-start;
     gap: 10px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(0, 240, 255, 0.18);
+    border: 1px solid rgba(91, 141, 239, 0.18);
     border-radius: 12px;
     padding: 10px 12px;
     text-align: left;
@@ -1601,7 +1603,7 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: rgba(0, 240, 255, 0.18);
+    background: rgba(91, 141, 239, 0.18);
     border: 1px solid var(--cyan);
     color: var(--cyan);
     font-weight: 800;
@@ -1628,25 +1630,25 @@
     border-radius: 50%;
     background: rgba(4, 12, 22, 0.78);
     backdrop-filter: blur(8px);
-    border: 1.5px solid rgba(0, 240, 255, 0.55);
+    border: 1.5px solid rgba(91, 141, 239, 0.55);
     color: var(--cyan);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 240, 255, 0.25);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), 0 0 12px rgba(91, 141, 239, 0.25);
     transition: all 0.22s ease;
     padding: 0;
   }
   .modal-action-icon-btn:hover {
-    background: rgba(0, 240, 255, 0.22);
+    background: rgba(91, 141, 239, 0.22);
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 0 18px rgba(0, 240, 255, 0.5);
+    box-shadow: 0 0 18px rgba(91, 141, 239, 0.5);
   }
   .modal-action-icon-btn.auto-active {
-    background: linear-gradient(135deg, rgba(0, 240, 255, 0.32), rgba(7, 142, 251, 0.4));
-    border-color: #00ffaa;
-    color: #00ffaa;
+    background: linear-gradient(135deg, rgba(91, 141, 239, 0.32), rgba(63, 111, 216, 0.4));
+    border-color: #3fbf7f;
+    color: #3fbf7f;
     box-shadow: 0 0 16px rgba(0, 255, 170, 0.55);
   }
 
@@ -1658,8 +1660,8 @@
     width: 38px;
     height: 38px;
     border-radius: 12px;
-    background: rgba(0, 240, 255, 0.12);
-    border: 1.5px solid rgba(0, 240, 255, 0.4);
+    background: rgba(91, 141, 239, 0.12);
+    border: 1.5px solid rgba(91, 141, 239, 0.4);
     color: var(--cyan);
     cursor: pointer;
     display: flex;
@@ -1670,9 +1672,9 @@
     z-index: 5;
   }
   .profile-settings-gear-btn:hover {
-    background: rgba(0, 240, 255, 0.25);
+    background: rgba(91, 141, 239, 0.25);
     transform: rotate(35deg) scale(1.05);
-    box-shadow: 0 0 16px rgba(0, 240, 255, 0.45);
+    box-shadow: 0 0 16px rgba(91, 141, 239, 0.45);
   }
 
   /* Share Post & Auto Share Preview Banner */
@@ -1682,7 +1684,7 @@
     border-radius: 14px;
     overflow: hidden;
     background: #071320 center/cover no-repeat;
-    border: 1.5px solid rgba(0, 240, 255, 0.42);
+    border: 1.5px solid rgba(91, 141, 239, 0.42);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -1709,7 +1711,7 @@
     width: 100%;
     min-height: 76px;
     background: rgba(5, 14, 24, 0.88);
-    border: 1px solid rgba(0, 240, 255, 0.38);
+    border: 1px solid rgba(91, 141, 239, 0.38);
     border-radius: 12px;
     padding: 10px 12px;
     color: #fff;
@@ -1721,12 +1723,12 @@
   }
   .share-desc-textarea:focus {
     border-color: var(--cyan);
-    box-shadow: 0 0 14px rgba(0, 240, 255, 0.28);
+    box-shadow: 0 0 14px rgba(91, 141, 239, 0.28);
   }
   .cyber-select-input {
     width: 100%;
     background: rgba(5, 14, 24, 0.9);
-    border: 1px solid rgba(0, 240, 255, 0.42);
+    border: 1px solid rgba(91, 141, 239, 0.42);
     border-radius: 12px;
     padding: 11px 12px;
     color: #fff;
@@ -1758,16 +1760,16 @@
     gap: 6px;
   }
   .yes-no-btn.active-yes {
-    background: linear-gradient(135deg, rgba(0, 230, 140, 0.26), rgba(0, 240, 255, 0.22));
-    border-color: #00ffaa;
-    color: #00ffaa;
+    background: linear-gradient(135deg, rgba(0, 230, 140, 0.26), rgba(91, 141, 239, 0.22));
+    border-color: #3fbf7f;
+    color: #3fbf7f;
     box-shadow: 0 0 16px rgba(0, 255, 170, 0.28);
   }
   .yes-no-btn.active-no {
     background: linear-gradient(135deg, rgba(255, 65, 108, 0.25), rgba(140, 20, 50, 0.25));
-    border-color: #ff4d6d;
-    color: #ff8fa3;
-    box-shadow: 0 0 14px rgba(255, 77, 109, 0.25);
+    border-color: #e05a5a;
+    color: #e89090;
+    box-shadow: 0 0 14px rgba(214, 69, 69, 0.25);
   }
 
   /* Language Grid inside Profile Settings Modal */
@@ -1779,7 +1781,7 @@
   }
   .lang-option-btn {
     background: rgba(255, 255, 255, 0.04);
-    border: 1.5px solid rgba(0, 240, 255, 0.22);
+    border: 1.5px solid rgba(91, 141, 239, 0.22);
     border-radius: 12px;
     padding: 11px 10px;
     color: #d8ecff;
@@ -1793,14 +1795,14 @@
     transition: all 0.2s ease;
   }
   .lang-option-btn:hover {
-    background: rgba(0, 240, 255, 0.12);
+    background: rgba(91, 141, 239, 0.12);
     border-color: var(--cyan);
   }
   .lang-option-btn.active {
-    background: linear-gradient(135deg, rgba(7, 142, 251, 0.35), rgba(0, 240, 255, 0.22));
+    background: linear-gradient(135deg, rgba(63, 111, 216, 0.35), rgba(91, 141, 239, 0.22));
     border-color: var(--cyan);
     color: #fff;
-    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 15px rgba(91, 141, 239, 0.3);
   }
 
   /* Toast Notification Banner for Auto-Share & Post Publish */
@@ -1817,7 +1819,7 @@
     color: #fff;
     font-size: 12.5px;
     font-weight: 700;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.85), 0 0 18px rgba(0, 240, 255, 0.4);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.85), 0 0 18px rgba(91, 141, 239, 0.4);
     transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
     max-width: 92vw;
     text-align: center;
@@ -1836,7 +1838,7 @@
   .custom-map-selector-trigger {
     width: 100%;
     background: rgba(5, 14, 24, 0.92);
-    border: 1.5px solid rgba(0, 240, 255, 0.45);
+    border: 1.5px solid rgba(91, 141, 239, 0.45);
     border-radius: 12px;
     padding: 11px 14px;
     color: #fff;
@@ -1851,7 +1853,7 @@
   }
   .custom-map-selector-trigger:hover {
     border-color: var(--cyan);
-    box-shadow: 0 0 14px rgba(0, 240, 255, 0.28);
+    box-shadow: 0 0 14px rgba(91, 141, 239, 0.28);
   }
   .custom-map-selector-menu {
     display: none;
@@ -1861,7 +1863,7 @@
     max-height: 215px;
     overflow-y: auto;
     background: rgba(4, 11, 20, 0.98);
-    border: 1.5px solid rgba(0, 240, 255, 0.45);
+    border: 1.5px solid rgba(91, 141, 239, 0.45);
     border-radius: 13px;
     padding: 8px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.85);
@@ -1882,8 +1884,8 @@
   }
   .custom-map-option:hover,
   .custom-map-option.selected {
-    background: rgba(0, 240, 255, 0.12);
-    border-color: rgba(0, 240, 255, 0.45);
+    background: rgba(91, 141, 239, 0.12);
+    border-color: rgba(91, 141, 239, 0.45);
   }
   .status-glow-badge {
     width: 24px;
@@ -1897,18 +1899,18 @@
     flex-shrink: 0;
   }
   .status-glow-badge.glow-green {
-    background: rgba(0, 255, 136, 0.18);
-    border: 1.5px solid #00ff88;
-    color: #00ff88;
-    box-shadow: 0 0 12px rgba(0, 255, 136, 0.7), inset 0 0 6px rgba(0, 255, 136, 0.35);
-    text-shadow: 0 0 8px #00ff88;
+    background: rgba(63, 191, 127, 0.18);
+    border: 1.5px solid #3fbf7f;
+    color: #3fbf7f;
+    box-shadow: 0 0 12px rgba(63, 191, 127, 0.7), inset 0 0 6px rgba(63, 191, 127, 0.35);
+    text-shadow: 0 0 8px #3fbf7f;
   }
   .status-glow-badge.glow-red {
-    background: rgba(255, 59, 92, 0.18);
-    border: 1.5px solid #ff3b5c;
-    color: #ff4d6d;
-    box-shadow: 0 0 12px rgba(255, 59, 92, 0.65), inset 0 0 6px rgba(255, 59, 92, 0.3);
-    text-shadow: 0 0 8px #ff3b5c;
+    background: rgba(214, 69, 69, 0.18);
+    border: 1.5px solid #d64545;
+    color: #e05a5a;
+    box-shadow: 0 0 12px rgba(214, 69, 69, 0.65), inset 0 0 6px rgba(214, 69, 69, 0.3);
+    text-shadow: 0 0 8px #d64545;
   }
   .autoshare-actions-grid {
     display: grid;
@@ -1918,9 +1920,9 @@
     margin-bottom: 6px;
   }
   .done-confirm-btn {
-    background: linear-gradient(135deg, #00c853, #00e676);
-    border: 1.5px solid #69f0ae;
-    color: #04120b;
+    background: linear-gradient(135deg, #3f6fd8, #5b8def);
+    border: 1.5px solid #7aa3f2;
+    color: #fff;
     padding: 11px 12px;
     border-radius: 12px;
     font-size: 13px;
@@ -1930,12 +1932,12 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    box-shadow: 0 0 16px rgba(0, 230, 118, 0.4);
+    box-shadow: 0 4px 14px rgba(63, 111, 216, 0.35);
     transition: all 0.2s ease;
   }
   .done-confirm-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 22px rgba(0, 230, 118, 0.65);
+    box-shadow: 0 0 22px rgba(63, 191, 127, 0.65);
   }
   .share-now-btn {
     background: linear-gradient(135deg, var(--blue), #00bcd4);
@@ -1950,12 +1952,12 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    box-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
+    box-shadow: 0 0 15px rgba(91, 141, 239, 0.35);
     transition: all 0.2s ease;
   }
   .share-now-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.55);
+    box-shadow: 0 0 20px rgba(91, 141, 239, 0.55);
   }
 
 
@@ -2002,7 +2004,7 @@
   .glass-card, .modal-box, .button-container, .podium-card, .map-card {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background: rgba(8, 20, 34, 0.93) !important;
+    background: rgba(17, 24, 38, 0.93) !important;
     transform: translateZ(0);
   }
   .modal-overlay {
@@ -2018,7 +2020,7 @@
   /* ---------- PLAYER ACTIVITY WIDGET (7-DAY SQUARES + 30-DAY HEATMAP) ---------- */
   .activity-section-card {
     background: rgba(5, 13, 24, 0.85);
-    border: 1px solid rgba(0, 240, 255, 0.22);
+    border: 1px solid rgba(91, 141, 239, 0.22);
     border-radius: 15px;
     padding: 12px 12px 10px;
     margin-bottom: 14px;
@@ -2052,14 +2054,14 @@
     font-weight: 800;
     padding: 2px 7px;
     border-radius: 8px;
-    background: rgba(0, 240, 255, 0.12);
-    border: 1px solid rgba(0, 240, 255, 0.35);
+    background: rgba(91, 141, 239, 0.12);
+    border: 1px solid rgba(91, 141, 239, 0.35);
     color: #d6ecff;
   }
   .activity-mini-pill.streak-fire {
     background: rgba(255, 165, 0, 0.16);
     border-color: rgba(255, 180, 0, 0.55);
-    color: #ffcc4d;
+    color: #d9b45a;
   }
 
   /* 7-Day Weekly Squares Row (Sun, Mon, Tue, Wed, Thu, Fri, Sat) */
@@ -2100,15 +2102,15 @@
     transform: translateY(-2px) scale(1.05);
   }
   .day-square-box.played-yes {
-    background: linear-gradient(145deg, rgba(0, 230, 118, 0.28), rgba(0, 240, 255, 0.18));
-    border: 1.5px solid #00ff88;
-    color: #00ff88;
-    box-shadow: 0 0 11px rgba(0, 255, 136, 0.38), inset 0 0 6px rgba(0, 255, 136, 0.2);
-    text-shadow: 0 0 6px #00ff88;
+    background: linear-gradient(145deg, rgba(63, 191, 127, 0.28), rgba(91, 141, 239, 0.18));
+    border: 1.5px solid #3fbf7f;
+    color: #3fbf7f;
+    box-shadow: 0 0 11px rgba(63, 191, 127, 0.38), inset 0 0 6px rgba(63, 191, 127, 0.2);
+    text-shadow: 0 0 6px #3fbf7f;
   }
   .day-square-box.played-no {
     background: rgba(255, 255, 255, 0.03);
-    border: 1.5px solid rgba(255, 77, 109, 0.28);
+    border: 1.5px solid rgba(214, 69, 69, 0.28);
     color: rgba(255, 107, 139, 0.55);
   }
   .day-pts-micro {
@@ -2147,18 +2149,18 @@
     z-index: 2;
   }
   .heatmap-cell-sq.lvl-1 {
-    background: rgba(0, 230, 118, 0.35);
-    border-color: rgba(0, 255, 136, 0.6);
+    background: rgba(63, 191, 127, 0.35);
+    border-color: rgba(63, 191, 127, 0.6);
   }
   .heatmap-cell-sq.lvl-2 {
-    background: rgba(0, 240, 255, 0.55);
-    border-color: #00f0ff;
-    box-shadow: 0 0 6px rgba(0, 240, 255, 0.45);
+    background: rgba(91, 141, 239, 0.55);
+    border-color: #5b8def;
+    box-shadow: 0 0 6px rgba(91, 141, 239, 0.45);
   }
   .heatmap-cell-sq.lvl-3 {
-    background: #00ff88;
+    background: #3fbf7f;
     border-color: #ffffff;
-    box-shadow: 0 0 8px rgba(0, 255, 136, 0.75);
+    box-shadow: 0 0 8px rgba(63, 191, 127, 0.75);
   }
   .activity-selected-day-info {
     margin-top: 7px;
@@ -2183,11 +2185,11 @@
     width: 6px;
     height: 6px;
     border-radius: 2px;
-    background: rgba(255, 77, 109, 0.32);
+    background: rgba(214, 69, 69, 0.32);
   }
   .mini-7d-sq.on {
-    background: #00ff88;
-    box-shadow: 0 0 4px #00ff88;
+    background: #3fbf7f;
+    box-shadow: 0 0 4px #3fbf7f;
   }
 
 
@@ -2258,11 +2260,11 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    background: rgba(8, 20, 34, 0.9);
+    background: rgba(17, 24, 38, 0.9);
     border: 1.5px solid var(--cyan);
     border-radius: 13px;
     padding: 6px 10px;
-    box-shadow: 0 0 12px rgba(0, 240, 255, 0.22);
+    box-shadow: 0 0 12px rgba(91, 141, 239, 0.22);
     flex-shrink: 0;
     cursor: pointer;
   }
@@ -2271,7 +2273,7 @@
     height: 22px;
     border-radius: 50%;
     object-fit: cover;
-    border: 1px solid rgba(0, 240, 255, 0.5);
+    border: 1px solid rgba(91, 141, 239, 0.5);
   }
   .gw-clan-points-meta {
     display: flex;
@@ -2295,17 +2297,17 @@
   .gw-clan-points-week {
     font-size: 10px;
     font-weight: 800;
-    color: #8ab4f8;
+    color: #9fb3cf;
     white-space: nowrap;
   }
   .gw-clan-points-spent {
     font-size: 9.5px;
     font-weight: 700;
-    color: #ff8fa3;
+    color: #e89090;
     white-space: nowrap;
   }
   .gw-clan-points-rank {
-    color: #ffd700;
+    color: #d4af37;
     margin-right: 4px;
   }
   .gw-sub-tabs {
@@ -2337,7 +2339,7 @@
     align-items: center;
     gap: 6px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(0, 240, 255, 0.22);
+    border: 1px solid rgba(91, 141, 239, 0.22);
     color: #9ab3c9;
     padding: 6px 11px;
     border-radius: 999px;
@@ -2354,10 +2356,10 @@
     border: 1px solid var(--cyan);
   }
   .pf-chip.active {
-    background: rgba(0, 240, 255, 0.16);
+    background: rgba(91, 141, 239, 0.16);
     border-color: var(--cyan);
     color: var(--cyan);
-    box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+    box-shadow: 0 0 12px rgba(91, 141, 239, 0.25);
   }
   .pf-select {
     width: 100%;
@@ -2383,9 +2385,9 @@
     gap: 5px;
     font-size: 10.5px;
     font-weight: 900;
-    color: #ffd700;
-    background: rgba(255, 215, 0, 0.1);
-    border: 1px solid rgba(255, 215, 0, 0.45);
+    color: #d4af37;
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.45);
     border-radius: 9px;
     padding: 2px 8px;
     margin-bottom: 4px;
@@ -2397,9 +2399,9 @@
     object-fit: cover;
   }
   .pf-manage-btn {
-    background: rgba(255, 59, 92, 0.12);
-    border: 1px solid rgba(255, 77, 109, 0.5);
-    color: #ff8fa3;
+    background: rgba(214, 69, 69, 0.12);
+    border: 1px solid rgba(214, 69, 69, 0.5);
+    color: #e89090;
     border-radius: 9px;
     padding: 5px 10px;
     font-size: 11px;
@@ -2409,9 +2411,9 @@
   .pf-admin-entry-btn {
     width: 100%;
     margin-top: 9px;
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.16), rgba(0, 240, 255, 0.12));
-    border: 1.5px solid rgba(255, 215, 0, 0.6);
-    color: #ffd700;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.16), rgba(91, 141, 239, 0.12));
+    border: 1.5px solid rgba(212, 175, 55, 0.6);
+    color: #d4af37;
     padding: 11px 14px;
     border-radius: 13px;
     font-size: 13px;
@@ -2420,7 +2422,7 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    box-shadow: 0 0 14px rgba(255, 215, 0, 0.18);
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.18);
   }
   .home-clan-card {
     display: flex;
@@ -2428,14 +2430,14 @@
     gap: 12px;
     padding: 12px;
     border-radius: 15px;
-    background: linear-gradient(165deg, rgba(12, 28, 46, 0.95), rgba(6, 15, 26, 0.96));
-    border: 1.5px solid rgba(0, 240, 255, 0.3);
+    background: linear-gradient(165deg, rgba(22, 31, 48, 0.95), rgba(13, 19, 31, 0.96));
+    border: 1.5px solid rgba(91, 141, 239, 0.3);
     margin-bottom: 9px;
     cursor: pointer;
     transition: all 0.2s ease;
   }
   .home-clan-card:active { transform: scale(0.98); }
-  .home-clan-card.has-active { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0, 240, 255, 0.22); }
+  .home-clan-card.has-active { border-color: var(--cyan); box-shadow: 0 0 14px rgba(91, 141, 239, 0.22); }
   .home-clan-avatar {
     width: 46px;
     height: 46px;
@@ -2447,7 +2449,7 @@
     align-items: center;
     justify-content: center;
     font-size: 22px;
-    background: rgba(0, 240, 255, 0.1);
+    background: rgba(91, 141, 239, 0.1);
   }
   .home-clan-name { font-size: 15px; font-weight: 900; color: #fff; margin-bottom: 5px; }
   .home-clan-pills { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -2457,26 +2459,26 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    background: linear-gradient(135deg, rgba(255, 170, 0, 0.16), rgba(0, 240, 255, 0.1));
+    background: linear-gradient(135deg, rgba(201, 154, 58, 0.16), rgba(91, 141, 239, 0.1));
     border: 1.5px solid rgba(255, 204, 77, 0.6);
     border-radius: 16px;
     padding: 12px 14px;
     margin-bottom: 12px;
-    box-shadow: 0 0 16px rgba(255, 170, 0, 0.18);
+    box-shadow: 0 0 16px rgba(201, 154, 58, 0.18);
     text-align: left;
   }
-  .hgy-wallet-label { font-size: 10.5px; font-weight: 900; color: #ffcc4d; text-transform: uppercase; letter-spacing: 0.5px; }
+  .hgy-wallet-label { font-size: 10.5px; font-weight: 900; color: #d9b45a; text-transform: uppercase; letter-spacing: 0.5px; }
   .hgy-wallet-value { font-size: 24px; font-weight: 900; color: #fff; line-height: 1.1; text-shadow: 0 0 12px rgba(255, 204, 77, 0.5); }
   .hgy-wallet-sub { font-size: 10.5px; font-weight: 700; color: #9ab3c9; margin-top: 3px; line-height: 1.4; }
   .tk-card {
-    background: linear-gradient(165deg, rgba(12, 28, 46, 0.95) 0%, rgba(6, 15, 26, 0.96) 100%);
-    border: 1.5px solid rgba(0, 240, 255, 0.32);
+    background: linear-gradient(165deg, rgba(22, 31, 48, 0.95) 0%, rgba(13, 19, 31, 0.96) 100%);
+    border: 1.5px solid rgba(91, 141, 239, 0.32);
     border-radius: 16px;
     padding: 13px;
     margin-bottom: 11px;
     box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
   }
-  .tk-card.done { border-color: rgba(0, 255, 136, 0.55); }
+  .tk-card.done { border-color: rgba(63, 191, 127, 0.55); }
   .tk-top {
     display: flex;
     justify-content: space-between;
@@ -2489,9 +2491,9 @@
     flex-shrink: 0;
     font-size: 12px;
     font-weight: 900;
-    color: #ffcc4d;
-    background: rgba(255, 170, 0, 0.14);
-    border: 1px solid #ffaa00;
+    color: #d9b45a;
+    background: rgba(201, 154, 58, 0.14);
+    border: 1px solid #c99a3a;
     border-radius: 9px;
     padding: 3px 8px;
   }
@@ -2505,15 +2507,15 @@
   }
   .tk-progress > div {
     height: 100%;
-    background: linear-gradient(90deg, #078efb, var(--cyan));
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+    background: linear-gradient(90deg, #3f6fd8, var(--cyan));
+    box-shadow: 0 0 10px rgba(91, 141, 239, 0.6);
   }
   .tk-progress-label {
     display: flex;
     justify-content: space-between;
     font-size: 10.5px;
     font-weight: 800;
-    color: #8ab4f8;
+    color: #9fb3cf;
   }
   .tk-actions {
     display: flex;
@@ -2529,8 +2531,8 @@
     padding: 10px;
     border-radius: 12px;
   }
-  .tk-status.done { color: #00ff88; background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.45); }
-  .tk-status.pending { color: #ffcc4d; background: rgba(255, 170, 0, 0.1); border: 1px solid rgba(255, 170, 0, 0.45); }
+  .tk-status.done { color: #3fbf7f; background: rgba(63, 191, 127, 0.1); border: 1px solid rgba(63, 191, 127, 0.45); }
+  .tk-status.pending { color: #d9b45a; background: rgba(201, 154, 58, 0.1); border: 1px solid rgba(201, 154, 58, 0.45); }
   .pf-row {
     display: flex;
     align-items: center;
@@ -2539,13 +2541,13 @@
     padding: 9px 10px;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(0, 240, 255, 0.16);
+    border: 1px solid rgba(91, 141, 239, 0.16);
     margin-bottom: 7px;
   }
   .pf-row-main { display: flex; align-items: center; gap: 9px; min-width: 0; }
   .pf-row-main img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--cyan); }
   .pf-row-name { font-size: 13px; font-weight: 900; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .pf-row-sub { font-size: 10.5px; color: #8ab4f8; font-weight: 700; }
+  .pf-row-sub { font-size: 10.5px; color: #9fb3cf; font-weight: 700; }
   .pf-toggle {
     border-radius: 9px;
     padding: 5px 8px;
@@ -2557,7 +2559,7 @@
     color: #8faac4;
     white-space: nowrap;
   }
-  .pf-toggle.on { border-color: #00ff88; color: #00ff88; background: rgba(0, 255, 136, 0.12); }
+  .pf-toggle.on { border-color: #3fbf7f; color: #3fbf7f; background: rgba(63, 191, 127, 0.12); }
   .pf-section-title {
     font-size: 12px;
     font-weight: 900;
@@ -2576,8 +2578,8 @@
     margin-bottom: 8px;
   }
   .gw-tab-btn {
-    background: rgba(8, 20, 34, 0.85);
-    border: 1.5px solid rgba(0, 240, 255, 0.25);
+    background: rgba(17, 24, 38, 0.85);
+    border: 1.5px solid rgba(91, 141, 239, 0.25);
     color: #8faac4;
     padding: 11px 8px;
     border-radius: 13px;
@@ -2591,14 +2593,14 @@
     transition: all 0.2s ease;
   }
   .gw-tab-btn.active {
-    background: linear-gradient(135deg, rgba(7, 142, 251, 0.35), rgba(0, 240, 255, 0.22));
+    background: linear-gradient(135deg, rgba(63, 111, 216, 0.35), rgba(91, 141, 239, 0.22));
     border-color: var(--cyan);
     color: #fff;
-    box-shadow: 0 0 15px rgba(0, 240, 255, 0.28);
+    box-shadow: 0 0 15px rgba(91, 141, 239, 0.28);
   }
   .gw-card {
-    background: linear-gradient(165deg, rgba(12, 28, 46, 0.95) 0%, rgba(6, 15, 26, 0.96) 100%);
-    border: 1.5px solid rgba(0, 240, 255, 0.38);
+    background: linear-gradient(165deg, rgba(22, 31, 48, 0.95) 0%, rgba(13, 19, 31, 0.96) 100%);
+    border: 1.5px solid rgba(91, 141, 239, 0.38);
     border-radius: 18px;
     padding: 15px;
     margin-bottom: 14px;
@@ -2607,7 +2609,7 @@
     overflow: hidden;
   }
   .gw-card.ended {
-    border-color: rgba(255, 215, 0, 0.55);
+    border-color: rgba(212, 175, 55, 0.55);
   }
   .gw-prizes-gallery {
     display: flex;
@@ -2620,7 +2622,7 @@
     min-width: 115px;
     max-width: 140px;
     background: rgba(4, 10, 18, 0.9);
-    border: 1px solid rgba(0, 240, 255, 0.35);
+    border: 1px solid rgba(91, 141, 239, 0.35);
     border-radius: 12px;
     overflow: hidden;
     flex-shrink: 0;
@@ -2660,19 +2662,19 @@
     font-weight: 800;
     padding: 3px 9px;
     border-radius: 9px;
-    background: rgba(0, 240, 255, 0.12);
-    border: 1px solid rgba(0, 240, 255, 0.3);
+    background: rgba(91, 141, 239, 0.12);
+    border: 1px solid rgba(91, 141, 239, 0.3);
     color: #d8ecff;
   }
   .gw-pill.free-pill {
-    background: rgba(0, 255, 136, 0.14);
-    border-color: #00ff88;
-    color: #00ff88;
+    background: rgba(63, 191, 127, 0.14);
+    border-color: #3fbf7f;
+    color: #3fbf7f;
   }
   .gw-pill.pts-pill {
-    background: rgba(255, 170, 0, 0.16);
-    border-color: #ffaa00;
-    color: #ffcc4d;
+    background: rgba(201, 154, 58, 0.16);
+    border-color: #c99a3a;
+    color: #d9b45a;
   }
   .gw-actions-row {
     display: grid;
@@ -2681,9 +2683,9 @@
     margin-top: 10px;
   }
   .gw-join-btn {
-    background: linear-gradient(135deg, #00c853, #00e676);
-    border: 1.5px solid #69f0ae;
-    color: #04120b;
+    background: linear-gradient(135deg, #3f6fd8, #5b8def);
+    border: 1.5px solid #7aa3f2;
+    color: #fff;
     padding: 10px 12px;
     border-radius: 12px;
     font-size: 13px;
@@ -2695,12 +2697,12 @@
     gap: 6px;
   }
   .gw-join-btn.joined {
-    background: rgba(0, 255, 136, 0.18);
-    color: #00ff88;
-    border-color: #00ff88;
+    background: rgba(63, 191, 127, 0.18);
+    color: #3fbf7f;
+    border-color: #3fbf7f;
   }
   .gw-share-btn {
-    background: rgba(0, 240, 255, 0.14);
+    background: rgba(91, 141, 239, 0.14);
     border: 1.5px solid var(--cyan);
     color: var(--cyan);
     padding: 10px 12px;
@@ -2720,8 +2722,8 @@
     gap: 10px;
   }
   .rw-card {
-    background: linear-gradient(165deg, rgba(12, 28, 46, 0.95) 0%, rgba(6, 15, 26, 0.96) 100%);
-    border: 1.5px solid rgba(0, 240, 255, 0.38);
+    background: linear-gradient(165deg, rgba(22, 31, 48, 0.95) 0%, rgba(13, 19, 31, 0.96) 100%);
+    border: 1.5px solid rgba(91, 141, 239, 0.38);
     border-radius: 15px;
     overflow: hidden;
     display: flex;
@@ -2764,7 +2766,7 @@
   }
   .rw-claim-btn {
     margin-top: auto;
-    background: linear-gradient(135deg, #ffaa00, #ffcc4d);
+    background: linear-gradient(135deg, #c99a3a, #d9b45a);
     border: 1.5px solid #ffd27a;
     color: #1a1000;
     padding: 8px 6px;
@@ -2782,7 +2784,7 @@
   .rw-admin-claims {
     font-size: 10px;
     color: #9ab3c9;
-    border-top: 1px dashed rgba(0, 240, 255, 0.25);
+    border-top: 1px dashed rgba(91, 141, 239, 0.25);
     padding-top: 5px;
     max-height: 90px;
     overflow-y: auto;
@@ -2790,7 +2792,7 @@
   .rw-admin-delete {
     background: none;
     border: none;
-    color: #ff4d6d;
+    color: #e05a5a;
     font-size: 10.5px;
     font-weight: 800;
     cursor: pointer;
@@ -2803,7 +2805,7 @@
     justify-content: space-between;
     gap: 8px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(0, 240, 255, 0.25);
+    border: 1px solid rgba(91, 141, 239, 0.25);
     border-radius: 10px;
     padding: 7px 10px;
     margin-bottom: 6px;
@@ -2819,7 +2821,7 @@
   .gw-filter-pill {
     flex: 1;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(0, 240, 255, 0.22);
+    border: 1px solid rgba(91, 141, 239, 0.22);
     color: #9ab3c9;
     padding: 8px 10px;
     border-radius: 10px;
@@ -2830,21 +2832,21 @@
     transition: all 0.2s ease;
   }
   .gw-filter-pill.active {
-    background: rgba(0, 240, 255, 0.16);
+    background: rgba(91, 141, 239, 0.16);
     border-color: var(--cyan);
     color: var(--cyan);
-    box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+    box-shadow: 0 0 12px rgba(91, 141, 239, 0.25);
   }
   .gw-creator-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(7, 142, 251, 0.14);
-    border: 1px solid rgba(0, 240, 255, 0.3);
+    background: rgba(63, 111, 216, 0.14);
+    border: 1px solid rgba(91, 141, 239, 0.3);
     border-radius: 9px;
     padding: 4px 9px;
     font-size: 11px;
-    color: #8ab4f8;
+    color: #9fb3cf;
     font-weight: 700;
     margin-bottom: 8px;
   }
@@ -2871,7 +2873,7 @@
   }
   .profile-war-pts-trigger {
     background: rgba(5, 15, 28, 0.92);
-    border: 1.5px solid rgba(0, 240, 255, 0.45);
+    border: 1.5px solid rgba(91, 141, 239, 0.45);
     border-radius: 12px;
     padding: 6px 10px;
     color: #fff;
@@ -2884,7 +2886,7 @@
   }
   .profile-war-pts-trigger:hover {
     border-color: var(--cyan);
-    box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
+    box-shadow: 0 0 14px rgba(91, 141, 239, 0.35);
   }
   .profile-war-pts-menu {
     display: none;
@@ -2915,13 +2917,13 @@
   }
   .profile-war-pts-opt:hover,
   .profile-war-pts-opt.active {
-    background: rgba(0, 240, 255, 0.18);
+    background: rgba(91, 141, 239, 0.18);
     color: var(--cyan);
   }
 
   .profile-clan-member-card {
-    background: linear-gradient(135deg, rgba(7, 142, 251, 0.18), rgba(5, 14, 26, 0.92));
-    border: 1.5px solid rgba(0, 240, 255, 0.42);
+    background: linear-gradient(135deg, rgba(63, 111, 216, 0.18), rgba(5, 14, 26, 0.92));
+    border: 1.5px solid rgba(91, 141, 239, 0.42);
     border-radius: 15px;
     padding: 11px 14px;
     margin-bottom: 14px;
@@ -2936,28 +2938,28 @@
   .profile-clan-member-card:hover {
     border-color: var(--cyan);
     transform: translateY(-2px);
-    box-shadow: 0 0 18px rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 18px rgba(91, 141, 239, 0.3);
   }
   .profile-clan-member-card.visible {
     display: flex;
   }
   .you-neon-badge {
-    background: rgba(0, 255, 136, 0.18);
-    border: 1px solid #00ff88;
-    color: #00ff88;
+    background: rgba(63, 191, 127, 0.18);
+    border: 1px solid #3fbf7f;
+    color: #3fbf7f;
     font-size: 10px;
     font-weight: 900;
     padding: 1px 7px;
     border-radius: 8px;
     margin-left: 5px;
-    box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+    box-shadow: 0 0 8px rgba(63, 191, 127, 0.4);
   }
   .unlink-account-btn {
     width: 100%;
     margin-top: 9px;
-    background: rgba(255, 59, 92, 0.14);
-    border: 1.5px solid rgba(255, 77, 109, 0.55);
-    color: #ff8fa3;
+    background: rgba(214, 69, 69, 0.14);
+    border: 1.5px solid rgba(214, 69, 69, 0.55);
+    color: #e89090;
     padding: 10px 14px;
     border-radius: 13px;
     font-size: 12.5px;
@@ -2970,9 +2972,9 @@
     transition: all 0.2s ease;
   }
   .unlink-account-btn:hover {
-    background: rgba(255, 59, 92, 0.26);
+    background: rgba(214, 69, 69, 0.26);
     color: #fff;
-    border-color: #ff4d6d;
+    border-color: #e05a5a;
   }
 
 </style>
@@ -3067,11 +3069,7 @@
 
   <!-- ==================== 2. Initial Loading Screen ==================== -->
   <div id="loading-screen">
-    <div class="loading-wolf-wrapper">
-      <svg viewBox="0 0 1000 1000" width="100%" height="100%">
-        <use href="#full-cyber-wolf"/>
-      </svg>
-    </div>
+    <div class="loading-wolf-wrapper" style="display:flex; align-items:center; justify-content:center; font-size:110px;">🎁</div>
     <div class="loading-text">LOADING...</div>
     <div class="progress-bar-box">
       <div class="progress-bar-fill"></div>
@@ -3100,7 +3098,7 @@
           <div class="section-header" style="margin-bottom:10px;">
             <div>
               <h2 class="section-title">🛡 Clans</h2>
-              <span style="font-size:11px; color:#8ab4f8;">Tap a clan to see its giveaways, tasks and rewards</span>
+              <span style="font-size:11px; color:#9fb3cf;">Tap a clan to see its giveaways, tasks and rewards</span>
             </div>
           </div>
           <div id="home-clan-list"></div>
@@ -3128,7 +3126,7 @@
           <div class="section-header" style="margin-bottom: 10px;">
             <div>
               <h2 class="section-title">⚔️ Recent Battles</h2>
-              <span style="font-size:11px; color:#8ab4f8;">Last 10 Maps (Click any map for battle details)</span>
+              <span style="font-size:11px; color:#9fb3cf;">Last 10 Maps (Click any map for battle details)</span>
             </div>
             <button class="dropdown-toggle-btn" id="recent-battles-dropdown-btn" onclick="toggleRecentBattlesDropdown()">
               <span>Show All (10)</span>
@@ -3145,7 +3143,7 @@
         <div class="glass-card">
           <div class="section-header">
             <h2 class="section-title">🏆 Top Players</h2>
-            <span style="font-size:11px; color:#8ab4f8;">Daily Clan War Rating</span>
+            <span style="font-size:11px; color:#9fb3cf;">Daily Clan War Rating</span>
           </div>
           <div class="rank-list" id="home-top-players-list">
             <!-- Populated via JS -->
@@ -3244,7 +3242,7 @@
               A
             </div>
             <div class="skin-mask-badge" title="Telegram / Profile Avatar">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b8def" stroke-width="2">
                 <path d="M12 2L4 6v6c0 5.5 3.8 10.7 8 12 4.2-1.3 8-6.5 8-12V6l-8-4z" fill="#0d2236"/>
                 <path d="M8 10h2.5M13.5 10H16M9 15c1.5 1 4.5 1 6 0" stroke-linecap="round"/>
               </svg>
@@ -3252,7 +3250,7 @@
           </div>
 
           <h3 style="margin:0 0 4px; font-size:19px; font-weight:800;">@Guest_Player</h3>
-          <p style="margin:0 0 12px; color:#8ab4f8; font-size:12.5px; font-family:monospace;">Player UUID: Not Linked Yet</p>
+          <p style="margin:0 0 12px; color:#9fb3cf; font-size:12.5px; font-family:monospace;">Player UUID: Not Linked Yet</p>
 
           <div class="clan-tag-pill">
             <span>⚔️ Clan:</span>
@@ -3283,7 +3281,7 @@
               <img id="profile-clan-card-avatar" src="" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid var(--cyan);" alt="">
               <div style="text-align:left; min-width:0;">
                 <div style="font-size:14.5px; font-weight:900; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="profile-clan-card-name">HEGEMONY</div>
-                <div style="font-size:11px; color:#8ab4f8; font-weight:700;" id="profile-clan-card-sub">Tap to view Clan Members & War Points</div>
+                <div style="font-size:11px; color:#9fb3cf; font-weight:700;" id="profile-clan-card-sub">Tap to view Clan Members & War Points</div>
               </div>
             </div>
             <span class="score-badge" style="font-size:11px;">👥 Members →</span>
@@ -3363,7 +3361,7 @@
           <div id="rw-admin-form" class="glass-card" style="display:none; padding:14px;">
             <div class="section-header" style="margin-bottom:10px;">
               <h2 class="section-title" style="font-size:14px;">👑 Add Reward</h2>
-              <span style="font-size:10.5px; color:#00ff88; font-weight:800;">Admin</span>
+              <span style="font-size:10.5px; color:#3fbf7f; font-weight:800;">Admin</span>
             </div>
             <label class="pf-label">Clan Shop</label>
             <select id="rw-owner-clan-select" class="search-input pf-select"></select>
@@ -3372,7 +3370,7 @@
             <input type="text" id="rw-image-input" class="search-input" style="padding:9px 12px; font-size:12px; margin-bottom:8px;" placeholder="Or paste image URL (https://...)">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
               <div>
-                <span style="font-size:10px; color:#ffcc4d; display:block; margin-bottom:3px; font-weight:700;">Cost (Points)</span>
+                <span style="font-size:10px; color:#d9b45a; display:block; margin-bottom:3px; font-weight:700;">Cost (Points)</span>
                 <input type="number" id="rw-cost-input" class="search-input" style="padding:9px; text-align:center;" value="1000" min="1">
               </div>
               <div>
@@ -3393,7 +3391,7 @@
           <div id="tk-admin-form" class="glass-card" style="display:none; padding:14px;">
             <div class="section-header" style="margin-bottom:10px;">
               <h2 class="section-title" style="font-size:14px;">🎯 Create Task</h2>
-              <span style="font-size:10.5px; color:#00ff88; font-weight:800;">Clan Admin</span>
+              <span style="font-size:10.5px; color:#3fbf7f; font-weight:800;">Clan Admin</span>
             </div>
             <label class="pf-label">Clan</label>
             <select id="tk-owner-clan-select" class="search-input pf-select"></select>
@@ -3438,7 +3436,7 @@
                 </select>
               </div>
               <div>
-                <span style="font-size:10px; color:#ffcc4d; display:block; margin-bottom:3px; font-weight:700;">Reward (Points)</span>
+                <span style="font-size:10px; color:#d9b45a; display:block; margin-bottom:3px; font-weight:700;">Reward (Points)</span>
                 <input type="number" id="tk-reward-input" class="search-input" style="padding:9px; text-align:center; margin-bottom:10px;" value="200" min="1">
               </div>
             </div>
@@ -3458,12 +3456,12 @@
             <p style="margin:0 0 12px; font-size:12.5px; color:#9ab3c9; line-height:1.5;">
               Only clan admins approved by the main admin can create giveaways for their clan.
             </p>
-            <div style="font-size:11px; color:#8ab4f8; font-family:monospace;" id="gw-current-user-debug"></div>
+            <div style="font-size:11px; color:#9fb3cf; font-family:monospace;" id="gw-current-user-debug"></div>
           </div>
           <div id="gw-admin-create-form" class="glass-card">
             <div class="section-header" style="margin-bottom:8px;">
               <h2 class="section-title" style="font-size:14.5px;">🎁 Create a Giveaway</h2>
-              <span style="font-size:10.5px; color:#00ff88; font-weight:800;">⚡ Auto Winner Notify</span>
+              <span style="font-size:10.5px; color:#3fbf7f; font-weight:800;">⚡ Auto Winner Notify</span>
             </div>
 
             <div class="gw-creator-badge" id="gw-creator-identity-badge">
@@ -3489,7 +3487,7 @@
               </button>
             </div>
             <div id="gw-min-points-wrap" style="display:none; margin-bottom:10px;">
-              <label style="display:block; font-size:10.5px; font-weight:700; color:#ffcc4d; margin-bottom:4px;">Entry Cost (deducted from the player's points on join):</label>
+              <label style="display:block; font-size:10.5px; font-weight:700; color:#d9b45a; margin-bottom:4px;">Entry Cost (deducted from the player's points on join):</label>
               <input type="number" id="gw-min-points-input" class="search-input" style="padding:9px 12px; font-size:13px;" value="1000" min="1">
             </div>
 
@@ -3511,7 +3509,7 @@
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
               <label style="font-size:11px; font-weight:800; color:var(--cyan); text-transform:uppercase;">Prizes (<span id="gw-prizes-count">0</span> Added)</label>
-              <button type="button" onclick="openAddPrizeModal()" style="background:rgba(0,240,255,0.16); border:1px solid var(--cyan); color:var(--cyan); border-radius:9px; padding:5px 10px; font-size:11.5px; font-weight:800; cursor:pointer;">
+              <button type="button" onclick="openAddPrizeModal()" style="background:rgba(91, 141, 239,0.16); border:1px solid var(--cyan); color:var(--cyan); border-radius:9px; padding:5px 10px; font-size:11.5px; font-weight:800; cursor:pointer;">
                 ➕ Add Prize / Skin Photo
               </button>
             </div>
@@ -3657,7 +3655,7 @@
       </div>
 
       <h3 id="inspected-player-name" style="margin:0 0 4px; font-size:19px; font-weight:800;">@Player</h3>
-      <p id="inspected-player-id" style="margin:0 0 12px; color:#8ab4f8; font-size:12.5px; font-family:monospace;">Player ID: #PW-884920</p>
+      <p id="inspected-player-id" style="margin:0 0 12px; color:#9fb3cf; font-size:12.5px; font-family:monospace;">Player ID: #PW-884920</p>
 
       <div class="clan-tag-pill" style="margin:0 auto 18px;">
         <span>⚔️ Clan:</span>
@@ -3705,7 +3703,7 @@
         </svg>
         <input type="text" id="link-player-uuid-input" class="search-input" placeholder="Paste your UUID here (e.g. a7bc058c-9499-...)" autocomplete="off">
       </div>
-      <div id="link-uuid-feedback" style="font-size:12px; color:#ff8fa3; margin-bottom:10px; display:none;"></div>
+      <div id="link-uuid-feedback" style="font-size:12px; color:#e89090; margin-bottom:10px; display:none;"></div>
       <div style="display:flex; gap:8px;">
         <button class="tg-connect-btn" onclick="submitPixelWorldUuid()" style="flex:1; padding:11px;">
           <span>Link UUID Now</span>
@@ -3759,7 +3757,7 @@
           <div>
             <span class="war-tag" id="share-post-map-tag" style="margin-bottom:4px;">24H CONTROL</span>
             <h3 id="share-post-map-name" style="margin:0; font-size:20px; font-weight:900; text-shadow:0 2px 8px rgba(0,0,0,0.95);">Panelka</h3>
-            <div id="share-post-map-owner" style="font-size:11.5px; color:#8ab4f8; font-weight:700; margin-top:2px;">👑 OLD_LEGION</div>
+            <div id="share-post-map-owner" style="font-size:11.5px; color:#9fb3cf; font-weight:700; margin-top:2px;">👑 OLD_LEGION</div>
           </div>
           <div class="war-countdown-box" style="padding:7px 11px; min-width:105px;">
             <span class="war-countdown-label" id="i18n-share-map-time-lbl">Map Time</span>
@@ -3807,7 +3805,7 @@
             <div>
               <span class="war-tag" id="auto-share-status-pill" style="margin-bottom:4px;">✕ AUTO SHARE</span>
               <h3 id="auto-share-map-name" style="margin:0; font-size:20px; font-weight:900; text-shadow:0 2px 8px rgba(0,0,0,0.95);">Lost City</h3>
-              <div id="auto-share-map-owner" style="font-size:11.5px; color:#8ab4f8; font-weight:700; margin-top:2px;">👑 OLD_LEGION</div>
+              <div id="auto-share-map-owner" style="font-size:11.5px; color:#9fb3cf; font-weight:700; margin-top:2px;">👑 OLD_LEGION</div>
             </div>
             <div class="war-countdown-box" style="padding:7px 11px; min-width:108px;">
               <span class="war-countdown-label" id="i18n-autoshare-rem-lbl">Remaining Time</span>
@@ -3830,15 +3828,15 @@
           </div>
         </div>
 
-        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(0,240,255,0.22); border-radius:13px; padding:12px;">
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(91, 141, 239,0.22); border-radius:13px; padding:12px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <label id="i18n-autoshare-group-lbl" style="font-size:11px; font-weight:800; color:var(--cyan); text-transform:uppercase;">Target Group / Channel</label>
-            <span id="group-lock-status-badge" style="display:none; font-size:10.5px; color:#00ff88; font-weight:800;">🔒 Locked</span>
+            <span id="group-lock-status-badge" style="display:none; font-size:10.5px; color:#3fbf7f; font-weight:800;">🔒 Locked</span>
           </div>
 
           <div style="display:flex; gap:7px; align-items:center; margin-bottom:8px;">
             <input type="text" id="auto-share-group-input" class="search-input" style="padding:10px 12px; font-size:12.5px; flex:1; transition:all 0.25s;" placeholder="@Channel, -100123456789, or https://t.me/+...">
-            <button type="button" id="edit-group-target-btn" onclick="unlockGroupTargetForEdit()" style="display:none; background:rgba(0,240,255,0.14); border:1.5px solid var(--cyan); color:var(--cyan); border-radius:11px; padding:9px 12px; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap;">
+            <button type="button" id="edit-group-target-btn" onclick="unlockGroupTargetForEdit()" style="display:none; background:rgba(91, 141, 239,0.14); border:1.5px solid var(--cyan); color:var(--cyan); border-radius:11px; padding:9px 12px; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap;">
               ✏️ Edit
             </button>
           </div>
@@ -3917,7 +3915,7 @@
       <input type="file" id="gw-prize-file-input" accept="image/*" style="margin-bottom:8px; font-size:12px; color:#fff; width:100%;" onchange="handlePrizeImageUpload(this)">
       <input type="text" id="gw-prize-url-input" class="search-input" style="padding:9px 12px; font-size:12px; margin-bottom:10px;" placeholder="Or paste image URL (https://...)">
 
-      <div id="gw-prize-img-preview" style="width:100%; height:110px; border-radius:12px; background:#071320 center/cover no-repeat; border:1px dashed rgba(0,240,255,0.4); margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#8faac4; font-size:12px;">
+      <div id="gw-prize-img-preview" style="width:100%; height:110px; border-radius:12px; background:#071320 center/cover no-repeat; border:1px dashed rgba(91, 141, 239,0.4); margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#8faac4; font-size:12px;">
         Prize Photo Preview
       </div>
 
@@ -3941,7 +3939,7 @@
           <img id="modal-clan-roster-avatar" src="" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1.5px solid var(--cyan);" alt="">
           <div style="text-align:left;">
             <h3 class="section-title" style="font-size:15px; margin:0;" id="modal-clan-roster-title">HEGEMONY</h3>
-            <span style="font-size:10.5px; color:#8ab4f8;" id="i18n-clan-roster-sub">Clan War Points Leaderboard</span>
+            <span style="font-size:10.5px; color:#9fb3cf;" id="i18n-clan-roster-sub">Clan War Points Leaderboard</span>
           </div>
         </div>
         <button class="modal-close-btn" style="position:static; width:30px; height:30px;" onclick="closeProfileClanRosterModal()">✕</button>
@@ -3965,7 +3963,7 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <div style="text-align:left;">
           <h3 class="section-title" style="font-size:15px; margin:0;">👑 Admin Panel</h3>
-          <span style="font-size:10.5px; color:#8ab4f8;" id="pf-admin-role-sub"></span>
+          <span style="font-size:10.5px; color:#9fb3cf;" id="pf-admin-role-sub"></span>
         </div>
         <button class="modal-close-btn" style="position:static; width:30px; height:30px;" onclick="closePlatformAdminModal()">✕</button>
       </div>
@@ -4948,7 +4946,7 @@
                   <span>${escapeHtml(c.name)}</span>
                   <span style="font-size:10px; color:var(--cyan);">▼</span>
                 </div>
-                <div style="font-size:11.5px; color:#8ab4f8;">👥 ${c.playersCount} ${c.playersCount === 1 ? 'Player' : 'Players'}</div>
+                <div style="font-size:11.5px; color:#9fb3cf;">👥 ${c.playersCount} ${c.playersCount === 1 ? 'Player' : 'Players'}</div>
               </div>
             </div>
             <div class="score-badge">${c.score} PTS</div>
@@ -5008,10 +5006,10 @@
               <div style="font-weight:800; font-size:13.5px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                 ${escapeHtml(p.name)}
               </div>
-              <div style="font-size:11px; color:#8ab4f8; display:flex; align-items:center; flex-wrap:wrap; gap:4px; margin-top:2px;">
+              <div style="font-size:11px; color:#9fb3cf; display:flex; align-items:center; flex-wrap:wrap; gap:4px; margin-top:2px;">
                 ${p.clanAvatar ? `<img class="mini-clan-icon" style="width:13px;height:13px;" src="${escapeHtml(p.clanAvatar)}" onerror="this.style.display='none'">` : ''}
                 <span style="white-space:nowrap;">${escapeHtml(p.clan)}</span>
-                <span style="color:#ffd700; font-weight:700; white-space:nowrap;">• ⚔️ ${Number(p.kills || 0).toLocaleString()}</span>
+                <span style="color:#d4af37; font-weight:700; white-space:nowrap;">• ⚔️ ${Number(p.kills || 0).toLocaleString()}</span>
                 ${buildMini7DayDotsHtml(p.uuid, p.name)}
               </div>
             </div>
@@ -5119,12 +5117,12 @@
     function renderExploreResults(matches, rawQuery, isSearchingLive) {
       const resultsBox = document.getElementById('explore-search-results');
       if (!matches.length) {
-        resultsBox.innerHTML = `<div class="glass-card" style="text-align:center; color:#8ab4f8; font-size:13px;">${isSearchingLive ? 'Searching live server...' : `No player, ID, or clan found matching "${escapeHtml(rawQuery)}"`}</div>`;
+        resultsBox.innerHTML = `<div class="glass-card" style="text-align:center; color:#9fb3cf; font-size:13px;">${isSearchingLive ? 'Searching live server...' : `No player, ID, or clan found matching "${escapeHtml(rawQuery)}"`}</div>`;
         return;
       }
 
       resultsBox.innerHTML = matches.slice(0, 30).map(m => `
-        <div class="rank-row clickable-item" style="background: rgba(8, 20, 34, 0.82); backdrop-filter: blur(12px);" onclick="${m.type === 'Player' ? `openPlayerProfileModal(${jsArg(m.uuid)}, ${jsArg(m.name)})` : ''}">
+        <div class="rank-row clickable-item" style="background: rgba(17, 24, 38, 0.82); backdrop-filter: blur(12px);" onclick="${m.type === 'Player' ? `openPlayerProfileModal(${jsArg(m.uuid)}, ${jsArg(m.name)})` : ''}">
           <div class="rank-left">
             <div class="rank-num" style="width:auto; padding:0 8px;">${escapeHtml(m.type)}</div>
             ${m.type === 'Player'
@@ -5136,7 +5134,7 @@
                 <span style="font-size:11px; color:var(--cyan); font-family:monospace;">${escapeHtml(m.id)}</span>
                 ${m.type === 'Player' ? buildMini7DayDotsHtml(m.uuid, m.name) : ''}
               </div>
-              <div style="font-size:11px; color:#8ab4f8;">${escapeHtml(m.clan)}</div>
+              <div style="font-size:11px; color:#9fb3cf;">${escapeHtml(m.clan)}</div>
             </div>
           </div>
           <div class="score-badge">${escapeHtml(m.stat)}</div>
@@ -5156,8 +5154,8 @@
           </div>
           <div class="map-card-body">
             <div class="map-name">${escapeHtml(formatMapDisplayName(map.map_id, map.name))}</div>
-            <div style="font-size:11.5px; color:#8ab4f8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:6px;">
-              ${map.controllerAvatar ? `<img src="${escapeHtml(map.controllerAvatar)}" style="width:16px;height:16px;border-radius:50%;object-fit:cover;border:1px solid rgba(0,240,255,0.5);" onerror="this.style.display='none'">` : ''}
+            <div style="font-size:11.5px; color:#9fb3cf; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:6px;">
+              ${map.controllerAvatar ? `<img src="${escapeHtml(map.controllerAvatar)}" style="width:16px;height:16px;border-radius:50%;object-fit:cover;border:1px solid rgba(91, 141, 239,0.5);" onerror="this.style.display='none'">` : ''}
               <strong style="color:var(--cyan);">${escapeHtml(map.controller)}</strong>
             </div>
             <div class="map-timer-row">
@@ -5329,7 +5327,7 @@
       const podiumBox = document.getElementById('lb-podium-box');
       podiumBox.innerHTML =
         renderPodiumCard(r2, 2, '2ND', '#d8e6f8') +
-        renderPodiumCard(r1, 1, '👑 1ST', '#ffd700') +
+        renderPodiumCard(r1, 1, '👑 1ST', '#d4af37') +
         renderPodiumCard(r3, 3, '3RD', '#e5904c');
 
       const sliceStart = lbCurrentPage === 1 ? 3 : 0;
@@ -5348,7 +5346,7 @@
                 : (item.avatar ? `<img class="mini-avatar" src="${escapeHtml(item.avatar)}" alt="" onerror="this.style.display='none'">` : '')}
               <div>
                 <div style="font-weight:700;">${escapeHtml(item.name)}</div>
-                <div style="font-size:11px; color:#8ab4f8;">${escapeHtml(item.sub)}</div>
+                <div style="font-size:11px; color:#9fb3cf;">${escapeHtml(item.sub)}</div>
               </div>
             </div>
             <div class="score-badge">${escapeHtml(item.badge)}</div>
@@ -5575,7 +5573,7 @@
 
         <div class="heatmap-30-header">
           <span>${escapeHtml(txt.last30)}</span>
-          <span style="color:#00ff88;">■ Active</span>
+          <span style="color:#3fbf7f;">■ Active</span>
         </div>
         <div class="heatmap-30-grid">
           ${heatmapCellsHtml}
@@ -5590,7 +5588,7 @@
       const el = document.getElementById(infoBoxId);
       if (!el) return;
       const { txt } = getActivityI18n();
-      el.style.color = isPlayed ? '#00ff88' : '#ff8fa3';
+      el.style.color = isPlayed ? '#3fbf7f' : '#e89090';
       el.textContent = isPlayed ? txt.playedOn(dateLabel, pts) : txt.restOn(dateLabel);
     }
 
@@ -5742,7 +5740,7 @@
         if (tgUser && tgUser.photo_url) {
           smallBadge.innerHTML = `<img src="${escapeHtml(tgUser.photo_url)}" alt="Telegram Photo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
         } else {
-          smallBadge.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2"><path d="M12 2L4 6v6c0 5.5 3.8 10.7 8 12 4.2-1.3 8-6.5 8-12V6l-8-4z" fill="#0d2236"/><path d="M8 10h2.5M13.5 10H16M9 15c1.5 1 4.5 1 6 0" stroke-linecap="round"/></svg>`;
+          smallBadge.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b8def" stroke-width="2"><path d="M12 2L4 6v6c0 5.5 3.8 10.7 8 12 4.2-1.3 8-6.5 8-12V6l-8-4z" fill="#0d2236"/><path d="M8 10h2.5M13.5 10H16M9 15c1.5 1 4.5 1 6 0" stroke-linecap="round"/></svg>`;
         }
       }
 
@@ -5930,7 +5928,7 @@
       if (ok) {
         closeLinkAccountModal();
       } else if (feedback) {
-        feedback.style.color = '#ff8fa3';
+        feedback.style.color = '#e89090';
         feedback.textContent = 'Could not verify UUID. Please check your UUID and try again.';
       }
     }
@@ -6061,8 +6059,8 @@
         groupInput.setAttribute('readonly', 'readonly');
         groupInput.style.opacity = '0.48';
         groupInput.style.background = 'rgba(4, 12, 20, 0.95)';
-        groupInput.style.borderColor = 'rgba(0, 255, 136, 0.45)';
-        groupInput.style.color = '#00ff88';
+        groupInput.style.borderColor = 'rgba(63, 191, 127, 0.45)';
+        groupInput.style.color = '#3fbf7f';
         groupInput.style.pointerEvents = 'none';
         if (editBtn) editBtn.style.display = 'inline-flex';
         if (lockBadge) lockBadge.style.display = 'inline';
@@ -6074,7 +6072,7 @@
         groupInput.removeAttribute('readonly');
         groupInput.style.opacity = '1';
         groupInput.style.background = 'rgba(6, 16, 28, 0.88)';
-        groupInput.style.borderColor = 'rgba(0, 240, 255, 0.45)';
+        groupInput.style.borderColor = 'rgba(91, 141, 239, 0.45)';
         groupInput.style.color = '#fff';
         groupInput.style.pointerEvents = 'auto';
         if (editBtn) editBtn.style.display = 'none';
@@ -6390,7 +6388,7 @@
         return `
           <div class="custom-map-option ${isSelected ? 'selected' : ''}" onclick="onAutoShareMapSelectionChange(${jsArg(m.map_id)})">
             <div style="display:flex; align-items:center; gap:10px;">
-              <img src="${escapeHtml(m.image_url)}" style="width:30px; height:30px; border-radius:7px; object-fit:cover; border:1px solid rgba(0,240,255,0.4);" alt="">
+              <img src="${escapeHtml(m.image_url)}" style="width:30px; height:30px; border-radius:7px; object-fit:cover; border:1px solid rgba(91, 141, 239,0.4);" alt="">
               <span style="font-weight:800; font-size:13.5px; color:#fff;">${escapeHtml(cleanName)}</span>
             </div>
             <span class="status-glow-badge ${isYes ? 'glow-green' : 'glow-red'}">${isYes ? '✓' : '✕'}</span>
@@ -6517,8 +6515,8 @@
       }
       if (statusPill) {
         statusPill.textContent = isEnabled ? '✓ AUTO SHARE ENABLED' : '✕ AUTO SHARE DISABLED';
-        statusPill.style.borderColor = isEnabled ? '#00ff88' : '#ff4d6d';
-        statusPill.style.color = isEnabled ? '#00ff88' : '#ff8fa3';
+        statusPill.style.borderColor = isEnabled ? '#3fbf7f' : '#e05a5a';
+        statusPill.style.color = isEnabled ? '#3fbf7f' : '#e89090';
       }
       if (nameEl) {
         nameEl.textContent = formatMapDisplayName(mapObj.map_id, mapObj.name);
@@ -6543,7 +6541,7 @@
       const enabledMaps = pixelWorldMaps.filter(m => autoShareConfigMap[m.map_id] === true);
 
       if (!enabledMaps.length) {
-        listBox.innerHTML = `<div style="text-align:center; padding:10px; font-size:12px; color:#8ab4f8; background:rgba(255,255,255,0.03); border-radius:10px;">No maps enabled yet. Tap YES above to activate a map.</div>`;
+        listBox.innerHTML = `<div style="text-align:center; padding:10px; font-size:12px; color:#9fb3cf; background:rgba(255,255,255,0.03); border-radius:10px;">No maps enabled yet. Tap YES above to activate a map.</div>`;
         return;
       }
 
@@ -6554,7 +6552,7 @@
             <img src="${escapeHtml(m.image_url)}" style="width:36px; height:36px; border-radius:8px; object-fit:cover; border:1px solid var(--cyan);" alt="">
             <div>
               <div style="font-weight:800; font-size:13px;">${escapeHtml(formatMapDisplayName(m.map_id, m.name))}</div>
-              <div style="font-size:11px; color:#00ff88;">📌 5m Pin & Edit + 🔥 Battle Started Pin</div>
+              <div style="font-size:11px; color:#3fbf7f;">📌 5m Pin & Edit + 🔥 Battle Started Pin</div>
             </div>
           </div>
           <div class="score-badge" data-map-timer="${m.id}">${formatTime(m.seconds)}</div>
@@ -6939,7 +6937,7 @@
         badge.onclick = () => switchTab('profile', document.querySelector('.button-container .button:last-child'));
         badge.innerHTML = `
           <div class="gw-clan-points-meta">
-            <span class="gw-clan-points-label">${HEGEMONY_CLAN_NAME} Monthly</span>
+            <span class="gw-clan-points-label">Clan Points</span>
             <span class="gw-clan-points-value" style="font-size:11.5px;">🔗 Link account</span>
           </div>
         `;
@@ -6961,8 +6959,8 @@
       if (!isBotUserInHegemony()) {
         badge.innerHTML = `
           <div class="gw-clan-points-meta">
-            <span class="gw-clan-points-label">${HEGEMONY_CLAN_NAME} Monthly</span>
-            <span class="gw-clan-points-value" style="font-size:11.5px; color:#ff8fa3;">Not a member</span>
+            <span class="gw-clan-points-label">Clan Points</span>
+            <span class="gw-clan-points-value" style="font-size:11.5px;">—</span>
           </div>
         `;
         return;
@@ -6983,7 +6981,7 @@
       badge.innerHTML = `
         ${clan.avatar ? `<img src="${escapeHtml(clan.avatar)}" alt="" onerror="this.style.display='none'">` : ''}
         <div class="gw-clan-points-meta">
-          <span class="gw-clan-points-label">${HEGEMONY_CLAN_NAME} Monthly</span>
+          <span class="gw-clan-points-label">Clan Points</span>
           <span class="gw-clan-points-value">${valueHtml}</span>
           ${weekHtml}
           ${spentHtml}
@@ -7047,7 +7045,7 @@
 
       if (!hegemonyRosters[range]) {
         podiumBox.innerHTML = '';
-        listEl.innerHTML = `<div style="text-align:center; padding:14px; font-size:12.5px; color:#8ab4f8;">${
+        listEl.innerHTML = `<div style="text-align:center; padding:14px; font-size:12.5px; color:#9fb3cf;">${
           hegemonyRosterState[range].error ? 'HEGEMONY list unavailable right now.' : 'Loading HEGEMONY members…'}</div>`;
       } else {
         drawHegemonyLeaderboard(podiumBox, listEl, range);
@@ -7094,26 +7092,26 @@
       `;
       podiumBox.innerHTML =
         podiumCard(members[1], 2, '2ND', '#d8e6f8') +
-        podiumCard(members[0], 1, '👑 1ST', '#ffd700') +
+        podiumCard(members[0], 1, '👑 1ST', '#d4af37') +
         podiumCard(members[2], 3, '3RD', '#e5904c');
 
       const total = members.reduce((sum, m) => sum + m.points, 0);
       const active = members.filter(m => m.points > 0).length;
       const header = `
-        <div style="display:flex; justify-content:space-between; font-size:11px; color:#8ab4f8; font-weight:700; padding:2px 4px 8px;">
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:#9fb3cf; font-weight:700; padding:2px 4px 8px;">
           <span>${range === 'month' ? '📅 Monthly' : '🗓 Weekly'} • 👥 ${members.length} members • ${active} with points</span>
           <span>Σ ${total.toLocaleString()} PTS</span>
         </div>
       `;
 
       listEl.innerHTML = header + members.slice(3).map(m => `
-        <div class="rank-row ${m.uuid ? 'clickable-item' : ''}" style="${m.uuid && m.uuid === myUuid ? 'border-color:var(--cyan); box-shadow:0 0 12px rgba(0,240,255,0.35);' : ''}" onclick="${m.uuid ? `openPlayerProfileModal(${jsArg(m.uuid)}, '')` : ''}">
+        <div class="rank-row ${m.uuid ? 'clickable-item' : ''}" style="${m.uuid && m.uuid === myUuid ? 'border-color:var(--cyan); box-shadow:0 0 12px rgba(91, 141, 239,0.35);' : ''}" onclick="${m.uuid ? `openPlayerProfileModal(${jsArg(m.uuid)}, '')` : ''}">
           <div class="rank-left">
             <div class="rank-num">${m.rank}</div>
             ${m.avatar ? `<img class="mini-avatar" src="${escapeHtml(m.avatar)}" alt="" onerror="this.style.display='none'">` : ''}
             <div>
               <div style="font-weight:700;">${escapeHtml(m.name)}${m.uuid && m.uuid === myUuid ? ' <span style="color:var(--cyan); font-size:10.5px;">(You)</span>' : ''}</div>
-              <div style="font-size:11px; color:#8ab4f8;">${otherPoints.has(m.uuid) ? `${otherLabel}: ${otherPoints.get(m.uuid).toLocaleString()} PTS` : 'HEGEMONY'}</div>
+              <div style="font-size:11px; color:#9fb3cf;">${otherPoints.has(m.uuid) ? `${otherLabel}: ${otherPoints.get(m.uuid).toLocaleString()} PTS` : 'HEGEMONY'}</div>
             </div>
           </div>
           <div class="score-badge">${m.points.toLocaleString()} PTS</div>
@@ -7355,7 +7353,7 @@
               <div class="rw-name" title="${escapeHtml(rw.name)}">${escapeHtml(rw.name)}</div>
               <div class="rw-meta">
                 <span>${stockLeft === Infinity ? '∞ in stock' : `${stockLeft} left`}</span>
-                ${myClaims ? `<span style="color:#00ff88;">✓ ${myClaims}x claimed</span>` : ''}
+                ${myClaims ? `<span style="color:#3fbf7f;">✓ ${myClaims}x claimed</span>` : ''}
               </div>
               <button type="button" class="rw-claim-btn" ${soldOut ? 'disabled' : ''} style="${!soldOut && !canAfford ? 'opacity:0.6;' : ''}" onclick="claimRewardById(${jsArg(rw.id)})">${btnLabel}</button>
               ${claimsHtml}
@@ -7440,7 +7438,7 @@
           <div class="custom-map-option ${isSel ? 'selected' : ''}" onclick="selectGwEligibleClan(${jsArg(c.id)})">
             <div style="display:flex; align-items:center; gap:10px;">
               ${c.id === 'ALL'
-                ? `<span style="width:28px; height:28px; border-radius:50%; background:rgba(0,240,255,0.15); display:flex; align-items:center; justify-content:center; font-size:15px;">🌍</span>`
+                ? `<span style="width:28px; height:28px; border-radius:50%; background:rgba(91, 141, 239,0.15); display:flex; align-items:center; justify-content:center; font-size:15px;">🌍</span>`
                 : `<img src="${escapeHtml(c.avatar)}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1.5px solid var(--cyan);" alt="">`
               }
               <span style="font-weight:800; font-size:13px; color:#fff;">${escapeHtml(c.id === 'ALL' ? c.name : c.name + ' Only')}</span>
@@ -7646,7 +7644,7 @@
               <div style="font-size:10.5px; color:var(--cyan); font-family:monospace;">${escapeHtml(pr.tag)}</div>
             </div>
           </div>
-          <button type="button" onclick="removeDraftPrize(${idx})" style="background:none; border:none; color:#ff4d6d; font-weight:900; cursor:pointer;">✕</button>
+          <button type="button" onclick="removeDraftPrize(${idx})" style="background:none; border:none; color:#e05a5a; font-weight:900; cursor:pointer;">✕</button>
         </div>
       `).join('');
     }
@@ -7939,7 +7937,7 @@
               <div style="min-width:0; flex:1;">
                 ${renderPlatformOwnerPill(gw.clanName, gw.clanAvatar)}
                 <h3 style="margin:0 0 3px; font-size:15.5px; font-weight:900; color:#fff;">${escapeHtml(gw.title)}</h3>
-                <div style="font-size:11px; color:#8ab4f8; font-weight:700; margin-bottom:3px;">
+                <div style="font-size:11px; color:#9fb3cf; font-weight:700; margin-bottom:3px;">
                   👤 Hosted by: <span style="color:var(--cyan);">${escapeHtml(gw.creatorUsername || '@Player')}</span>
                 </div>
                 ${gw.description ? `<p style="margin:0; font-size:12px; color:#9ab3c9;">${escapeHtml(gw.description)}</p>` : ''}
@@ -7972,8 +7970,8 @@
               </div>
             ` : ''}
             ${gw.ended && gw.winner ? `
-              <div style="background:rgba(255,215,0,0.14); border:1.5px solid #ffd700; border-radius:12px; padding:10px; text-align:center; margin-top:8px;">
-                <div style="font-size:11px; color:#ffd700; font-weight:800; text-transform:uppercase;">🏆 Winner Selected</div>
+              <div style="background:rgba(212, 175, 55,0.14); border:1.5px solid #d4af37; border-radius:12px; padding:10px; text-align:center; margin-top:8px;">
+                <div style="font-size:11px; color:#d4af37; font-weight:800; text-transform:uppercase;">🏆 Winner Selected</div>
                 <div style="font-size:15px; font-weight:900; color:#fff; margin-top:2px;">🎉 ${escapeHtml(gw.winner.name)} (${escapeHtml(gw.winner.clan || 'Player')})</div>
               </div>
             ` : `
@@ -8341,7 +8339,7 @@
         }
         return `
           <div class="tk-card ${done ? 'done' : ''}">
-            ${t.clanId === 0 ? '<div class="pf-owner-pill" style="color:var(--cyan); border-color:rgba(0,240,255,0.45); background:rgba(0,240,255,0.1);">🌍 <span>For everyone</span></div>' : renderPlatformOwnerPill(t.clanName, t.clanAvatar)}
+            ${t.clanId === 0 ? '<div class="pf-owner-pill" style="color:var(--cyan); border-color:rgba(91, 141, 239,0.45); background:rgba(91, 141, 239,0.1);">🌍 <span>For everyone</span></div>' : renderPlatformOwnerPill(t.clanName, t.clanAvatar)}
             <div class="tk-top">
               <div class="tk-title">${escapeHtml(t.title)}</div>
               <div class="tk-reward">+${Number(t.reward).toLocaleString()} Points</div>
@@ -8569,7 +8567,7 @@
         return `
           <div class="pf-row">
             <div style="min-width:0; flex:1;">
-              <div class="pf-row-name">${escapeHtml(s.label || s.user_key)} <span style="color:#ffd700; font-size:10.5px;">${PF_ROLE_LABEL[s.role] || s.role}</span></div>
+              <div class="pf-row-name">${escapeHtml(s.label || s.user_key)} <span style="color:#d4af37; font-size:10.5px;">${PF_ROLE_LABEL[s.role] || s.role}</span></div>
               <div class="pf-row-sub">${escapeHtml(c ? c.name : '#' + s.team_id)} • ${rights}</div>
             </div>
             <button type="button" class="pf-manage-btn" onclick="adminRemoveStaff(${s.team_id}, ${jsArg(s.user_key)})">🗑</button>
@@ -9048,7 +9046,7 @@
         const isMe = (myUuid && m.uuid === myUuid) || (myNick && String(m.nickname).toLowerCase() === myNick);
         const rankNum = idx + 1;
         const rowClass = 'rank-row clickable-item ' + (rankNum <= 3 ? 'top-' + rankNum : '');
-        const rowStyle = isMe ? 'border-color:#00ff88; background:rgba(0,255,136,0.08);' : '';
+        const rowStyle = isMe ? 'border-color:#3fbf7f; background:rgba(63, 191, 127,0.08);' : '';
         const youBadgeHtml = isMe ? `<span class="you-neon-badge">${escapeHtml(vt.youTag)}</span>` : '';
         return `<div class="${rowClass}" style="${rowStyle}" data-member-uuid="${escapeHtml(m.uuid)}" data-member-nick="${escapeHtml(m.nickname)}" onclick="onClickClanRosterMemberRow(this)">` +
           `<div class="rank-left">` +
@@ -9059,7 +9057,7 @@
                 `<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.nickname)}</span>` +
                 youBadgeHtml +
               `</div>` +
-              `<div style="font-size:11px; color:#8ab4f8;">⚔️ ${escapeHtml(clanInfo.name)}</div>` +
+              `<div style="font-size:11px; color:#9fb3cf;">⚔️ ${escapeHtml(clanInfo.name)}</div>` +
             `</div>` +
           `</div>` +
           `<div class="score-badge">${Number(m.points || 0).toLocaleString()} PTS</div>` +
