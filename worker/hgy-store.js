@@ -85,7 +85,7 @@ export async function handleStore(request, env, ctx) {
   try {
     const result = await handler(app, url, body);
     if (result.error) return json({ ok: false, error: result.error }, result.status || 400);
-    return json({ ok: true, ...result });
+    return json({ ok: true, ...result, ...(app.warning ? { warning: app.warning } : {}) });
   } catch (err) {
     if (err && err.dataApi) return json({ ok: false, error: 'Game points are unavailable right now, try again in a minute' }, 502);
     throw err;
@@ -315,8 +315,10 @@ async function postPlatform(app, body) {
     if (action === 'announce_send_now') {
       if (next.to_users) await startBroadcast(app, next, next.last_sent);
       const results = await postAnnouncement(app, next);
-      const failed = results.filter(r => !r.ok);
-      if (failed.length) return { error: failed.map(f => `${f.chat}: ${f.error}`).join(' • ') };
+      const failed = results.filter(r => !r.ok).map(f => `${f.chat}: ${f.error}`).join(' • ');
+      // With private messages running, a bad channel must not stop them; it is reported as a warning
+      if (failed && !next.to_users) return { error: failed };
+      if (failed) app.warning = failed;
     }
     return {};
   }

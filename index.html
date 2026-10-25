@@ -6166,15 +6166,15 @@
 
       if (plainText) {
         if (isBattleStarted) {
-          return `🤖 @hgyhelp_bot\n⚔️ WAR STARTED!\n🗺 ${cleanName}\nJoin the battle!`;
+          return `🤖 @PWCLANapp\n⚔️ WAR STARTED!\n🗺 ${cleanName}\nJoin the battle!`;
         }
-        return `🤖 @hgyhelp_bot\n🗺 Map: ${cleanName}\n🛡 Clan: ${mapObj.controller} (${mapObj.score} PTS)\n⏳ Starts In: ${timeStr}`;
+        return `🤖 @PWCLANapp\n🗺 Map: ${cleanName}\n🛡 Clan: ${mapObj.controller} (${mapObj.score} PTS)\n⏳ Starts In: ${timeStr}`;
       }
 
       if (isBattleStarted) {
-        return `🤖 @hgyhelp_bot\n⚔️ <b>WAR STARTED!</b>\n🗺 <b>${cleanName}</b>\nJoin the battle!`;
+        return `🤖 @PWCLANapp\n⚔️ <b>WAR STARTED!</b>\n🗺 <b>${cleanName}</b>\nJoin the battle!`;
       }
-      return `🤖 @hgyhelp_bot\n🗺 <b>Map:</b> ${cleanName}\n🛡 <b>Clan:</b> ${mapObj.controller} (${mapObj.score} PTS)\n⏳ <b>Starts In:</b> <code>${timeStr}</code>`;
+      return `🤖 @PWCLANapp\n🗺 <b>Map:</b> ${cleanName}\n🛡 <b>Clan:</b> ${mapObj.controller} (${mapObj.score} PTS)\n⏳ <b>Starts In:</b> <code>${timeStr}</code>`;
     }
 
     async function dispatchBotDirectToGroup(mapObj, captionText, options = {}) {
@@ -7850,12 +7850,12 @@
       const gw = giveawaysList.find(g => g.id === gwId);
       if (!gw) return;
 
-      const deepLinkUrl = `https://t.me/hgyhelp_bot?startapp=giveaway_${encodeURIComponent(gw.id)}`;
+      const deepLinkUrl = `https://t.me/PWCLANapp?startapp=giveaway_${encodeURIComponent(gw.id)}`;
       const clanStr = gw.eligibleClan === 'ALL' ? 'All Clans' : `${gw.eligibleClan} Clan Only`;
       const entryStr = gw.entryMode === 'points' ? `Entry: ${Number(gw.minPoints).toLocaleString()} Points` : 'FREE Entry';
       const prizeNames = (gw.prizes || []).map(p => `${p.name} (${p.tag})`).join(', ');
 
-      const shareText = `🤖 @hgyhelp_bot\n🎁 GIVEAWAY: ${gw.title}\n👤 Hosted by: ${gw.creatorUsername || '@Player'}\n🏆 Prizes: ${prizeNames}\n🛡 Eligibility: ${clanStr} • ${entryStr}\n\n👇 Tap the link above to open the Giveaway directly in the bot!`;
+      const shareText = `🤖 @PWCLANapp\n🎁 GIVEAWAY: ${gw.title}\n👤 Hosted by: ${gw.creatorUsername || '@Player'}\n🏆 Prizes: ${prizeNames}\n🛡 Eligibility: ${clanStr} • ${entryStr}\n\n👇 Tap the link above to open the Giveaway directly in the bot!`;
       const fullShareUrl = `https://t.me/share/url?url=${encodeURIComponent(deepLinkUrl)}&text=${encodeURIComponent(shareText)}`;
 
       try {
@@ -8698,7 +8698,7 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
           <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">The bot posts this message once a day. The bot must be an admin of the channel (or a member of the group).</div>
           <label class="pf-check"><input type="checkbox" id="pf-ann-users" ${a.to_users ? 'checked' : ''}> 👥 Send privately to all bot users${bc ? ` (${bc.users})` : ''}</label>
           ${bc && bc.date ? `<div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">Last broadcast ${escapeHtml(bc.date)}: ${bc.sent} delivered, ${bc.failed} failed${bc.done ? '' : ' • sending…'}</div>` : ''}
-          <label class="pf-label">Also post to channels/groups (optional, @channel or id, comma separated)</label>
+          <label class="pf-label">Also post to channels/groups (optional, @channel or id, comma separated; not the bot itself)</label>
           <input type="text" id="pf-ann-chats" class="search-input" style="padding:9px; font-size:12.5px; margin-bottom:8px;" placeholder="@hegemonyprivate" value="${escapeHtml((a.chats || []).join(', '))}">
           <label class="pf-label">Image (optional)</label>
           ${a.image ? `<img id="pf-ann-img-preview" src="${escapeHtml(a.image)}" alt="" style="width:100%; max-height:150px; object-fit:cover; border-radius:10px; margin-bottom:6px;" onerror="this.style.display='none'">` : '<img id="pf-ann-img-preview" alt="" style="display:none; width:100%; max-height:150px; object-fit:cover; border-radius:10px; margin-bottom:6px;">'}
@@ -8807,6 +8807,7 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
         return false;
       }
       applyPlatformState(res.data);
+      if (res.data && res.data.warning) showCyberToast(`⚠️ ${res.data.warning}`);
       loadGiveawaysData();
       loadRewardsData();
       loadTasksData();

@@ -1,4 +1,4 @@
-// Telegram bot side of @hgyhelp_bot: welcome message, commands and the bot's profile texts.
+// Telegram bot side of @PWCLANapp: welcome message, commands and the bot's profile texts.
 //
 //   POST /api/telegram/webhook  Telegram sends chat messages here (checked with a secret derived from BOT_TOKEN)
 //   POST /api/telegram/setup    main admin only (signed initData): sets name, descriptions, commands,
@@ -180,7 +180,7 @@ export function buildReply(update, origin) {
   });
 
   if (cmd === 'start') {
-    // t.me/hgyhelp_bot?start=giveaway_xxx style links open the app on that item
+    // t.me/PWCLANapp?start=giveaway_xxx style links open the app on that item
     const payload = /^[A-Za-z0-9_-]{1,64}$/.test(arg) ? arg : '';
     const name = escapeHtml(String((msg.from && msg.from.first_name) || 'there').slice(0, 64));
     return send(t.welcome(name), [
