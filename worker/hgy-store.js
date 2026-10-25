@@ -18,8 +18,9 @@
 //   BOT_TOKEN        secret: the BotFather token of the bot that opens the Mini App
 //   SUPER_ADMIN_IDS  optional: comma separated Telegram ids of main admins (default: Eren)
 //
-// HGY point balance (one wallet per Telegram user, current UTC month, like the game's monthly points):
-//   monthly game points of the linked Pixel World player + task rewards - giveaway entries - reward claims
+// HGY points: the bot's own currency, one wallet per Telegram user, kept (no monthly reset):
+//   task rewards - giveaway entries - reward claims
+// In-game clan points are separate: they only decide clan-points tasks and clan membership.
 
 import { getClanPlayers } from './clan-points.js';
 
@@ -37,6 +38,8 @@ const SEED_GLOBAL_TASKS = [
   { title: 'Join the hegemonyprivate chat', chat: '@hegemonyprivate', reward: 50 }
 ];
 
+// Entries and claims before this were paid with clan points, not HGY points
+const HGY_SPEND_SINCE = Date.parse('2026-10-25T05:30:00Z');
 const INIT_DATA_MAX_AGE_SECONDS = 7 * 86400;
 const MAX_RECORD_BYTES = 1500000; // images are data URLs; D1 rows hold up to 2 MB
 const TASK_KINDS = ['clan_points', 'telegram_join', 'manual'];
@@ -367,18 +370,14 @@ async function getMembership(app, link) {
   };
 }
 
-function utcMonthStart(now = new Date()) {
-  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
-}
-
 async function getBalance(app, link) {
   const db = app.db;
   const userId = app.user.id;
-  const since = utcMonthStart();
+  const since = HGY_SPEND_SINCE;
   const membership = await getMembership(app, link);
   const player = membership.player;
   const [earned, gw, rw] = await Promise.all([
-    db.prepare("SELECT COALESCE(SUM(points), 0) AS s FROM task_claims WHERE user_id = ? AND status = 'done' AND decided_at >= ?").bind(userId, since).first(),
+    db.prepare("SELECT COALESCE(SUM(points), 0) AS s FROM task_claims WHERE user_id = ? AND status = 'done'").bind(userId).first(),
     db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM giveaway_participants WHERE user_id = ? AND joined_at >= ?").bind(userId, since).first(),
     db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM reward_claims WHERE user_id = ? AND claimed_at >= ?").bind(userId, since).first()
   ]);
@@ -393,7 +392,7 @@ async function getBalance(app, link) {
     month_points: monthPoints,
     task_points: taskPoints,
     spent,
-    balance: Math.max(0, monthPoints + taskPoints - spent),
+    balance: Math.max(0, taskPoints - spent),
     team_id: membership.team_id,
     clan_name: membership.clan_name,
     rank_in_clan: rank
@@ -507,14 +506,15 @@ async function postGiveaway(app, body) {
     const link = await getLink(db, user.id);
     let clanName = link ? link.clan_name : '';
     if (cost > 0 || restricted) {
-      if (!link) return { error: 'Link your Pixel World UUID in Profile first' };
+      // Clan-only giveaways need the linked player's clan; HGY points need no link
+      if (restricted && !link) return { error: 'Link your Pixel World UUID in Profile first' };
       const bal = await getBalance(app, link);
       clanName = bal.clan_name;
       if (restricted && String(bal.clan_name).toLowerCase() !== String(gw.eligibleClan).toLowerCase()) {
         return { error: `Only ${gw.eligibleClan} members can join this giveaway` };
       }
       if (cost > bal.balance) {
-        return { error: `Not enough points: you have ${bal.balance} PTS, entry costs ${cost} PTS` };
+        return { error: `Not enough HGY points: you have ${bal.balance}, entry costs ${cost}` };
       }
     }
 
@@ -630,7 +630,7 @@ async function postReward(app, body) {
     if (!link) return { error: 'Link your Pixel World UUID in Profile first' };
     const bal = await getBalance(app, link);
     if (bal.team_id !== clanId) return { error: 'This reward is for members of its clan only' };
-    if (rw.cost > bal.balance) return { error: `Not enough points: you have ${bal.balance} PTS, this reward costs ${rw.cost} PTS` };
+    if (rw.cost > bal.balance) return { error: `Not enough HGY points: you have ${bal.balance}, this reward costs ${rw.cost}` };
     const claim = {
       id: user.id,
       name: displayName(user),

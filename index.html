@@ -3327,7 +3327,7 @@
             <input type="text" id="rw-image-input" class="search-input" style="padding:9px 12px; font-size:12px; margin-bottom:8px;" placeholder="Or paste image URL (https://...)">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
               <div>
-                <span style="font-size:10px; color:#ffcc4d; display:block; margin-bottom:3px; font-weight:700;">Cost (PTS)</span>
+                <span style="font-size:10px; color:#ffcc4d; display:block; margin-bottom:3px; font-weight:700;">Cost (HGY)</span>
                 <input type="number" id="rw-cost-input" class="search-input" style="padding:9px; text-align:center;" value="1000" min="1">
               </div>
               <div>
@@ -3437,10 +3437,10 @@
             <label style="display:block; font-size:11px; font-weight:800; color:var(--cyan); text-transform:uppercase; margin-bottom:6px;">Entry Type (Free or Costs Points)</label>
             <div class="yes-no-toggle-row" style="margin-bottom:8px;">
               <button type="button" class="yes-no-btn active-yes" id="gw-entry-free-btn" onclick="setGiveawayEntryMode('free')">
-                <span>🎁</span><span>Free (0 PTS)</span>
+                <span>🎁</span><span>Free (0 HGY)</span>
               </button>
               <button type="button" class="yes-no-btn" id="gw-entry-pts-btn" onclick="setGiveawayEntryMode('points')">
-                <span>⭐</span><span>Costs Points</span>
+                <span>⭐</span><span>Costs HGY Points</span>
               </button>
             </div>
             <div id="gw-min-points-wrap" style="display:none; margin-bottom:10px;">
@@ -6880,6 +6880,18 @@
       badge.style.display = 'flex';
 
       // Not linked or not a HEGEMONY member: keep the badge visible with a hint instead of hiding it
+      const wallet = getHgyWallet();
+      if ((!isBotUserLinked || !botUserProfileData) && wallet) {
+        badge.onclick = null;
+        badge.innerHTML = `
+          <span style="font-size:20px;">💎</span>
+          <div class="gw-clan-points-meta">
+            <span class="gw-clan-points-label">HGY Points</span>
+            <span class="gw-clan-points-value">${wallet.balance.toLocaleString()} HGY</span>
+          </div>
+        `;
+        return;
+      }
       if (!isBotUserLinked || !botUserProfileData) {
         badge.onclick = () => switchTab('profile', document.querySelector('.button-container .button:last-child'));
         badge.innerHTML = `
@@ -6893,15 +6905,12 @@
       badge.onclick = refreshGiveawayClanPoints;
       const server = getServerPointsBalance();
       if (server) {
-        const clan = botUserProfileData.clan || {};
-        const avatar = (getPlatformClan(server.team_id) || {}).avatar || clan.avatar || '';
         badge.innerHTML = `
-          ${avatar ? `<img src="${escapeHtml(avatar)}" alt="" onerror="this.style.display='none'">` : ''}
+          <span style="font-size:20px;">💎</span>
           <div class="gw-clan-points-meta">
-            <span class="gw-clan-points-label">${escapeHtml(server.clan_name || 'HGY')} • HGY Points</span>
-            <span class="gw-clan-points-value">${server.rank_in_clan ? `<span class="gw-clan-points-rank">#${server.rank_in_clan}</span>` : ''}${server.balance.toLocaleString()} PTS</span>
-            <span class="gw-clan-points-week">Month ${server.month_points.toLocaleString()}${server.task_points ? ` + Tasks ${server.task_points.toLocaleString()}` : ''}</span>
-            ${server.spent > 0 ? `<span class="gw-clan-points-spent">−${server.spent.toLocaleString()} spent this month</span>` : ''}
+            <span class="gw-clan-points-label">HGY Points</span>
+            <span class="gw-clan-points-value">${server.balance.toLocaleString()} HGY</span>
+            <span class="gw-clan-points-week">${escapeHtml(server.clan_name || 'Clan')}: ${server.rank_in_clan ? `#${server.rank_in_clan} • ` : ''}${server.month_points.toLocaleString()} PTS this month</span>
           </div>
         `;
         return;
@@ -6918,14 +6927,11 @@
 
       const rec = findBotUserHegemonyRecord();
       const clan = botUserProfileData.clan || {};
-      const spent = getSpentGiveawayPoints(getGiveawayUserId());
-      const balance = rec ? Math.max(0, rec.points - spent) : 0;
+      // Outside Telegram there is no HGY wallet: show the in-game clan points only
       const valueHtml = rec
-        ? `${rec.rank ? `<span class="gw-clan-points-rank">#${rec.rank}</span>` : ''}${balance.toLocaleString()} PTS`
+        ? `${rec.rank ? `<span class="gw-clan-points-rank">#${rec.rank}</span>` : ''}${rec.points.toLocaleString()} PTS`
         : (isFetchingHegemonyRoster ? '…' : '— PTS');
-      const spentHtml = (rec && spent > 0)
-        ? `<span class="gw-clan-points-spent">−${spent.toLocaleString()} spent this month</span>`
-        : '';
+      const spentHtml = '';
       const weekRec = findBotUserHegemonyRecord('week');
       const weekHtml = weekRec
         ? `<span class="gw-clan-points-week">Weekly: ${weekRec.points.toLocaleString()}${weekRec.rank ? ` (#${weekRec.rank})` : ''}</span>`
@@ -7220,13 +7226,17 @@
       if (!rw) return;
       const cost = Number(rw.cost) || 0;
 
+      if (!getServerPointsBalance()) {
+        showCyberToast('⚠️ Link your Pixel World UUID in Profile first (rewards are for clan members).');
+        return;
+      }
       if (getRewardStockLeft(rw) <= 0) {
         showCyberToast('⚠️ This reward is sold out.');
         return;
       }
       const balance = getHegemonyPointsBalance();
       if (balance === null) {
-        showCyberToast('⚠️ Link your Pixel World UUID in Profile to use points.');
+        showCyberToast('⚠️ Open the app from Telegram to use HGY points.');
         return;
       }
       const myClan = getMyPlatformClanId();
@@ -7235,10 +7245,10 @@
         return;
       }
       if (balance < cost) {
-        showCyberToast(`⚠️ Not enough points: you have ${balance.toLocaleString()} PTS, this reward costs ${cost.toLocaleString()} PTS.`);
+        showCyberToast(`⚠️ Not enough HGY points: you have ${balance.toLocaleString()}, this reward costs ${cost.toLocaleString()}. Earn more in Tasks.`);
         return;
       }
-      const ok = await askUserConfirm(`Claim "${rw.name}" for ${cost.toLocaleString()} PTS?\nYour balance: ${balance.toLocaleString()} → ${(balance - cost).toLocaleString()} PTS.`);
+      const ok = await askUserConfirm(`Claim "${rw.name}" for ${cost.toLocaleString()} HGY?\nYour HGY points: ${balance.toLocaleString()} → ${(balance - cost).toLocaleString()}.`);
       if (!ok) return;
 
       const userInfo = getCurrentPlayerClanAndPoints();
@@ -7261,7 +7271,7 @@
 
       renderRewardsList();
       loadPlatformState();
-      showCyberToast(`🎁 "${rw.name}" claimed! ${cost.toLocaleString()} PTS deducted. An admin will deliver it.`);
+      showCyberToast(`🎁 "${rw.name}" claimed! ${cost.toLocaleString()} HGY deducted. An admin will deliver it.`);
     }
 
     function renderRewardsList() {
@@ -7282,7 +7292,7 @@
         const soldOut = stockLeft <= 0;
         const myClaims = (rw.claims || []).filter(c => c.id === userId).length;
         const canAfford = balance !== null && balance >= cost;
-        const btnLabel = soldOut ? 'Sold Out' : `Claim • ${cost.toLocaleString()} PTS`;
+        const btnLabel = soldOut ? 'Sold Out' : `Claim • ${cost.toLocaleString()} HGY`;
         const isAdmin = getPlatformPerm(rw.clanId, 'giveaways');
         const claimsHtml = isAdmin ? `
           <div class="rw-admin-claims">
@@ -7691,13 +7701,10 @@
     }
 
     // Remaining HEGEMONY points = clan points - points spent on giveaways (null when the player is not on the roster)
+    // HGY points come from the server only (task rewards minus spending); null outside Telegram
     function getHegemonyPointsBalance() {
-      const server = getServerPointsBalance();
-      if (server) return server.balance;
-      if (!isBotUserInHegemony()) return null;
-      const rec = findBotUserHegemonyRecord();
-      if (!rec) return null;
-      return Math.max(0, rec.points - getSpentGiveawayPoints(getGiveawayUserId()));
+      const b = getHgyWallet();
+      return b ? b.balance : null;
     }
 
     function askUserConfirm(message) {
@@ -7750,14 +7757,14 @@
       if (cost > 0) {
         const balance = getHegemonyPointsBalance();
         if (balance === null) {
-          showCyberToast('⚠️ Link your Pixel World UUID in Profile to use points.');
+          showCyberToast('⚠️ Open the app from Telegram to use HGY points.');
           return;
         }
         if (balance < cost) {
-          showCyberToast(`⚠️ Not enough points: you have ${balance.toLocaleString()} PTS, entry costs ${cost.toLocaleString()} PTS.`);
+          showCyberToast(`⚠️ Not enough HGY points: you have ${balance.toLocaleString()}, entry costs ${cost.toLocaleString()}. Earn more in Tasks.`);
           return;
         }
-        const ok = await askUserConfirm(`Joining costs ${cost.toLocaleString()} PTS.\nYour balance: ${balance.toLocaleString()} → ${(balance - cost).toLocaleString()} PTS.\nJoin this giveaway?`);
+        const ok = await askUserConfirm(`Joining costs ${cost.toLocaleString()} HGY.\nYour HGY points: ${balance.toLocaleString()} → ${(balance - cost).toLocaleString()}.\nJoin this giveaway?`);
         if (!ok) return;
       }
       userInfo.paidPoints = cost;
@@ -7775,7 +7782,7 @@
       renderGiveawaysList();
       loadPlatformState();
       showCyberToast(cost > 0
-        ? `🎉 Joined! ${cost.toLocaleString()} PTS deducted. Good luck!`
+        ? `🎉 Joined! ${cost.toLocaleString()} HGY deducted. Good luck!`
         : '🎉 You have entered the Giveaway! Good luck!');
     }
 
@@ -7785,7 +7792,7 @@
 
       const deepLinkUrl = `https://t.me/hgyhelp_bot?startapp=giveaway_${encodeURIComponent(gw.id)}`;
       const clanStr = gw.eligibleClan === 'ALL' ? 'All Clans' : `${gw.eligibleClan} Clan Only`;
-      const entryStr = gw.entryMode === 'points' ? `Entry: ${Number(gw.minPoints).toLocaleString()} PTS` : 'FREE Entry';
+      const entryStr = gw.entryMode === 'points' ? `Entry: ${Number(gw.minPoints).toLocaleString()} HGY` : 'FREE Entry';
       const prizeNames = (gw.prizes || []).map(p => `${p.name} (${p.tag})`).join(', ');
 
       const shareText = `🤖 @hgyhelp_bot\n🎁 GIVEAWAY: ${gw.title}\n👤 Hosted by: ${gw.creatorUsername || '@Player'}\n🏆 Prizes: ${prizeNames}\n🛡 Eligibility: ${clanStr} • ${entryStr}\n\n👇 Tap the link above to open the Giveaway directly in the bot!`;
@@ -7903,7 +7910,7 @@
 
             <div class="gw-meta-pills">
               <span class="gw-pill ${gw.entryMode === 'points' ? 'pts-pill' : 'free-pill'}">
-                ${gw.entryMode === 'points' ? `⭐ Cost ${Number(gw.minPoints).toLocaleString()} PTS` : '🎁 FREE ENTRY'}
+                ${gw.entryMode === 'points' ? `⭐ Cost ${Number(gw.minPoints).toLocaleString()} HGY` : '🎁 FREE ENTRY'}
               </span>
               <span class="gw-pill" style="display:inline-flex; align-items:center; gap:5px;">
                 ${clanAvatarUrl ? `<img src="${escapeHtml(clanAvatarUrl)}" style="width:15px;height:15px;border-radius:50%;object-fit:cover;border:1px solid var(--cyan);" alt="">` : '🌍'}
@@ -7928,7 +7935,7 @@
               <div class="gw-actions-row">
                 <button type="button" class="gw-join-btn ${isJoined ? 'joined' : ''}" onclick="joinGiveawayById(${jsArg(gw.id)})">
                   <span>${isJoined ? '✓' : '🎉'}</span>
-                  <span>${isJoined ? 'Joined' : (getGiveawayEntryCost(gw) > 0 ? `Join (−${getGiveawayEntryCost(gw).toLocaleString()} PTS)` : 'Join Giveaway')}</span>
+                  <span>${isJoined ? 'Joined' : (getGiveawayEntryCost(gw) > 0 ? `Join (−${getGiveawayEntryCost(gw).toLocaleString()} HGY)` : 'Join Giveaway')}</span>
                 </button>
                 <button type="button" class="gw-share-btn" onclick="shareGiveawayDirectLink(${jsArg(gw.id)})">
                   <span>📤</span>
@@ -7994,6 +8001,11 @@
       return platformState.clans.filter(c => getPlatformPerm(c.team_id, feature));
     }
 
+    function getHgyWallet() {
+      const me = platformState.me;
+      return me && me.balance ? me.balance : null;
+    }
+
     // Balance computed by the server (null when not linked or not known yet)
     function getServerPointsBalance() {
       const me = platformState.me;
@@ -8011,9 +8023,7 @@
           el.style.display = 'none';
           return;
         }
-        const parts = [];
-        if (me.link) parts.push(`⚔️ Clan points this month ${b.month_points.toLocaleString()}`);
-        parts.push(`🎯 Tasks +${b.task_points.toLocaleString()}`);
+        const parts = [`🎯 Earned from tasks +${b.task_points.toLocaleString()}`];
         if (b.spent) parts.push(`🎁 Spent −${b.spent.toLocaleString()}`);
         el.style.display = 'flex';
         el.innerHTML = `
@@ -8021,7 +8031,9 @@
             <div class="hgy-wallet-label">💎 Your HGY Points</div>
             <div class="hgy-wallet-value">${b.balance.toLocaleString()}</div>
             <div class="hgy-wallet-sub">${parts.join(' • ')}</div>
-            <div class="hgy-wallet-sub" style="color:#8faac4;">${me.link ? 'Resets on the 1st of each month (UTC)' : '🔗 Link your Pixel World account in Profile to add your clan points'}</div>
+            <div class="hgy-wallet-sub" style="color:#8faac4;">${me.link
+              ? `⚔️ In-game clan points (separate): ${b.month_points.toLocaleString()} this month${b.rank_in_clan ? ` • #${b.rank_in_clan} in ${escapeHtml(b.clan_name)}` : ''}`
+              : '🔗 Link your Pixel World account in Profile for clan tasks'}</div>
           </div>
           <div style="font-size:30px; flex-shrink:0;">💎</div>`;
       });
