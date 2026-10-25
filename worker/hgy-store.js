@@ -102,6 +102,7 @@ async function postGiveaway(db, user, body) {
       entryMode: g.entryMode === 'points' ? 'points' : 'free',
       minPoints: Math.max(0, Math.floor(Number(g.minPoints) || 0)),
       eligibleClan: cleanText(g.eligibleClan, 60) || 'ALL',
+      eligibleClanAvatar: cleanImage(g.eligibleClanAvatar),
       prizes: (Array.isArray(g.prizes) ? g.prizes : []).slice(0, 10).map(p => ({
         name: cleanText(p && p.name, 120),
         tag: cleanText(p && p.tag, 40),
@@ -110,7 +111,8 @@ async function postGiveaway(db, user, body) {
       endsAtMs: Math.min(now + 90 * 86400000, Math.max(now + 60000, Number(g.endsAtMs) || 0)),
       winner: null,
       ended: false,
-      createdBy: user.id,
+      creatorId: user.id,
+      creatorUsername: user.username ? '@' + user.username : cleanText(user.first_name, 60) || 'Admin',
       createdAt: now
     };
     const data = JSON.stringify(gw);

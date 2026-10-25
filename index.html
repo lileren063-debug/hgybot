@@ -2548,6 +2548,172 @@
     margin-bottom: 6px;
   }
 
+
+  /* ==================== V16: CUSTOM CLAN SELECTOR WITH AVATARS & ACTIVE/ENDED GIVEAWAY TABS ==================== */
+  .gw-status-filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .gw-filter-pill {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(0, 240, 255, 0.22);
+    color: #9ab3c9;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+  }
+  .gw-filter-pill.active {
+    background: rgba(0, 240, 255, 0.16);
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+  }
+  .gw-creator-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(7, 142, 251, 0.14);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    border-radius: 9px;
+    padding: 4px 9px;
+    font-size: 11px;
+    color: #8ab4f8;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .gw-clan-avatar-mini {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid var(--cyan);
+    background: #0d2236;
+    flex-shrink: 0;
+  }
+
+
+  /* ==================== V18: TOP-LEFT WAR POINTS WIDGET + CLAN ROSTER MODAL + UNLINK BUTTON ==================== */
+  .profile-war-pts-corner {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 15;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .profile-war-pts-trigger {
+    background: rgba(5, 15, 28, 0.92);
+    border: 1.5px solid rgba(0, 240, 255, 0.45);
+    border-radius: 12px;
+    padding: 6px 10px;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+  }
+  .profile-war-pts-trigger:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
+  }
+  .profile-war-pts-menu {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 5px;
+    background: rgba(4, 12, 22, 0.98);
+    border: 1.5px solid var(--cyan);
+    border-radius: 11px;
+    padding: 6px;
+    min-width: 135px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.85);
+  }
+  .profile-war-pts-menu.open {
+    display: flex;
+  }
+  .profile-war-pts-opt {
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #c8e2ff;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .profile-war-pts-opt:hover,
+  .profile-war-pts-opt.active {
+    background: rgba(0, 240, 255, 0.18);
+    color: var(--cyan);
+  }
+
+  .profile-clan-member-card {
+    background: linear-gradient(135deg, rgba(7, 142, 251, 0.18), rgba(5, 14, 26, 0.92));
+    border: 1.5px solid rgba(0, 240, 255, 0.42);
+    border-radius: 15px;
+    padding: 11px 14px;
+    margin-bottom: 14px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  }
+  .profile-clan-member-card:hover {
+    border-color: var(--cyan);
+    transform: translateY(-2px);
+    box-shadow: 0 0 18px rgba(0, 240, 255, 0.3);
+  }
+  .profile-clan-member-card.visible {
+    display: flex;
+  }
+  .you-neon-badge {
+    background: rgba(0, 255, 136, 0.18);
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    font-size: 10px;
+    font-weight: 900;
+    padding: 1px 7px;
+    border-radius: 8px;
+    margin-left: 5px;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+  }
+  .unlink-account-btn {
+    width: 100%;
+    margin-top: 9px;
+    background: rgba(255, 59, 92, 0.14);
+    border: 1.5px solid rgba(255, 77, 109, 0.55);
+    color: #ff8fa3;
+    padding: 10px 14px;
+    border-radius: 13px;
+    font-size: 12.5px;
+    font-weight: 800;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: all 0.2s ease;
+  }
+  .unlink-account-btn:hover {
+    background: rgba(255, 59, 92, 0.26);
+    color: #fff;
+    border-color: #ff4d6d;
+  }
+
 </style>
 </head>
 <body>
@@ -2767,6 +2933,29 @@
       <!-- ==================== VIEW 5: PROFILE (BOT USER PERSONAL PROFILE) ==================== -->
       <div id="view-profile" class="view-panel">
         <div class="glass-card" style="text-align:center; padding: 24px 18px; position:relative;">
+                    <!-- Top-Left Corner: Player Clan War Points Dropdown (Daily / Weekly / Monthly) -->
+          <div class="profile-war-pts-corner" onclick="event.stopPropagation()">
+            <div class="profile-war-pts-trigger" onclick="toggleProfileWarPtsMenu(event)">
+              <span style="font-size:13px;">⚔️</span>
+              <div style="text-align:left; line-height:1.15;">
+                <div style="font-size:9px; color:#9ab3c9; font-weight:800; text-transform:uppercase;" id="profile-war-pts-lbl">Daily War PTS</div>
+                <div style="font-size:12.5px; font-weight:900; color:var(--cyan);" id="profile-war-pts-val">0 PTS</div>
+              </div>
+              <span style="font-size:10px; color:var(--cyan); margin-left:2px;">▼</span>
+            </div>
+            <div class="profile-war-pts-menu" id="profile-war-pts-menu">
+              <div class="profile-war-pts-opt active" data-war-pts-opt="day" onclick="selectProfileWarPtsRange('day', event)">
+                <span>Daily War PTS</span><span>⚔️</span>
+              </div>
+              <div class="profile-war-pts-opt" data-war-pts-opt="week" onclick="selectProfileWarPtsRange('week', event)">
+                <span>Weekly War PTS</span><span>⚔️</span>
+              </div>
+              <div class="profile-war-pts-opt" data-war-pts-opt="month" onclick="selectProfileWarPtsRange('month', event)">
+                <span>Monthly War PTS</span><span>⚔️</span>
+              </div>
+            </div>
+          </div>
+
           <button class="profile-settings-gear-btn" onclick="openProfileSettingsModal()" title="Settings & Language">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
@@ -2812,6 +3001,18 @@
             </div>
           </div>
 
+          <!-- Interactive Linked Clan Banner (Opens Clan Members & War Points Modal with "You" Badge) -->
+          <div class="profile-clan-member-card" id="profile-linked-clan-card" onclick="openProfileClanRosterModal()">
+            <div style="display:flex; align-items:center; gap:11px; min-width:0;">
+              <img id="profile-clan-card-avatar" src="" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid var(--cyan);" alt="">
+              <div style="text-align:left; min-width:0;">
+                <div style="font-size:14.5px; font-weight:900; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="profile-clan-card-name">HEGEMONY</div>
+                <div style="font-size:11px; color:#8ab4f8; font-weight:700;" id="profile-clan-card-sub">Tap to view Clan Members & War Points</div>
+              </div>
+            </div>
+            <span class="score-badge" style="font-size:11px;">👥 Members →</span>
+          </div>
+
           <!-- Personal Player Activity Card (7-Day Squares + 30-Day Heatmap) -->
           <div class="activity-section-card" id="bot-user-activity-box">
             <!-- Populated via JS -->
@@ -2827,11 +3028,14 @@
             </button>
             <button class="pw-help-icon-btn" onclick="openUuidHelpModal()" title="How to find your Pixel World UUID">!</button>
           </div>
+          <button type="button" class="unlink-account-btn" id="profile-unlink-btn" onclick="unlinkPixelWorldAccount()">
+            <span id="i18n-unlink-btn-txt">⛓️‍💥 Unlink Pixel World Account</span>
+          </button>
 
         </div>
       </div>
 
-      <!-- ==================== VIEW 6: GIVEAWAYS (JOIN GIVEAWAY & ADMIN CREATE GIVEAWAY) ==================== -->
+      <!-- ==================== VIEW 6: GIVEAWAYS (JOIN GIVEAWAY [ACTIVE / ENDED] & CREATE GIVEAWAY FOR ALL USERS) ==================== -->
       <div id="view-giveaways" class="view-panel">
         <div class="gw-header-row">
           <h2 class="section-title">🎁 Giveaways</h2>
@@ -2853,8 +3057,16 @@
           </button>
         </div>
 
-        <!-- SUB-VIEW A: JOIN GIVEAWAY LIST -->
+        <!-- SUB-VIEW A: JOIN GIVEAWAY (WITH ACTIVE & ENDED TABS) -->
         <div id="gw-subview-join">
+          <div class="gw-status-filter-bar">
+            <button type="button" class="gw-filter-pill active" id="gw-filter-active-btn" onclick="setGiveawayStatusFilter('active')">
+              🔥 Active (<span id="gw-active-count-lbl">0</span>)
+            </button>
+            <button type="button" class="gw-filter-pill" id="gw-filter-ended-btn" onclick="setGiveawayStatusFilter('ended')">
+              🏁 Ended (<span id="gw-ended-count-lbl">0</span>)
+            </button>
+          </div>
           <div id="giveaways-active-list"></div>
         </div>
 
@@ -2891,15 +3103,18 @@
             <div style="font-size:34px; margin-bottom:8px;">🔒</div>
             <h3 style="margin:0 0 6px; color:var(--cyan); font-size:16px;">Admin Access Only</h3>
             <p style="margin:0 0 12px; font-size:12.5px; color:#9ab3c9; line-height:1.5;">
-              Only the authorized Bot Administrator (<strong>@TheRizzller</strong>) can create and launch official giveaways.
+              Only the bot admins (<strong>@TheRizzller</strong>, <strong>@erenlil</strong>) can create and launch official giveaways.
             </p>
             <div style="font-size:11px; color:#8ab4f8; font-family:monospace;" id="gw-current-user-debug"></div>
           </div>
-
           <div id="gw-admin-create-form" class="glass-card">
-            <div class="section-header" style="margin-bottom:12px;">
-              <h2 class="section-title" style="font-size:14.5px;">👑 Create Official Giveaway</h2>
-              <span style="font-size:10.5px; color:#00ff88; font-weight:800;">✓ Admin Verified</span>
+            <div class="section-header" style="margin-bottom:8px;">
+              <h2 class="section-title" style="font-size:14.5px;">🎁 Create a Giveaway</h2>
+              <span style="font-size:10.5px; color:#00ff88; font-weight:800;">⚡ Auto Winner Notify</span>
+            </div>
+
+            <div class="gw-creator-badge" id="gw-creator-identity-badge">
+              👤 Host: @Player (Bot will DM you the winner results automatically)
             </div>
 
             <label style="display:block; font-size:11px; font-weight:800; color:#9ab3c9; text-transform:uppercase; margin-bottom:5px;">Giveaway Title</label>
@@ -2922,20 +3137,21 @@
               <input type="number" id="gw-min-points-input" class="search-input" style="padding:9px 12px; font-size:13px;" value="1000" min="1">
             </div>
 
-            <label style="display:block; font-size:11px; font-weight:800; color:var(--cyan); text-transform:uppercase; margin-bottom:6px;">Eligible Clan Members</label>
-            <select id="gw-clan-select" class="cyber-select-input" style="margin-bottom:10px;">
-              <option value="ALL">🌍 All Clans (Everyone can join)</option>
-              <option value="HEGEMONY">⚔️ HEGEMONY Members Only</option>
-              <option value="OLD_LEGION">⚔️ OLD_LEGION Members Only</option>
-              <option value="DMX">⚔️ DMX Members Only</option>
-              <option value="DNEVNIK_AKTIVOV">⚔️ DNEVNIK_AKTIVOV Members Only</option>
-              <option value="RONIN">⚔️ RONIN Members Only</option>
-              <option value="EVERY">⚔️ EVERY Members Only</option>
-              <option value="Typical Clan">⚔️ Typical Clan Members Only</option>
-              <option value="Skyfall">⚔️ Skyfall Members Only</option>
-              <option value="42">⚔️ 42 Members Only</option>
-              <option value="THX">⚔️ THX Members Only</option>
-            </select>
+            <!-- Custom Clan Selector with Real Clan Profile Avatars -->
+            <div class="custom-map-selector-wrap" style="margin-bottom:12px;">
+              <label style="display:block; font-size:11px; font-weight:800; color:var(--cyan); text-transform:uppercase; margin-bottom:6px;">Eligible Clan Members</label>
+              <input type="hidden" id="gw-clan-select" value="ALL">
+              <div class="custom-map-selector-trigger" id="gw-clan-custom-trigger" onclick="toggleGwClanSelectorMenu()">
+                <div style="display:flex; align-items:center; gap:9px;" id="gw-clan-trigger-content">
+                  <span style="font-size:16px;">🌍</span>
+                  <span>All Clans (Everyone can join)</span>
+                </div>
+                <span style="color:var(--cyan); font-size:12px;">▼</span>
+              </div>
+              <div class="custom-map-selector-menu" id="gw-clan-custom-menu">
+                <!-- Populated via JS with real clan avatars -->
+              </div>
+            </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
               <label style="font-size:11px; font-weight:800; color:var(--cyan); text-transform:uppercase;">Prizes (<span id="gw-prizes-count">0</span> Added)</label>
@@ -3383,6 +3599,32 @@
       <button type="button" class="done-confirm-btn" style="width:100%; padding:11px;" onclick="confirmAddPrizeToDraft()">
         <span>✓</span><span>Add Prize to Giveaway</span>
       </button>
+    </div>
+  </div>
+
+  <!-- ==================== 13. LINKED CLAN MEMBERS & WAR POINTS MODAL (DAILY / WEEKLY / MONTHLY + "YOU" BADGE) ==================== -->
+  <div class="modal-overlay" id="profile-clan-roster-modal" onclick="closeProfileClanRosterModal(event)">
+    <div class="modal-box" style="max-width:445px; padding:18px; max-height:90vh;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <img id="modal-clan-roster-avatar" src="" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1.5px solid var(--cyan);" alt="">
+          <div style="text-align:left;">
+            <h3 class="section-title" style="font-size:15px; margin:0;" id="modal-clan-roster-title">HEGEMONY</h3>
+            <span style="font-size:10.5px; color:#8ab4f8;" id="i18n-clan-roster-sub">Clan War Points Leaderboard</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" style="position:static; width:30px; height:30px;" onclick="closeProfileClanRosterModal()">✕</button>
+      </div>
+
+      <div class="sub-filters" style="margin-bottom:12px;">
+        <button type="button" class="filter-btn active" id="clan-roster-tf-day" onclick="setProfileClanRosterTimeframe('day')">Daily</button>
+        <button type="button" class="filter-btn" id="clan-roster-tf-week" onclick="setProfileClanRosterTimeframe('week')">Weekly</button>
+        <button type="button" class="filter-btn" id="clan-roster-tf-month" onclick="setProfileClanRosterTimeframe('month')">Monthly</button>
+      </div>
+
+      <div class="modal-body-scroll" style="padding:0;">
+        <div class="rank-list" id="profile-clan-roster-list"></div>
+      </div>
     </div>
   </div>
 
@@ -3879,6 +4121,21 @@
           phase: 'upcoming',
           starts_at: '2026-10-20T10:00:00+00:00',
           ends_at: '2026-10-20T11:00:00+00:00'
+        });
+      }
+      if (Array.isArray(mapsPayload.recent_battles) && !mapsPayload.recent_battles.some(b => b.map_id === 'bridge_level')) {
+        mapsPayload.recent_battles.splice(1, 0, {
+          map_id: 'bridge_level',
+          map_name: 'Bridge',
+          map_image_url: 'https://static.pw.game/unity/interfaces/map_icons/bridge_level.png',
+          battle_at: '2026-10-19T11:00:00+00:00',
+          started_at: '2026-10-19T10:00:00+00:00',
+          winner: { id: 523, name: 'RONIN', avatar: 'https://static.pw.game/teams/f679d28f7d0851a885078c9140dbde113e0fff6fa6d8867139b273b419743353.jpg' },
+          winner_points: 9870,
+          standings: [
+            { id: 523, name: 'RONIN', avatar: 'https://static.pw.game/teams/f679d28f7d0851a885078c9140dbde113e0fff6fa6d8867139b273b419743353.jpg', points: 9870, place: 1 },
+            { id: 5, name: 'HEGEMONY', avatar: 'https://static.pw.game/teams/34ca79e23c5a8670af7397dee3d9d815c10d8c4f255aa71dcc4c21859cd48c8b.jpg', points: 6420, place: 2 }
+          ]
         });
       }
       serverSyncTimestampMs = Date.now();
@@ -4874,67 +5131,33 @@
         playerActivityCache[cacheKey] = serverActivityObj;
         return serverActivityObj;
       }
-      if (playerActivityCache[cacheKey]) {
-        return playerActivityCache[cacheKey];
-      }
-
-      // Check if matches HAR_SNAPSHOT.playerSample
       if (HAR_SNAPSHOT.playerSample && HAR_SNAPSHOT.playerSample.activity &&
           (HAR_SNAPSHOT.playerSample.uuid === uuid || String(HAR_SNAPSHOT.playerSample.nickname).toLowerCase() === cacheKey)) {
         playerActivityCache[cacheKey] = HAR_SNAPSHOT.playerSample.activity;
         return HAR_SNAPSHOT.playerSample.activity;
       }
-
-      // Generate a realistic deterministic 30-day history seeded by player UUID/nickname & their known points
-      const localRec = findLocalPlayerRecord(uuid, nickname) || {};
-      const basePts = Number(localRec.points || localRec.kills || 1200);
-      let seed = 0;
-      for (let i = 0; i < cacheKey.length; i++) {
-        seed = ((seed << 5) - seed + cacheKey.charCodeAt(i)) | 0;
+      if (playerActivityCache[cacheKey]) {
+        return playerActivityCache[cacheKey];
       }
-
+      const todayRec = (HAR_SNAPSHOT.clanPlayers && HAR_SNAPSHOT.clanPlayers.day || []).find(p => (uuid && p.uuid === uuid) || (nickname && String(p.nickname || '').toLowerCase() === cacheKey));
+      const todayPts = todayRec ? Number(todayRec.points || 0) : 0;
       const now = new Date();
       const heatmap = [];
-      let activeDays = 0;
-      let curStreak = 0;
-      let bestStreak = 0;
-      let runningStreak = 0;
-
       for (let d = 29; d >= 0; d--) {
         const dt = new Date(now.getTime() - d * 86400000);
         const dateStr = dt.toISOString().slice(0, 10);
-        const hashVal = Math.abs(Math.sin(seed + d * 17.37) * 10000);
-        const playProb = basePts > 5000 ? 0.78 : basePts > 1000 ? 0.65 : 0.48;
-        const isActive = (hashVal % 100) / 100 < playProb;
-        const dayPts = isActive ? Math.max(65, Math.round(((hashVal % 850) + 120) * (basePts > 5000 ? 2.2 : 1))) : 0;
-
-        if (isActive) {
-          activeDays++;
-          runningStreak++;
-          if (runningStreak > bestStreak) bestStreak = runningStreak;
-        } else {
-          runningStreak = 0;
-        }
-
-        heatmap.push({
-          date: dateStr,
-          points: dayPts,
-          active: isActive
-        });
+        const isToday = (d === 0 && todayPts > 0);
+        heatmap.push({ date: dateStr, points: isToday ? todayPts : 0, active: isToday });
       }
-      curStreak = runningStreak;
-
-      const built = {
+      return {
         uuid: uuid || '',
         days: 30,
-        active_days: activeDays,
-        inactive_days: 30 - activeDays,
-        current_active_streak: curStreak,
-        best_active_streak: bestStreak,
+        active_days: todayPts > 0 ? 1 : 0,
+        inactive_days: todayPts > 0 ? 29 : 30,
+        current_active_streak: todayPts > 0 ? 1 : 0,
+        best_active_streak: todayPts > 0 ? 1 : 0,
         heatmap: heatmap
       };
-      playerActivityCache[cacheKey] = built;
-      return built;
     }
 
     // Mini 7-Day Activity Squares for Clan Battle Rosters, Top Players & Explore Search
@@ -5194,6 +5417,8 @@
       renderPlayerActivityCard('bot-user-activity-box', '', tgDisplayName, null);
       updateConnectTelegramButtonState(false, '');
       renderGiveawayClanPointsBadge();
+      updateProfileLinkedClanCardUI();
+      fetchTelegramUserAvatarFallback();
     }
 
     function updateConnectTelegramButtonState(isLinked, linkedName) {
@@ -5266,6 +5491,8 @@
       renderPlayerActivityCard('bot-user-activity-box', profile.uuid, displayName, profile.activity);
       updateConnectTelegramButtonState(true, displayName);
       refreshGiveawayClanPoints();
+      updateProfileLinkedClanCardUI();
+      fetchTelegramUserAvatarFallback();
     }
 
     async function loadBotUserProfileByUuid(rawUuid, saveLink) {
@@ -5280,6 +5507,12 @@
           return true;
         }
       } catch (e) {}
+
+      if (HAR_SNAPSHOT.playerSample && HAR_SNAPSHOT.playerSample.uuid === cleanUuid) {
+        applyBotUserProfileToDom(HAR_SNAPSHOT.playerSample);
+        if (saveLink) safeSetUserLinkedProfile(HAR_SNAPSHOT.playerSample);
+        return true;
+      }
 
       const foundLocal = findLocalPlayerRecord(cleanUuid, null);
       if (foundLocal) {
@@ -5587,9 +5820,12 @@
       const startLiveCountdown = Boolean(options.startLiveCountdown);
 
       let rawTarget = '';
+      let resolvedId = '';
       try {
         rawTarget = (document.getElementById('auto-share-group-input') && document.getElementById('auto-share-group-input').value.trim()) || localStorage.getItem(AUTO_SHARE_GROUP_KEY) || '';
+        resolvedId = localStorage.getItem('cyber_wolf_resolved_chat_id_v16') || '';
       } catch (e) {}
+      const targetToSend = (rawTarget.includes('t.me/+') && resolvedId) ? resolvedId : rawTarget;
 
       if (!rawTarget) {
         showCyberToast(tst.enterGroupFirst);
@@ -5604,7 +5840,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'send',
-            target: rawTarget,
+            target: targetToSend,
+            raw_invite_link: rawTarget,
             sync_subscriptions: autoShareConfigMap,
             photo_url: mapObj.image_url,
             caption: captionText,
@@ -5614,10 +5851,8 @@
         });
         const data = await res.json();
         if (data && data.ok && data.result) {
-          if (data.resolved_chat_id && rawTarget.includes('t.me/+')) {
-            try { localStorage.setItem(AUTO_SHARE_GROUP_KEY, String(data.resolved_chat_id)); } catch (e) {}
-            const inp = document.getElementById('auto-share-group-input');
-            if (inp) inp.value = String(data.resolved_chat_id);
+          if (data.resolved_chat_id) {
+            try { localStorage.setItem('cyber_wolf_resolved_chat_id_v16', String(data.resolved_chat_id)); } catch (e) {}
           }
           if (startLiveCountdown && data.result.message_id) {
             activeLiveCountdownMessages[mapObj.map_id] = {
@@ -5861,7 +6096,7 @@
       showCyberToast(isEnabled ? tst.mapActivated(mapTitle) : tst.mapDisabled(mapTitle));
     }
 
-    function saveAndConfirmAutoShareDone() {
+    async function saveAndConfirmAutoShareDone() {
       const tst = getToastText();
       const groupInput = document.getElementById('auto-share-group-input');
       const rawGroup = groupInput ? groupInput.value.trim() : '';
@@ -5875,17 +6110,24 @@
       saveAutoShareGroupTarget(rawGroup);
       try { localStorage.setItem(AUTO_SHARE_GROUP_LOCKED_KEY, 'true'); } catch (e) {}
       saveAutoShareSettings();
-
       applyGroupInputLockUI(true);
-      fetch(`${API_BASE}/tg-bot-publish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'register_webhook',
-          target: rawGroup,
-          sync_subscriptions: autoShareConfigMap
-        })
-      }).catch(() => {});
+
+      try {
+        const res = await fetch(`${API_BASE}/tg-bot-publish`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'resolve_group',
+            target: rawGroup,
+            sync_subscriptions: autoShareConfigMap
+          })
+        });
+        const data = await res.json();
+        if (data && data.resolved_chat_id) {
+          try { localStorage.setItem('cyber_wolf_resolved_chat_id_v16', String(data.resolved_chat_id)); } catch (e) {}
+        }
+      } catch (e) {}
+
       showCyberToast(tst.groupLocked(rawGroup));
     }
 
@@ -6745,15 +6987,11 @@
 
 
     // =========================================================================
-    // 17. GIVEAWAYS ENGINE (ADMIN AUTH, MULTI-PRIZE UPLOAD, CLAN/POINTS FILTER, RANDOM WINNER & DEEP LINK SHARE)
+    // 17. GIVEAWAYS ENGINE V16 (ADMIN-CREATED, SERVER-STORED, CREATOR TRACKING, ACTIVE/ENDED TABS & CLAN AVATARS)
     // =========================================================================
-    const GIVEAWAYS_STORAGE_KEY = 'cyber_wolf_giveaways_v15';
+    const GIVEAWAYS_STORAGE_KEY = 'cyber_wolf_giveaways_v16_clean';
+    // Keep in sync with ADMINS in worker/hgy-store.js (the server is what actually enforces it)
     const AUTHORIZED_ADMINS = ['therizzller', '5332662287', 'erenlil', '1563597048'];
-
-    let giveawaysList = [];
-    let currentGwEntryMode = 'free';
-    let draftGiveawayPrizes = [];
-    let currentUploadedPrizeDataUrl = '';
 
     function isCurrentUserGiveawayAdmin() {
       const tgUser = getCurrentTelegramUser();
@@ -6768,7 +7006,111 @@
       return false;
     }
 
+    let giveawaysList = [];
+    let currentGwEntryMode = 'free';
+    let currentGwStatusFilter = 'active'; // 'active' | 'ended'
+    let selectedGwClanValue = 'ALL';
+    let draftGiveawayPrizes = [];
+    let currentUploadedPrizeDataUrl = '';
+
+    // Official Game Clans with their real profile pictures/avatars
+    const GAME_CLANS_WITH_AVATARS = [
+      { id: 'ALL', name: 'All Clans (Everyone can join)', avatar: '' },
+      { id: 'HEGEMONY', name: 'HEGEMONY', avatar: 'https://static.pw.game/teams/34ca79e23c5a8670af7397dee3d9d815c10d8c4f255aa71dcc4c21859cd48c8b.jpg' },
+      { id: 'OLD_LEGION', name: 'OLD_LEGION', avatar: 'https://static.pw.game/teams/5144e512b95104868fed3849c738b8f3391924d3c0f14d93c19a8a6f3d86b03e.jpg' },
+      { id: 'DMX', name: 'DMX', avatar: 'https://static.pw.game/teams/5f86fd5e7eeeb5230cd9b6e90324de3648483516f91fa8fd909f524a410dfd97.jpg' },
+      { id: 'DNEVNIK_AKTIVOV', name: 'DNEVNIK_AKTIVOV', avatar: 'https://static.pw.game/teams/e849978c8a2ca33b666ac25e70b12470b6b4c5932da234be0b18abaee392de0f.jpg' },
+      { id: 'RONIN', name: 'RONIN', avatar: 'https://static.pw.game/teams/f679d28f7d0851a885078c9140dbde113e0fff6fa6d8867139b273b419743353.jpg' },
+      { id: 'EVERY', name: 'EVERY', avatar: 'https://static.pw.game/teams/09f875e84d9952340eeeebb3db4bb91533554d69c23c627466984947555e2569.jpg' },
+      { id: 'Typical Clan', name: 'Typical Clan', avatar: 'https://static.pw.game/teams/1302c83783f1e1e87c5d623226a8d416b988039920a2117304fb71a03e8f4d9c.jpg' },
+      { id: 'Skyfall', name: 'Skyfall', avatar: 'https://static.pw.game/teams/1703d8f61d714e0c2b3ed0e40384c146b00b117c0a05f44182b400cd610147ce.jpg' },
+      { id: '42', name: '42', avatar: 'https://static.pw.game/teams/63564abfff2c55441759c764cf4099e71f5875084a7b52e3c384dd294a0c1a07.jpg' },
+      { id: 'THX', name: 'THX', avatar: 'https://static.pw.game/teams/883a82e88225f37be042982da357e409ca484bb2d71c645b1c56f49d3a3bf8c9.jpg' },
+      { id: 'CARIB', name: 'CARIB', avatar: 'https://static.pw.game/teams/c810cb7870f656432ea0c8f385233bdeedaeb6127ed2370662cee59303484a5e.jpg' },
+      { id: 'HUNTER', name: 'HUNTER', avatar: 'https://static.pw.game/teams/b77040c7e189444a4dbb324a356fc0d6864dce18d4d4986d92c279b1581a6de7.jpg' },
+      { id: 'CryptoMedwed', name: 'CryptoMedwed', avatar: 'https://static.pw.game/teams/9c570138706058e2286b95931da60837c28d7a682b43c6a8f1419862e653d773.jpg' },
+      { id: 'Angels', name: 'Angels', avatar: 'https://static.pw.game/teams/1735090d921841af4a7b7c68c4c1cc533f8cae3687bc29f4cc887956a903d5e9.jpg' }
+    ];
+
+    function getClanAvatarUrlByName(clanName) {
+      if (!clanName || clanName === 'ALL') return '';
+      const found = GAME_CLANS_WITH_AVATARS.find(c => c.id.toLowerCase() === String(clanName).toLowerCase());
+      if (found && found.avatar) return found.avatar;
+      const fromSnap = (HAR_SNAPSHOT.globalClans && HAR_SNAPSHOT.globalClans.month || []).find(c => String(c.name).toLowerCase() === String(clanName).toLowerCase());
+      return fromSnap ? fromSnap.avatar : '';
+    }
+
+    function toggleGwClanSelectorMenu() {
+      const menu = document.getElementById('gw-clan-custom-menu');
+      if (menu) menu.classList.toggle('open');
+    }
+
+    function renderGwClanSelectorOptions() {
+      const menuEl = document.getElementById('gw-clan-custom-menu');
+      const triggerContent = document.getElementById('gw-clan-trigger-content');
+      const hiddenInput = document.getElementById('gw-clan-select');
+
+      const curClan = GAME_CLANS_WITH_AVATARS.find(c => c.id === selectedGwClanValue) || GAME_CLANS_WITH_AVATARS[0];
+      if (hiddenInput) hiddenInput.value = curClan.id;
+
+      if (triggerContent) {
+        if (curClan.id === 'ALL') {
+          triggerContent.innerHTML = `<span style="font-size:16px;">🌍</span><span>All Clans (Everyone can join)</span>`;
+        } else {
+          triggerContent.innerHTML = `
+            <img src="${escapeHtml(curClan.avatar)}" class="gw-clan-avatar-mini" alt="">
+            <span>${escapeHtml(curClan.name)} Members Only</span>
+          `;
+        }
+      }
+
+      if (!menuEl) return;
+      menuEl.innerHTML = GAME_CLANS_WITH_AVATARS.map(c => {
+        const isSel = c.id === selectedGwClanValue;
+        return `
+          <div class="custom-map-option ${isSel ? 'selected' : ''}" onclick="selectGwEligibleClan(${jsArg(c.id)})">
+            <div style="display:flex; align-items:center; gap:10px;">
+              ${c.id === 'ALL'
+                ? `<span style="width:28px; height:28px; border-radius:50%; background:rgba(0,240,255,0.15); display:flex; align-items:center; justify-content:center; font-size:15px;">🌍</span>`
+                : `<img src="${escapeHtml(c.avatar)}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1.5px solid var(--cyan);" alt="">`
+              }
+              <span style="font-weight:800; font-size:13px; color:#fff;">${escapeHtml(c.id === 'ALL' ? c.name : c.name + ' Only')}</span>
+            </div>
+            ${isSel ? `<span class="status-glow-badge glow-green" style="width:20px;height:20px;font-size:11px;">✓</span>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectGwEligibleClan(clanId) {
+      selectedGwClanValue = clanId;
+      const menu = document.getElementById('gw-clan-custom-menu');
+      if (menu) menu.classList.remove('open');
+      renderGwClanSelectorOptions();
+    }
+
+    function getCurrentGiveawayCreatorInfo() {
+      const tgUser = getCurrentTelegramUser();
+      if (tgUser && tgUser.id) {
+        return {
+          id: String(tgUser.id),
+          username: tgUser.username ? '@' + tgUser.username : (tgUser.first_name || '@User')
+        };
+      }
+      if (botUserProfileData && botUserProfileData.nickname) {
+        return {
+          id: String(botUserProfileData.uuid || 'local_creator'),
+          username: botUserProfileData.nickname.startsWith('@') ? botUserProfileData.nickname : '@' + botUserProfileData.nickname
+        };
+      }
+      return { id: 'guest_creator', username: '@Player' };
+    }
+
     async function loadGiveawaysData() {
+      // Remove old demo storage keys if present
+      try { localStorage.removeItem('cyber_wolf_giveaways_v14'); } catch (e) {}
+      try { localStorage.removeItem('cyber_wolf_giveaways_v15'); } catch (e) {}
+
       try {
         const raw = localStorage.getItem(GIVEAWAYS_STORAGE_KEY);
         if (raw) giveawaysList = JSON.parse(raw) || [];
@@ -6779,15 +7121,28 @@
         giveawaysList = res.items;
         try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
       }
+      // Ensure no demo sample remains
+      giveawaysList = (giveawaysList || []).filter(g => g && g.id !== 'gw_sample_1');
 
+      renderGwClanSelectorOptions();
       renderGiveawaysList();
       renderGiveawayClanPointsBadge();
       checkDeepLinkForGiveaway();
     }
 
+    function setGiveawayStatusFilter(filterMode) {
+      currentGwStatusFilter = filterMode === 'ended' ? 'ended' : 'active';
+      const actBtn = document.getElementById('gw-filter-active-btn');
+      const endBtn = document.getElementById('gw-filter-ended-btn');
+      if (actBtn) actBtn.classList.toggle('active', currentGwStatusFilter === 'active');
+      if (endBtn) endBtn.classList.toggle('active', currentGwStatusFilter === 'ended');
+      renderGiveawaysList();
+    }
+
     function switchGiveawaySubTab(subTab) {
       const adminForm = document.getElementById('gw-admin-create-form');
       const lockedNotice = document.getElementById('gw-admin-locked-notice');
+      const creatorBadge = document.getElementById('gw-creator-identity-badge');
 
       ['join', 'rewards', 'create'].forEach(name => {
         const btn = document.getElementById(`gw-tab-${name}-btn`);
@@ -6801,7 +7156,6 @@
         if (rwForm) rwForm.style.display = isCurrentUserGiveawayAdmin() ? 'block' : 'none';
         renderRewardsList();
       } else if (subTab === 'create') {
-
         const isAdmin = isCurrentUserGiveawayAdmin();
         if (adminForm) adminForm.style.display = isAdmin ? 'block' : 'none';
         if (lockedNotice) {
@@ -6810,6 +7164,12 @@
           const u = getCurrentTelegramUser();
           if (dbg && u) dbg.textContent = `Your Telegram: @${u.username || 'user'} (ID: ${u.id})`;
         }
+
+        const creator = getCurrentGiveawayCreatorInfo();
+        if (creatorBadge) {
+          creatorBadge.textContent = `👤 Host: ${creator.username} (ID: ${creator.id})`;
+        }
+        renderGwClanSelectorOptions();
         renderDraftPrizesList();
       } else {
         renderGiveawaysList();
@@ -6915,14 +7275,17 @@
       `).join('');
     }
 
+    // Admins create giveaways; the server records the verified creator id and username
     async function submitAndLaunchGiveaway() {
       if (!isCurrentUserGiveawayAdmin()) {
         showCyberToast('⚠️ Only the authorized Admin can create giveaways.');
         return;
       }
-      const title = document.getElementById('gw-title-input').value.trim() || '🎁 Official Pixel World Giveaway';
+      const creator = getCurrentGiveawayCreatorInfo();
+      const title = document.getElementById('gw-title-input').value.trim() || '🎁 Pixel World Giveaway';
       const desc = document.getElementById('gw-desc-input').value.trim();
-      const clan = document.getElementById('gw-clan-select').value || 'ALL';
+      const clan = selectedGwClanValue || 'ALL';
+      const clanAvatar = getClanAvatarUrlByName(clan);
       const minPts = currentGwEntryMode === 'points' ? Math.max(1, Number(document.getElementById('gw-min-points-input').value || 500)) : 0;
 
       const dDays = Math.max(0, Number(document.getElementById('gw-dur-days').value || 0));
@@ -6942,9 +7305,12 @@
         id: 'gw_' + Date.now(),
         title,
         description: desc,
+        creatorId: creator.id,
+        creatorUsername: creator.username,
         entryMode: currentGwEntryMode,
         minPoints: minPts,
         eligibleClan: clan,
+        eligibleClanAvatar: clanAvatar,
         prizes,
         endsAtMs: Date.now() + totalSec * 1000,
         participants: [],
@@ -6963,8 +7329,9 @@
       draftGiveawayPrizes = [];
       document.getElementById('gw-title-input').value = '';
       document.getElementById('gw-desc-input').value = '';
+      currentGwStatusFilter = 'active';
       switchGiveawaySubTab('join');
-      showCyberToast('🚀 Giveaway Launched Successfully!');
+      showCyberToast(`🚀 Giveaway Launched by ${creator.username}!`);
     }
 
     // Stable id: Telegram id, or one guest id kept per browser (a random id per call let guests join repeatedly)
@@ -7096,7 +7463,7 @@
       const entryStr = gw.entryMode === 'points' ? `Entry: ${Number(gw.minPoints).toLocaleString()} PTS` : 'FREE Entry';
       const prizeNames = (gw.prizes || []).map(p => `${p.name} (${p.tag})`).join(', ');
 
-      const shareText = `🤖 @HGYinfo_bot\n🎁 GIVEAWAY: ${gw.title}\n🏆 Prizes: ${prizeNames}\n🛡 Eligibility: ${clanStr} • ${entryStr}\n\n👇 Tap the link above to open the Giveaway directly in the bot!`;
+      const shareText = `🤖 @HGYinfo_bot\n🎁 GIVEAWAY: ${gw.title}\n👤 Hosted by: ${gw.creatorUsername || '@Player'}\n🏆 Prizes: ${prizeNames}\n🛡 Eligibility: ${clanStr} • ${entryStr}\n\n👇 Tap the link above to open the Giveaway directly in the bot!`;
       const fullShareUrl = `https://t.me/share/url?url=${encodeURIComponent(deepLinkUrl)}&text=${encodeURIComponent(shareText)}`;
 
       try {
@@ -7135,7 +7502,7 @@
         giveawaysList = list;
         try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
         const done = giveawaysList.find(g => g.id === gw.id);
-        if (done && done.winner && done.winner.id) showCyberToast(`🎉 Giveaway Winner Selected: ${done.winner.name}!`);
+        if (done && done.winner && done.winner.id) showCyberToast(`🎉 Giveaway Ended! Winner: ${done.winner.name}`);
       }
       renderGiveawaysList();
     }
@@ -7144,20 +7511,40 @@
       const container = document.getElementById('giveaways-active-list');
       if (!container) return;
 
-      if (!giveawaysList.length) {
-        container.innerHTML = '<div class="glass-card" style="text-align:center; color:#8faac4;">No active giveaways right now.</div>';
+      const nowMs = Date.now();
+      // Check if any active giveaway reached 00:00:00
+      giveawaysList.forEach(gw => {
+        if (!gw.ended && gw.endsAtMs <= nowMs) {
+          triggerRandomGiveawayWinner(gw);
+        }
+      });
+
+      const activeItems = giveawaysList.filter(g => !g.ended && g.endsAtMs > nowMs);
+      const endedItems = giveawaysList.filter(g => g.ended || g.endsAtMs <= nowMs);
+
+      const actCountEl = document.getElementById('gw-active-count-lbl');
+      const endCountEl = document.getElementById('gw-ended-count-lbl');
+      if (actCountEl) actCountEl.textContent = String(activeItems.length);
+      if (endCountEl) endCountEl.textContent = String(endedItems.length);
+
+      const visibleList = currentGwStatusFilter === 'ended' ? endedItems : activeItems;
+
+      if (!visibleList.length) {
+        container.innerHTML = `<div class="glass-card" style="text-align:center; color:#8faac4; padding:22px 14px;">${
+          currentGwStatusFilter === 'ended'
+            ? 'No ended giveaways yet.'
+            : 'No active giveaways right now.'
+        }</div>`;
         return;
       }
 
-      const nowMs = Date.now();
       const curUser = getCurrentPlayerClanAndPoints();
 
-      container.innerHTML = giveawaysList.map(gw => {
+      container.innerHTML = visibleList.map(gw => {
         const remSec = Math.max(0, Math.floor((gw.endsAtMs - nowMs) / 1000));
-        if (remSec <= 0 && !gw.ended) {
-          setTimeout(() => triggerRandomGiveawayWinner(gw), 50);
-        }
         const isJoined = Array.isArray(gw.participants) && gw.participants.some(p => p.id === curUser.id);
+        const clanAvatarUrl = gw.eligibleClanAvatar || getClanAvatarUrlByName(gw.eligibleClan);
+
         const prizesHtml = (gw.prizes || []).map(pr => `
           <div class="gw-prize-item">
             <img src="${escapeHtml(pr.image)}" alt="${escapeHtml(pr.name)}">
@@ -7170,9 +7557,12 @@
 
         return `
           <div class="gw-card ${gw.ended ? 'ended' : ''}" id="gw-card-${escapeHtml(gw.id)}">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
               <div style="min-width:0; flex:1;">
-                <h3 style="margin:0 0 4px; font-size:15.5px; font-weight:900; color:#fff;">${escapeHtml(gw.title)}</h3>
+                <h3 style="margin:0 0 3px; font-size:15.5px; font-weight:900; color:#fff;">${escapeHtml(gw.title)}</h3>
+                <div style="font-size:11px; color:#8ab4f8; font-weight:700; margin-bottom:3px;">
+                  👤 Hosted by: <span style="color:var(--cyan);">${escapeHtml(gw.creatorUsername || '@Player')}</span>
+                </div>
                 ${gw.description ? `<p style="margin:0; font-size:12px; color:#9ab3c9;">${escapeHtml(gw.description)}</p>` : ''}
               </div>
               <div class="score-badge" data-gw-timer="${escapeHtml(gw.id)}">
@@ -7188,8 +7578,9 @@
               <span class="gw-pill ${gw.entryMode === 'points' ? 'pts-pill' : 'free-pill'}">
                 ${gw.entryMode === 'points' ? `⭐ Cost ${Number(gw.minPoints).toLocaleString()} PTS` : '🎁 FREE ENTRY'}
               </span>
-              <span class="gw-pill">
-                🛡 ${gw.eligibleClan === 'ALL' ? 'All Clans' : escapeHtml(gw.eligibleClan) + ' Only'}
+              <span class="gw-pill" style="display:inline-flex; align-items:center; gap:5px;">
+                ${clanAvatarUrl ? `<img src="${escapeHtml(clanAvatarUrl)}" style="width:15px;height:15px;border-radius:50%;object-fit:cover;border:1px solid var(--cyan);" alt="">` : '🌍'}
+                <span>${gw.eligibleClan === 'ALL' ? 'All Clans' : escapeHtml(gw.eligibleClan) + ' Only'}</span>
               </span>
               <span class="gw-pill">
                 👥 ${(gw.participants || []).length} Joined
@@ -7198,7 +7589,7 @@
 
             ${gw.ended && gw.winner ? `
               <div style="background:rgba(255,215,0,0.14); border:1.5px solid #ffd700; border-radius:12px; padding:10px; text-align:center; margin-top:8px;">
-                <div style="font-size:11px; color:#ffd700; font-weight:800; text-transform:uppercase;">🏆 Random Winner Selected</div>
+                <div style="font-size:11px; color:#ffd700; font-weight:800; text-transform:uppercase;">🏆 Winner Selected</div>
                 <div style="font-size:15px; font-weight:900; color:#fff; margin-top:2px;">🎉 ${escapeHtml(gw.winner.name)} (${escapeHtml(gw.winner.clan || 'Player')})</div>
               </div>
             ` : `
@@ -7229,6 +7620,355 @@
           triggerRandomGiveawayWinner(gw);
         }
       });
+    }
+
+    // =========================================================================
+    // =========================================================================
+    // 18. V18 FEATURES: TOP-LEFT WAR POINTS DROPDOWN, CLAN ROSTER MODAL WITH (YOU) BADGE, UNLINK ACCOUNT & REAL ACTIVITY
+    // =========================================================================
+    let currentProfileWarPtsRange = 'day';
+    let currentClanRosterModalRange = 'day';
+
+    const V18_I18N = {
+      en: {
+        unlinkBtn: '⛓️‍💥 Unlink Pixel World Account',
+        unlinkedToast: '✓ Account unlinked successfully.',
+        warPtsLabel: { day: 'Daily War PTS', week: 'Weekly War PTS', month: 'Monthly War PTS' },
+        clanCardSub: 'Tap to view Clan Members & War Points',
+        youTag: '(You)'
+      },
+      ru: {
+        unlinkBtn: '⛓️‍💥 Отвязать аккаунт Pixel World',
+        unlinkedToast: '✓ Аккаунт успешно отвязан.',
+        warPtsLabel: { day: 'Очки войн (День)', week: 'Очки войн (Нед.)', month: 'Очки войн (Мес.)' },
+        clanCardSub: 'Нажмите для просмотра участников и очков клана',
+        youTag: '(Вы)'
+      },
+      fa: {
+        unlinkBtn: '⛓️‍💥 لغو اتصال اکانت Pixel World',
+        unlinkedToast: '✓ اتصال اکانت با موفقیت لغو شد.',
+        warPtsLabel: { day: 'امتیاز کلن‌وار (روزانه)', week: 'امتیاز کلن‌وار (هفتگی)', month: 'امتیاز کلن‌وار (ماهانه)' },
+        clanCardSub: 'مشاهده اعضای کلن و امتیازات جنگ',
+        youTag: '(شما)'
+      },
+      ar: {
+        unlinkBtn: '⛓️‍💥 إلغاء ربط حساب Pixel World',
+        unlinkedToast: '✓ تم إلغاء ربط الحساب بنجاح.',
+        warPtsLabel: { day: 'نقاط الحرب (يومي)', week: 'نقاط الحرب (أسبوعي)', month: 'نقاط الحرب (شهري)' },
+        clanCardSub: 'اضغط لعرض أعضاء الكلان ونقاط الحروب',
+        youTag: '(أنت)'
+      }
+    };
+
+    function getV18Text() {
+      const lang = (typeof getCurrentAppLanguage === 'function') ? getCurrentAppLanguage() : 'en';
+      return V18_I18N[lang] || V18_I18N.en;
+    }
+
+    function resolveRealPlayerClanInfo(profile) {
+      if (!profile) return { name: 'No Clan', avatar: '', team_id: null };
+      if (profile.clan && profile.clan.name && profile.clan.name !== 'No Clan' && profile.clan.name !== 'Pixel World') {
+        return {
+          name: profile.clan.name,
+          avatar: profile.clan.avatar || (typeof getClanAvatarUrlByName === 'function' ? getClanAvatarUrlByName(profile.clan.name) : ''),
+          team_id: profile.clan.team_id || profile.team_id || null
+        };
+      }
+      if (profile.clan_name && profile.clan_name !== 'No Clan' && profile.clan_name !== 'Pixel World') {
+        return {
+          name: profile.clan_name,
+          avatar: profile.clan_avatar || (typeof getClanAvatarUrlByName === 'function' ? getClanAvatarUrlByName(profile.clan_name) : ''),
+          team_id: profile.team_id || null
+        };
+      }
+      if (profile.activity && profile.activity.last_seen && profile.activity.last_seen.clan_name) {
+        const cname = profile.activity.last_seen.clan_name;
+        return {
+          name: cname,
+          avatar: profile.activity.last_seen.clan_avatar || (typeof getClanAvatarUrlByName === 'function' ? getClanAvatarUrlByName(cname) : ''),
+          team_id: profile.activity.last_seen.clan_id || null
+        };
+      }
+      if (Array.isArray(profile.clan_history) && profile.clan_history.length > 0 && profile.clan_history[0].name) {
+        const ch = profile.clan_history[0];
+        return {
+          name: ch.name,
+          avatar: ch.avatar || (typeof getClanAvatarUrlByName === 'function' ? getClanAvatarUrlByName(ch.name) : ''),
+          team_id: ch.team_id || null
+        };
+      }
+      const uid = String(profile.uuid || '');
+      const nick = String(profile.nickname || profile.name || '');
+      const inHgySample = (HAR_SNAPSHOT.clanMembersSample && HAR_SNAPSHOT.clanMembersSample['5'] || []).some(m => m.uuid === uid || String(m.nickname).toLowerCase() === nick.toLowerCase());
+      if (inHgySample || /^HGY[-_]/i.test(nick)) {
+        return {
+          name: 'HEGEMONY',
+          avatar: 'https://static.pw.game/teams/34ca79e23c5a8670af7397dee3d9d815c10d8c4f255aa71dcc4c21859cd48c8b.jpg',
+          team_id: 5
+        };
+      }
+      return { name: 'No Clan', avatar: '', team_id: null };
+    }
+
+    function computePlayerClanWarPoints(profile, rangeKey) {
+      if (!profile || !isBotUserLinked) return 0;
+      const uid = profile.uuid || '';
+      const nick = String(profile.nickname || profile.name || '').toLowerCase();
+      const cwList = (HAR_SNAPSHOT.clanPlayers && HAR_SNAPSHOT.clanPlayers[rangeKey]) || [];
+      const foundCw = cwList.find(p => (uid && p.uuid === uid) || (nick && String(p.nickname || p.name || '').toLowerCase() === nick));
+      if (foundCw && foundCw.points != null) return Number(foundCw.points);
+
+      if (profile.activity && profile.activity.last_seen) {
+        const ls = profile.activity.last_seen;
+        if (rangeKey === 'day' && ls.day_points != null) return Number(ls.day_points);
+        if (rangeKey === 'week' && ls.week_points != null) return Number(ls.week_points);
+        if (rangeKey === 'month' && ls.month_points != null) return Number(ls.month_points);
+      }
+      if (profile.activity && Array.isArray(profile.activity.heatmap) && profile.activity.heatmap.length > 0) {
+        const hm = profile.activity.heatmap;
+        if (rangeKey === 'day') {
+          const lastDay = hm[hm.length - 1];
+          return lastDay && lastDay.active ? Number(lastDay.points || 0) : 0;
+        }
+        if (rangeKey === 'week') {
+          return hm.slice(-7).reduce((sum, item) => sum + Number(item.points || 0), 0);
+        }
+        if (rangeKey === 'month') {
+          return hm.reduce((sum, item) => sum + Number(item.points || 0), 0);
+        }
+      }
+      if (profile.stats && profile.stats[rangeKey] && profile.stats[rangeKey].points != null) {
+        return Number(profile.stats[rangeKey].points);
+      }
+      return 0;
+    }
+
+    function toggleProfileWarPtsMenu(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('profile-war-pts-menu');
+      if (menu) menu.classList.toggle('open');
+    }
+
+    function selectProfileWarPtsRange(rangeKey, e) {
+      if (e) e.stopPropagation();
+      currentProfileWarPtsRange = rangeKey;
+      const menu = document.getElementById('profile-war-pts-menu');
+      if (menu) menu.classList.remove('open');
+      updateProfileWarPtsCornerUI();
+    }
+
+    function updateProfileWarPtsCornerUI() {
+      const valEl = document.getElementById('profile-war-pts-val');
+      const lblEl = document.getElementById('profile-war-pts-lbl');
+      const vt = getV18Text();
+      if (lblEl) lblEl.textContent = vt.warPtsLabel[currentProfileWarPtsRange] || 'War PTS';
+      if (valEl) {
+        if (!isBotUserLinked || !botUserProfileData) {
+          valEl.textContent = '0 PTS';
+        } else {
+          const pts = computePlayerClanWarPoints(botUserProfileData, currentProfileWarPtsRange);
+          valEl.textContent = `${pts.toLocaleString()} PTS`;
+        }
+      }
+      document.querySelectorAll('[data-war-pts-opt]').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-war-pts-opt') === currentProfileWarPtsRange);
+      });
+    }
+
+    function updateProfileLinkedClanCardUI() {
+      const clanCard = document.getElementById('profile-linked-clan-card');
+      const unlinkBtn = document.getElementById('profile-unlink-btn');
+      const unlinkTxt = document.getElementById('i18n-unlink-btn-txt');
+      const vt = getV18Text();
+      if (unlinkTxt) unlinkTxt.textContent = vt.unlinkBtn;
+
+      if (!isBotUserLinked || !botUserProfileData) {
+        if (clanCard) clanCard.classList.remove('visible');
+        if (unlinkBtn) unlinkBtn.style.display = 'none';
+        updateProfileWarPtsCornerUI();
+        return;
+      }
+
+      if (unlinkBtn) unlinkBtn.style.display = 'flex';
+      const clanInfo = resolveRealPlayerClanInfo(botUserProfileData);
+      const clanStrong = document.querySelector('#view-profile .clan-tag-pill strong');
+      if (clanStrong) clanStrong.textContent = clanInfo.name;
+
+      if (clanCard) {
+        if (clanInfo.name && clanInfo.name !== 'No Clan' && clanInfo.name !== 'Link Account Below') {
+          clanCard.classList.add('visible');
+          const imgEl = document.getElementById('profile-clan-card-avatar');
+          const nameEl = document.getElementById('profile-clan-card-name');
+          const subEl = document.getElementById('profile-clan-card-sub');
+          if (imgEl) {
+            imgEl.src = clanInfo.avatar || 'https://static.pw.game/avatars/default.jpg';
+            imgEl.style.display = clanInfo.avatar ? 'block' : 'none';
+          }
+          if (nameEl) nameEl.textContent = clanInfo.name;
+          if (subEl) subEl.textContent = vt.clanCardSub;
+        } else {
+          clanCard.classList.remove('visible');
+        }
+      }
+      updateProfileWarPtsCornerUI();
+    }
+
+    function unlinkPixelWorldAccount() {
+      const key = getUserProfileStorageKey();
+      try { localStorage.removeItem(key); } catch (e) {}
+      try {
+        if (isTelegramCloudStorageSupported()) {
+          window.Telegram.WebApp.CloudStorage.removeItem('cyber_wolf_linked_profile', () => {});
+        }
+      } catch (e) {}
+      botUserProfileData = null;
+      isBotUserLinked = false;
+      renderUnlinkedBotUserState();
+      updateProfileLinkedClanCardUI();
+      showCyberToast(getV18Text().unlinkedToast);
+    }
+
+    async function fetchTelegramUserAvatarFallback() {
+      const tgUser = getCurrentTelegramUser();
+      if (!tgUser || !tgUser.id) return;
+      if (tgUser.photo_url) return;
+      try {
+        const res = await fetch(`${API_BASE}/tg-bot-publish`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_tg_avatar', user_id: tgUser.id })
+        });
+        const data = await res.json();
+        if (data && data.ok && data.photo_url) {
+          tgUser.photo_url = data.photo_url;
+          const smallBadge = document.querySelector('#view-profile .skin-mask-badge');
+          if (smallBadge) {
+            smallBadge.innerHTML = `<img src="${escapeHtml(data.photo_url)}" alt="Telegram Photo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function openProfileClanRosterModal() {
+      if (!botUserProfileData) return;
+      const clanInfo = resolveRealPlayerClanInfo(botUserProfileData);
+      if (!clanInfo.name || clanInfo.name === 'No Clan') return;
+
+      const titleEl = document.getElementById('modal-clan-roster-title');
+      const avEl = document.getElementById('modal-clan-roster-avatar');
+      if (titleEl) titleEl.textContent = clanInfo.name;
+      if (avEl) {
+        avEl.src = clanInfo.avatar || '';
+        avEl.style.display = clanInfo.avatar ? 'block' : 'none';
+      }
+
+      document.getElementById('profile-clan-roster-modal').classList.add('open');
+      await renderProfileClanRosterModalList();
+    }
+
+    function closeProfileClanRosterModal() {
+      const m = document.getElementById('profile-clan-roster-modal');
+      if (m) m.classList.remove('open');
+    }
+
+    async function setProfileClanRosterTimeframe(rangeKey) {
+      currentClanRosterModalRange = rangeKey;
+      ['day', 'week', 'month'].forEach(rk => {
+        const btn = document.getElementById('clan-roster-tf-' + rk);
+        if (btn) btn.classList.toggle('active', rk === rangeKey);
+      });
+      await renderProfileClanRosterModalList();
+    }
+
+    function onClickClanRosterMemberRow(el) {
+      const uid = el ? el.getAttribute('data-member-uuid') : '';
+      const nick = el ? el.getAttribute('data-member-nick') : '';
+      closeProfileClanRosterModal();
+      openPlayerProfileModal(uid, nick);
+    }
+
+    async function renderProfileClanRosterModalList() {
+      const listBox = document.getElementById('profile-clan-roster-list');
+      if (!listBox || !botUserProfileData) return;
+
+      const clanInfo = resolveRealPlayerClanInfo(botUserProfileData);
+      const rangeKey = currentClanRosterModalRange;
+      const myUuid = String(botUserProfileData.uuid || '');
+      const myNick = String(botUserProfileData.nickname || botUserProfileData.name || '').toLowerCase();
+      const vt = getV18Text();
+
+      try {
+        const liveCw = await apiFetch(`/global/clan-players?range=${rangeKey}&page=1`).catch(() => null);
+        if (liveCw && Array.isArray(liveCw.items) && liveCw.items.length > 0) {
+          HAR_SNAPSHOT.clanPlayers[rangeKey] = liveCw.items;
+        }
+      } catch (e) {}
+
+      const membersMap = new Map();
+      const addMember = (m, ptsOverride) => {
+        const key = m.uuid || String(m.nickname || m.name || '').toLowerCase();
+        if (!key) return;
+        const existing = membersMap.get(key);
+        const pts = ptsOverride !== undefined ? Number(ptsOverride) : Number(m.points || 0);
+        if (!existing || pts > existing.points) {
+          membersMap.set(key, {
+            uuid: m.uuid || '',
+            nickname: m.nickname || m.name || 'Player',
+            skinUrl: m.mask_image_url || m.avatar || '',
+            tgAvatarUrl: m.avatar || m.mask_image_url || '',
+            points: pts
+          });
+        }
+      };
+
+      const cwPool = (HAR_SNAPSHOT.clanPlayers && HAR_SNAPSHOT.clanPlayers[rangeKey]) || [];
+      cwPool.forEach(p => {
+        if (String(p.clan_name || '').toLowerCase() === clanInfo.name.toLowerCase()) {
+          addMember(p, p.points);
+        }
+      });
+
+      if (clanInfo.name.toUpperCase() === 'HEGEMONY' && HAR_SNAPSHOT.clanMembersSample && HAR_SNAPSHOT.clanMembersSample['5']) {
+        HAR_SNAPSHOT.clanMembersSample['5'].forEach(m => {
+          const scale = rangeKey === 'month' ? 18 : rangeKey === 'week' ? 4 : 1;
+          if (!membersMap.has(m.uuid || String(m.nickname).toLowerCase())) {
+            addMember(m, Number(m.points || 0) * scale);
+          }
+        });
+      }
+
+      const myPts = computePlayerClanWarPoints(botUserProfileData, rangeKey);
+      const tgUser = getCurrentTelegramUser();
+      addMember({
+        uuid: botUserProfileData.uuid,
+        nickname: botUserProfileData.nickname || botUserProfileData.name || 'Player',
+        mask_image_url: botUserProfileData.mask_image_url || botUserProfileData.avatar || '',
+        avatar: (tgUser && tgUser.photo_url) || botUserProfileData.avatar || ''
+      }, myPts);
+
+      const sortedMembers = Array.from(membersMap.values()).sort((a, b) => b.points - a.points);
+
+      listBox.innerHTML = sortedMembers.map((m, idx) => {
+        const isMe = (myUuid && m.uuid === myUuid) || (myNick && String(m.nickname).toLowerCase() === myNick);
+        const rankNum = idx + 1;
+        const rowClass = 'rank-row clickable-item ' + (rankNum <= 3 ? 'top-' + rankNum : '');
+        const rowStyle = isMe ? 'border-color:#00ff88; background:rgba(0,255,136,0.08);' : '';
+        const youBadgeHtml = isMe ? `<span class="you-neon-badge">${escapeHtml(vt.youTag)}</span>` : '';
+        return `<div class="${rowClass}" style="${rowStyle}" data-member-uuid="${escapeHtml(m.uuid)}" data-member-nick="${escapeHtml(m.nickname)}" onclick="onClickClanRosterMemberRow(this)">` +
+          `<div class="rank-left">` +
+            `<div class="rank-num">${rankNum}</div>` +
+            buildDualPlayerAvatarHtml(m.skinUrl, m.tgAvatarUrl, m.nickname) +
+            `<div style="min-width:0; flex:1;">` +
+              `<div style="font-weight:800; font-size:13.5px; color:#fff; display:flex; align-items:center; flex-wrap:wrap;">` +
+                `<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.nickname)}</span>` +
+                youBadgeHtml +
+              `</div>` +
+              `<div style="font-size:11px; color:#8ab4f8;">⚔️ ${escapeHtml(clanInfo.name)}</div>` +
+            `</div>` +
+          `</div>` +
+          `<div class="score-badge">${Number(m.points || 0).toLocaleString()} PTS</div>` +
+        `</div>`;
+      }).join('');
     }
 
   </script>
