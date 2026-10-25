@@ -81,8 +81,12 @@ admin's own actions are not reported. The receiver must have started the bot onc
 
 ## Daily announcement
 
-Main Admin Panel → **Daily announcement**: message, target chats (@channel or group id),
-hour and an on/off switch, plus **Send now**. The server posts it at most once a day
+Main Admin Panel → **Daily announcement**: message, optional image, **send privately to
+all bot users** (everyone who opened the app or wrote to the bot; users who blocked the bot
+are skipped), optional channels/groups, hour and an on/off switch, plus **Send now**.
+Private messages go out in batches of 22 (Workers request limit); the admin panel and the
+hourly workflow keep calling `/api/cron/daily` until all are sent. An uploaded image is
+stored in D1 and served from `/api/announce-image`. The server posts it at most once a day
 (state in D1 `meta.announce_v1`). It is triggered by app visits and by the hourly
 GitHub Actions workflow `.github/workflows/daily-announcement.yml`, which calls
 `/api/cron/daily`. The bot must be an admin of each channel (or a member of the group).

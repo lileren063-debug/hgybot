@@ -54,6 +54,7 @@ export async function handleStore(request, env, ctx) {
   const kind = url.pathname.replace(/\/+$/, '');
   const handlers = { '/api/platform': platform, '/api/giveaways': giveaways, '/api/rewards': rewards, '/api/tasks': tasks, '/api/cron/daily': cronDaily };
   const handler = handlers[kind];
+  if (kind === '/api/announce-image' && env.DB) return serveAnnouncementImage(env.DB);
   if (!handler) return null;
 
   if (!env.DB) {
@@ -112,6 +113,10 @@ async function ensureSchema(db) {
       await db.prepare(`ALTER TABLE ${table} ADD COLUMN clan_id INTEGER NOT NULL DEFAULT ${SEED_CLAN.team_id}`).run();
     } catch (e) { /* column already there */ }
   }
+  try {
+    // Users who blocked the bot are skipped by the daily broadcast
+    await db.prepare('ALTER TABLE users_seen ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0').run();
+  } catch (e) { /* column already there */ }
   // Seed once, so a clan or admin the main admin removes stays removed
   const seeded = await db.prepare("SELECT value FROM meta WHERE key = 'seeded_v1'").first();
   if (!seeded) {
@@ -242,6 +247,7 @@ async function platform(app, url, body) {
   };
   if (app.isSuper) {
     out.announce = await getAnnouncement(app.db);
+    out.announce.broadcast = await broadcastStatus(app.db);
     const staff = await app.db.prepare('SELECT team_id, user_key, label, role, can_giveaways, can_tasks, added_at FROM clan_staff ORDER BY team_id, added_at').all();
     out.staff = staff.results.map(s => ({
       team_id: Number(s.team_id),
@@ -292,14 +298,22 @@ async function postPlatform(app, body) {
     const next = {
       enabled: Boolean(a.enabled),
       chats: cleanText(a.chats, 300).split(/[\s,]+/).filter(c => /^(@[A-Za-z0-9_]{4,64}|-?\d{5,20})$/.test(c)).slice(0, 5),
+      to_users: Boolean(a.to_users),
+      image: await saveAnnouncementImage(app, a.image, prev.image),
       text: cleanText(a.text, 3500),
       hour: Math.min(23, Math.max(0, Math.floor(Number(a.hour) || 0))),
       last_sent: prev.last_sent
     };
-    if (next.enabled && (!next.chats.length || !next.text)) return { error: 'Enter the message and at least one chat (@channel or chat id)' };
+    const noTarget = !next.text || (!next.chats.length && !next.to_users);
+    if (next.enabled && noTarget) return { error: 'Enter the message and choose all bot users or at least one chat (@channel or chat id)' };
+    if (action === 'announce_send_now') {
+      if (noTarget) return { error: 'Enter the message and choose who gets it first' };
+      // Counts as today's message, so nobody gets it twice today
+      next.last_sent = new Date().toISOString().slice(0, 10);
+    }
     await db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('announce_v1', ?)").bind(JSON.stringify(next)).run();
     if (action === 'announce_send_now') {
-      if (!next.chats.length || !next.text) return { error: 'Enter the message and at least one chat first' };
+      if (next.to_users) await startBroadcast(app, next, next.last_sent);
       const results = await postAnnouncement(app, next);
       const failed = results.filter(r => !r.ok);
       if (failed.length) return { error: failed.map(f => `${f.chat}: ${f.error}`).join(' • ') };
@@ -914,7 +928,48 @@ async function isChatMember(botToken, chat, userId) {
 
 // ---------------------------------------------------------------- daily announcement
 
-const ANNOUNCE_DEFAULT = { enabled: false, chats: [], text: '', hour: 12, last_sent: '' };
+const ANNOUNCE_DEFAULT = { enabled: false, chats: [], to_users: false, image: '', text: '', hour: 12, last_sent: '' };
+
+// An uploaded photo is kept in D1 and served from our own URL, because Telegram fetches photos by URL
+async function saveAnnouncementImage(app, value, previous) {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  if (v === previous) return v;
+  if (/^https:\/\/\S{5,500}$/.test(v)) return v;
+  if (/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v) && v.length <= MAX_RECORD_BYTES) {
+    await app.db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('announce_img', ?)").bind(v).run();
+    return `${app.origin}/api/announce-image?v=${Date.now()}`;
+  }
+  return '';
+}
+
+async function serveAnnouncementImage(db) {
+  const row = await db.prepare("SELECT value FROM meta WHERE key = 'announce_img'").first().catch(() => null);
+  const m = row && /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(row.value);
+  if (!m) return new Response('Not found', { status: 404 });
+  const bytes = Uint8Array.from(atob(m[2]), c => c.charCodeAt(0));
+  return new Response(bytes, { headers: { 'Content-Type': m[1], 'Cache-Control': 'public, max-age=300' } });
+}
+
+// Photo with the text as caption (Telegram allows 1024 caption characters; longer text follows as its own message)
+async function sendAnnouncementTo(token, chatId, a, replyMarkup) {
+  const call = async (method, params) => {
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, ...params, ...(replyMarkup ? { reply_markup: replyMarkup } : {}) })
+    });
+    return res.json().catch(() => ({ ok: false, description: `HTTP ${res.status}` }));
+  };
+  if (a.image && a.text.length <= 1024) return call('sendPhoto', { photo: a.image, caption: a.text });
+  if (a.image) {
+    const photo = await call('sendPhoto', { photo: a.image });
+    if (!photo.ok) return photo;
+  }
+  return call('sendMessage', { text: a.text, disable_web_page_preview: true });
+}
+// Free Workers plans allow 50 outgoing requests per call, so private messages go out in batches
+const BROADCAST_BATCH = 22;
 
 async function getAnnouncement(db) {
   const row = await db.prepare("SELECT value FROM meta WHERE key = 'announce_v1'").first();
@@ -932,10 +987,11 @@ async function sendDailyAnnouncement(app) {
   const row = await app.db.prepare("SELECT value FROM meta WHERE key = 'announce_v1'").first();
   if (!row) return { sent: false };
   const a = { ...ANNOUNCE_DEFAULT, ...JSON.parse(row.value) };
-  if (!a.enabled || !a.text || !a.chats.length || a.last_sent === today || now.getUTCHours() < a.hour) return { sent: false };
+  if (!a.enabled || !a.text || (!a.chats.length && !a.to_users) || a.last_sent === today || now.getUTCHours() < a.hour) return { sent: false };
   const claimed = await app.db.prepare("UPDATE meta SET value = ? WHERE key = 'announce_v1' AND value = ?")
     .bind(JSON.stringify({ ...a, last_sent: today }), row.value).run();
   if (!claimed.meta || !claimed.meta.changes) return { sent: false };
+  if (a.to_users) await startBroadcast(app, a, today);
   await postAnnouncement(app, a);
   return { sent: true };
 }
@@ -945,21 +1001,75 @@ async function postAnnouncement(app, a) {
   if (!token) return a.chats.map(chat => ({ chat, ok: false, error: 'BOT_TOKEN is not set' }));
   return Promise.all(a.chats.map(async chat => {
     try {
-      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chat, text: a.text, disable_web_page_preview: true })
-      });
-      const data = await res.json().catch(() => ({}));
-      return data.ok ? { chat, ok: true } : { chat, ok: false, error: data.description || `HTTP ${res.status}` };
+      const data = await sendAnnouncementTo(token, chat, a, null);
+      return data.ok ? { chat, ok: true } : { chat, ok: false, error: data.description || 'Telegram error' };
     } catch (e) {
       return { chat, ok: false, error: 'Telegram unreachable' };
     }
   }));
 }
 
+// Private messages to everyone who used the bot or the app, sent in batches by /api/cron/daily
+async function startBroadcast(app, a, date) {
+  const state = { date, text: a.text, image: a.image || '', cursor: 0, sent: 0, failed: 0, done: false };
+  await app.db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('announce_bc', ?)").bind(JSON.stringify(state)).run();
+}
+
+async function broadcastStatus(db) {
+  const row = await db.prepare("SELECT value FROM meta WHERE key = 'announce_bc'").first();
+  const total = await db.prepare('SELECT COUNT(*) AS n FROM users_seen WHERE blocked = 0').first();
+  const state = row ? JSON.parse(row.value) : null;
+  return { users: total ? Number(total.n) : 0, date: state ? state.date : '', sent: state ? state.sent : 0, failed: state ? state.failed : 0, done: state ? state.done : true };
+}
+
+async function continueBroadcast(app) {
+  const db = app.db;
+  const row = await db.prepare("SELECT value FROM meta WHERE key = 'announce_bc'").first();
+  if (!row) return { done: true };
+  const state = JSON.parse(row.value);
+  if (state.done) return { done: true };
+  const batch = (await db.prepare('SELECT rowid AS rid, user_id FROM users_seen WHERE rowid > ? AND blocked = 0 ORDER BY rowid LIMIT ?')
+    .bind(state.cursor, BROADCAST_BATCH).all()).results;
+  const next = { ...state, cursor: batch.length ? batch[batch.length - 1].rid : state.cursor, done: batch.length < BROADCAST_BATCH };
+  // Claim this batch first, so two calls never message the same people
+  const claimed = await db.prepare("UPDATE meta SET value = ? WHERE key = 'announce_bc' AND value = ?").bind(JSON.stringify(next), row.value).run();
+  if (!claimed.meta || !claimed.meta.changes) return { done: false };
+
+  const token = app.env.BOT_TOKEN;
+  const keyboard = { inline_keyboard: [[{ text: '🚀 Open App', web_app: { url: `${app.origin}/` } }]] };
+  let sent = 0;
+  let failed = 0;
+  const blocked = [];
+  await Promise.all(batch.map(async u => {
+    try {
+      const data = await sendAnnouncementTo(token, u.user_id, state, keyboard);
+      if (data.ok) sent++;
+      else {
+        failed++;
+        // 403: the user blocked the bot or never started it
+        if (data.error_code === 403) blocked.push(u.user_id);
+      }
+    } catch (e) {
+      failed++;
+    }
+  }));
+  if (blocked.length) {
+    await db.batch(blocked.map(id => db.prepare('UPDATE users_seen SET blocked = 1 WHERE user_id = ?').bind(id)));
+  }
+  // Counters are best effort; the cursor above is what prevents double messages
+  const cur = await db.prepare("SELECT value FROM meta WHERE key = 'announce_bc'").first();
+  if (cur) {
+    const st = JSON.parse(cur.value);
+    await db.prepare("UPDATE meta SET value = ? WHERE key = 'announce_bc' AND value = ?")
+      .bind(JSON.stringify({ ...st, sent: st.sent + sent, failed: st.failed + failed }), cur.value).run();
+  }
+  return { done: next.done, sent, failed };
+}
+
 async function cronDaily(app) {
-  return sendDailyAnnouncement(app);
+  const daily = await sendDailyAnnouncement(app);
+  const broadcast = await continueBroadcast(app);
+  return { sent: daily.sent, broadcast };
 }
 
 // ---------------------------------------------------------------- activity messages

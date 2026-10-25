@@ -8689,13 +8689,24 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
     // Daily message the bot posts to channels/groups; the hour is UTC (Türkiye = UTC+3)
     function renderAnnounceAdmin() {
       const a = platformState.announce || { enabled: false, chats: [], text: '', hour: 12, last_sent: '' };
+      const bc = a.broadcast || null;
+      announceImageValue = a.image || '';
       const hours = Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === a.hour ? 'selected' : ''}>${String(h).padStart(2, '0')}:00 UTC (TR ${String((h + 3) % 24).padStart(2, '0')}:00)</option>`).join('');
       return `
         <div class="pf-section-title">📣 Daily announcement</div>
         <div class="glass-card" style="padding:11px; margin-bottom:8px;">
           <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">The bot posts this message once a day. The bot must be an admin of the channel (or a member of the group).</div>
-          <label class="pf-label">Send to (@channel or group id, comma separated)</label>
+          <label class="pf-check"><input type="checkbox" id="pf-ann-users" ${a.to_users ? 'checked' : ''}> 👥 Send privately to all bot users${bc ? ` (${bc.users})` : ''}</label>
+          ${bc && bc.date ? `<div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">Last broadcast ${escapeHtml(bc.date)}: ${bc.sent} delivered, ${bc.failed} failed${bc.done ? '' : ' • sending…'}</div>` : ''}
+          <label class="pf-label">Also post to channels/groups (optional, @channel or id, comma separated)</label>
           <input type="text" id="pf-ann-chats" class="search-input" style="padding:9px; font-size:12.5px; margin-bottom:8px;" placeholder="@hegemonyprivate" value="${escapeHtml((a.chats || []).join(', '))}">
+          <label class="pf-label">Image (optional)</label>
+          ${a.image ? `<img id="pf-ann-img-preview" src="${escapeHtml(a.image)}" alt="" style="width:100%; max-height:150px; object-fit:cover; border-radius:10px; margin-bottom:6px;" onerror="this.style.display='none'">` : '<img id="pf-ann-img-preview" alt="" style="display:none; width:100%; max-height:150px; object-fit:cover; border-radius:10px; margin-bottom:6px;">'}
+          <input type="file" accept="image/*" style="margin-bottom:6px; font-size:12px; color:#fff; width:100%;" onchange="handleAnnounceImageUpload(this)">
+          <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input type="text" id="pf-ann-image" class="search-input" style="padding:9px; font-size:12px; margin:0; flex:1;" placeholder="Or paste image URL (https://...)" value="${escapeHtml(a.image && !a.image.includes('/api/announce-image') ? a.image : '')}">
+            <button type="button" class="pf-manage-btn" onclick="clearAnnounceImage()">🗑</button>
+          </div>
           <label class="pf-label">Time</label>
           <select id="pf-ann-hour" class="search-input pf-select">${hours}</select>
           <label class="pf-label">Message</label>
@@ -8709,14 +8720,66 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
         </div>`;
     }
 
-    function adminSaveAnnounce(sendNow) {
+    let announceImageValue = '';
+
+    function handleAnnounceImageUpload(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const scale = Math.min(1, 1080 / img.width);
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          announceImageValue = canvas.toDataURL('image/jpeg', 0.85);
+          const prev = document.getElementById('pf-ann-img-preview');
+          if (prev) { prev.src = announceImageValue; prev.style.display = 'block'; }
+          document.getElementById('pf-ann-image').value = '';
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearAnnounceImage() {
+      announceImageValue = '';
+      document.getElementById('pf-ann-image').value = '';
+      const prev = document.getElementById('pf-ann-img-preview');
+      if (prev) prev.style.display = 'none';
+    }
+
+    // Private messages go out in batches; the admin's open panel keeps pushing them until all are sent
+    async function pumpAnnounceBroadcast() {
+      for (let i = 0; i < 200; i++) {
+        const res = await storeRequest('/cron/daily');
+        const b = res.ok && res.data.broadcast;
+        if (!b || b.done) break;
+      }
+      const res = await storeRequest('/platform');
+      if (res.ok) applyPlatformState(res.data);
+    }
+
+    async function adminSaveAnnounce(sendNow) {
+      const users = document.getElementById('pf-ann-users').checked;
+      if (sendNow && users && !confirm('Send this message privately to all bot users now?')) return;
+      const urlField = document.getElementById('pf-ann-image').value.trim();
       const announce = {
+        to_users: users,
+        image: urlField || announceImageValue,
         chats: document.getElementById('pf-ann-chats').value,
         hour: Number(document.getElementById('pf-ann-hour').value) || 0,
         text: document.getElementById('pf-ann-text').value,
         enabled: document.getElementById('pf-ann-on').checked
       };
-      platformAdminAction({ action: sendNow ? 'announce_send_now' : 'announce_save', announce }, sendNow ? '📤 Announcement sent' : '💾 Announcement saved');
+      const done = await platformAdminAction({ action: sendNow ? 'announce_send_now' : 'announce_save', announce }, sendNow ? '📤 Sending…' : '💾 Announcement saved');
+      if (done && sendNow && users) {
+        await pumpAnnounceBroadcast();
+        const b = platformState.announce && platformState.announce.broadcast;
+        if (b) showCyberToast(`📤 Sent to ${b.sent} users${b.failed ? `, ${b.failed} failed` : ''}`);
+      }
     }
 
     async function adminSetupBot(btn) {

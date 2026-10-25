@@ -141,6 +141,15 @@ export async function handleTelegram(request, env) {
     if (request.headers.get('X-Telegram-Bot-Api-Secret-Token') !== secret) return json({ ok: false }, 401);
     const update = await request.json().catch(() => null);
     const reply = update ? buildReply(update, url.origin) : null;
+    // Everyone who writes to the bot privately can get the daily broadcast
+    const from = reply && update.message.from;
+    if (from && env.DB) {
+      try {
+        await env.DB.prepare('INSERT OR IGNORE INTO users_seen (user_id, data, first_seen) VALUES (?, ?, ?)')
+          .bind(String(from.id), JSON.stringify({ username: from.username || '', first_name: from.first_name || '' }), Date.now()).run();
+        await env.DB.prepare('UPDATE users_seen SET blocked = 0 WHERE user_id = ?').bind(String(from.id)).run();
+      } catch (e) { /* table not created yet: the app creates it on first use */ }
+    }
     // Telegram runs a method returned in the webhook response, so no extra request is needed
     return reply ? json(reply) : json({ ok: true });
   }

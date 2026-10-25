@@ -1,5 +1,6 @@
 # Hourly nudge so the bot's daily announcement goes out even when nobody opens the app.
-# The server sends it at most once a day, at the hour set in the admin panel.
+# The server sends it at most once a day, at the hour set in the admin panel; private
+# messages go out in batches, so keep calling until the server says it is done.
 name: Daily announcement
 on:
   schedule:
@@ -9,4 +10,10 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - run: curl -fsS https://hgybot.pages.dev/api/cron/daily
+      - run: |
+          for i in $(seq 1 100); do
+            out=$(curl -fsS https://hgybot.pages.dev/api/cron/daily) || exit 1
+            echo "$out"
+            echo "$out" | grep -q '"done":true' && break
+            sleep 2
+          done
