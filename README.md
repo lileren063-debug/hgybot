@@ -17,24 +17,41 @@ Pixel World clan tracker (@HGYinfo_bot) for clan HEGEMONY (team 5).
 
 `functions/api/[[path]].js` bir Pages Function'dır ve Pages ile birlikte otomatik yayınlanır:
 
-- `/api/clans/5/members` → HEGEMONY haftalık/aylık puanlar. Varsayılan olarak giriş gerektirmeyen
-  mrktsticker `global/clan-players` sıralamasından süzülür (`worker/hegemony-from-upstream.js`).
-  `PW_AUTHORIZATION` / `PW_COOKIE` secret'ı tanımlıysa doğrudan pw.game kullanılır.
+- `/api/clans/:teamId/members?range=day|week|month` → herhangi bir klanın günlük/haftalık/aylık puanları.
+  Giriş gerektirmeyen mrktsticker `global/clan-players` sıralamasından süzülür (`worker/clan-points.js`).
+  HEGEMONY (5) için `PW_AUTHORIZATION` / `PW_COOKIE` secret'ı tanımlıysa doğrudan pw.game kullanılır.
+- `/api/platform`, `/api/giveaways`, `/api/rewards`, `/api/tasks` → kendi D1 veritabanımız (aşağıya bak).
 - diğer tüm `/api/...` istekleri → `https://mrktsticker.alwaysdata.net/api`
 
 İsteğe bağlı: doğrudan pw.game kullanmak için Pages projesine secret ekle: Pages projesi → **Settings** → **Variables and Secrets** → **Add** →
 tür **Secret**, ad `PW_COOKIE`, değer pw.game Cookie'si → Save. Sonra **Deployments** → son deploy → **Retry deployment**.
 
-## Çekilişler ve ödüller (ortak depo)
+## Çok klanlı platform (ortak depo)
 
-`/api/giveaways` ve `/api/rewards` kendi Cloudflare D1 veritabanımızda tutulur (`worker/hgy-store.js`).
-Yazma istekleri Telegram initData ile doğrulanır; çekiliş/ödül eklemek sadece adminlere açıktır.
+Klanlar, yöneticiler, çekilişler, ödüller, görevler ve oyuncu bağlantıları kendi Cloudflare D1
+veritabanımızda ayrı tablolarda tutulur (`worker/hgy-store.js`). Her yazma isteği Telegram initData
+ile doğrulanır ve yetkiler sunucuda kontrol edilir.
+
+Roller:
+- **Ana yönetici**: `SUPER_ADMIN_IDS` (varsayılan Eren, 1563597048). Klan ekler/kaldırır, her klan için
+  çekiliş ve görev iznini açar/kapatır, yönetici atar/kaldırır, yanlış oyuncu bağlantısını sıfırlar.
+- **Klan yöneticisi**: yalnızca kendi klanında açık olan her şeyi yönetir.
+- **Görevli yönetici**: yalnızca kendisine verilen yetkiyi (çekiliş/ödül veya görev) kendi klanında kullanır.
+- **Kullanıcı**: çekilişlere katılır, ödül alır, görev yapar.
+
+HGY puanı (UTC ay başında sıfırlanır) = bağlı oyuncunun aylık klan puanı + görev ödülleri − çekiliş girişleri − ödüller.
+
+Görev türleri: klan savaşı puan hedefi (oyuncunun kendi puanı veya klan toplamı; günlük/haftalık/sezon,
+otomatik kontrol), Telegram kanal/grup katılımı (bot o kanalda admin olmalı, otomatik kontrol),
+oyun içi etkinlik (yönetici onaylar).
 
 Kurulum (bir kez):
 1. Cloudflare → **Storage & Databases → D1** → **Create database** → ad: `hgy-db`.
 2. hgybot Pages projesi → **Settings → Bindings → Add → D1 database** → Variable name `DB`, database `hgy-db` → Save.
 3. Aynı sayfada **Variables and Secrets → Add** → Type **Secret**, Name `BOT_TOKEN`, Value: BotFather'daki bot token'ı → Save.
+   (İsteğe bağlı: başka ana yönetici için `SUPER_ADMIN_IDS` = virgülle ayrılmış Telegram id'leri.)
 4. **Deployments** → son deploy → **Retry deployment**. Tablolar ilk istekte kendiliğinden oluşur.
+5. Kanal görevleri için botu @HegemonyGames kanalına **admin**, @hegemonyprivate grubuna üye/admin olarak ekle.
 
 Gizli bilgiler **asla** bu repoya yazılmaz (repo herkese açık). pw.game oturumunu Worker secret olarak sakla:
 

@@ -2310,9 +2310,224 @@
   }
   .gw-sub-tabs {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
     margin-bottom: 14px;
+  }
+  .gw-sub-tabs .gw-tab-btn {
+    padding: 10px 4px;
+    font-size: 12px;
+    gap: 4px;
+    flex-direction: column;
+  }
+
+  /* ---------- Multi-clan platform: clan filter, tasks, admin panel ---------- */
+  .pf-clan-filter {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 12px;
+    scrollbar-width: none;
+  }
+  .pf-clan-filter::-webkit-scrollbar { display: none; }
+  .pf-chip {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(0, 240, 255, 0.22);
+    color: #9ab3c9;
+    padding: 6px 11px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .pf-chip img {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--cyan);
+  }
+  .pf-chip.active {
+    background: rgba(0, 240, 255, 0.16);
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+  }
+  .pf-select {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 13px;
+    margin-bottom: 10px;
+    color: #fff;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .pf-select option { background: #0b1a2b; color: #fff; }
+  .pf-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .pf-owner-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    font-weight: 900;
+    color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.45);
+    border-radius: 9px;
+    padding: 2px 8px;
+    margin-bottom: 4px;
+  }
+  .pf-owner-pill img {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .pf-manage-btn {
+    background: rgba(255, 59, 92, 0.12);
+    border: 1px solid rgba(255, 77, 109, 0.5);
+    color: #ff8fa3;
+    border-radius: 9px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .pf-admin-entry-btn {
+    width: 100%;
+    margin-top: 9px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.16), rgba(0, 240, 255, 0.12));
+    border: 1.5px solid rgba(255, 215, 0, 0.6);
+    color: #ffd700;
+    padding: 11px 14px;
+    border-radius: 13px;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    box-shadow: 0 0 14px rgba(255, 215, 0, 0.18);
+  }
+  .tk-card {
+    background: linear-gradient(165deg, rgba(12, 28, 46, 0.95) 0%, rgba(6, 15, 26, 0.96) 100%);
+    border: 1.5px solid rgba(0, 240, 255, 0.32);
+    border-radius: 16px;
+    padding: 13px;
+    margin-bottom: 11px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+  }
+  .tk-card.done { border-color: rgba(0, 255, 136, 0.55); }
+  .tk-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .tk-title { font-size: 14.5px; font-weight: 900; color: #fff; }
+  .tk-reward {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 900;
+    color: #ffcc4d;
+    background: rgba(255, 170, 0, 0.14);
+    border: 1px solid #ffaa00;
+    border-radius: 9px;
+    padding: 3px 8px;
+  }
+  .tk-desc { font-size: 12px; color: #9ab3c9; margin: 0 0 8px; }
+  .tk-progress {
+    height: 9px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+    margin: 6px 0 4px;
+  }
+  .tk-progress > div {
+    height: 100%;
+    background: linear-gradient(90deg, #078efb, var(--cyan));
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+  }
+  .tk-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #8ab4f8;
+  }
+  .tk-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 9px;
+  }
+  .tk-actions .gw-join-btn, .tk-actions .gw-share-btn { flex: 1; }
+  .tk-status {
+    flex: 1;
+    text-align: center;
+    font-size: 12.5px;
+    font-weight: 900;
+    padding: 10px;
+    border-radius: 12px;
+  }
+  .tk-status.done { color: #00ff88; background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.45); }
+  .tk-status.pending { color: #ffcc4d; background: rgba(255, 170, 0, 0.1); border: 1px solid rgba(255, 170, 0, 0.45); }
+  .pf-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(0, 240, 255, 0.16);
+    margin-bottom: 7px;
+  }
+  .pf-row-main { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .pf-row-main img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--cyan); }
+  .pf-row-name { font-size: 13px; font-weight: 900; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pf-row-sub { font-size: 10.5px; color: #8ab4f8; font-weight: 700; }
+  .pf-toggle {
+    border-radius: 9px;
+    padding: 5px 8px;
+    font-size: 10.5px;
+    font-weight: 900;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.04);
+    color: #8faac4;
+    white-space: nowrap;
+  }
+  .pf-toggle.on { border-color: #00ff88; color: #00ff88; background: rgba(0, 255, 136, 0.12); }
+  .pf-section-title {
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--cyan);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 14px 0 8px;
+  }
+  .pf-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #d8ecff;
+    margin-bottom: 8px;
   }
   .gw-tab-btn {
     background: rgba(8, 20, 34, 0.85);
@@ -3031,6 +3246,9 @@
           <button type="button" class="unlink-account-btn" id="profile-unlink-btn" onclick="unlinkPixelWorldAccount()">
             <span id="i18n-unlink-btn-txt">⛓️‍💥 Unlink Pixel World Account</span>
           </button>
+          <button type="button" class="pf-admin-entry-btn" id="pf-admin-entry-btn" style="display:none;" onclick="openPlatformAdminModal()">
+            <span>👑</span><span id="pf-admin-entry-txt">Admin Panel</span>
+          </button>
 
         </div>
       </div>
@@ -3040,8 +3258,10 @@
         <div class="gw-header-row">
           <h2 class="section-title">🎁 Giveaways</h2>
           <!-- HEGEMONY clan points of the linked player (filled by renderGiveawayClanPointsBadge) -->
-          <div id="gw-clan-points-badge" class="gw-clan-points-badge" style="display:none;" title="Your points inside HEGEMONY"></div>
+          <div id="gw-clan-points-badge" class="gw-clan-points-badge" style="display:none;" title="Your HGY points this month"></div>
         </div>
+        <!-- Clan filter: every clan's giveaways, rewards and tasks (filled by renderPlatformClanFilter) -->
+        <div class="pf-clan-filter" id="pf-clan-filter"></div>
         <div class="gw-sub-tabs">
           <button type="button" class="gw-tab-btn active" id="gw-tab-join-btn" onclick="switchGiveawaySubTab('join')">
             <span>🎉</span>
@@ -3050,6 +3270,10 @@
           <button type="button" class="gw-tab-btn" id="gw-tab-rewards-btn" onclick="switchGiveawaySubTab('rewards')">
             <span>🛒</span>
             <span id="i18n-gw-rewards-tab">Rewards</span>
+          </button>
+          <button type="button" class="gw-tab-btn" id="gw-tab-tasks-btn" onclick="switchGiveawaySubTab('tasks')">
+            <span>🎯</span>
+            <span id="i18n-gw-tasks-tab">Tasks</span>
           </button>
           <button type="button" class="gw-tab-btn" id="gw-tab-create-btn" onclick="switchGiveawaySubTab('create')">
             <span>👑</span>
@@ -3077,6 +3301,8 @@
               <h2 class="section-title" style="font-size:14px;">👑 Add Reward</h2>
               <span style="font-size:10.5px; color:#00ff88; font-weight:800;">Admin</span>
             </div>
+            <label class="pf-label">Clan Shop</label>
+            <select id="rw-owner-clan-select" class="search-input pf-select"></select>
             <input type="text" id="rw-name-input" class="search-input" style="padding:9px 12px; font-size:13px; margin-bottom:8px;" placeholder="Reward name (e.g. Cyber Wolf Mask)">
             <input type="file" id="rw-file-input" accept="image/*" style="margin-bottom:6px; font-size:12px; color:#fff; width:100%;" onchange="handleRewardImageUpload(this)">
             <input type="text" id="rw-image-input" class="search-input" style="padding:9px 12px; font-size:12px; margin-bottom:8px;" placeholder="Or paste image URL (https://...)">
@@ -3097,13 +3323,75 @@
           <div id="rewards-list"></div>
         </div>
 
+        <!-- SUB-VIEW T: CLAN TASKS (EARN HGY POINTS; CREATED BY AUTHORIZED CLAN ADMINS) -->
+        <div id="gw-subview-tasks" style="display:none;">
+          <div id="tk-admin-form" class="glass-card" style="display:none; padding:14px;">
+            <div class="section-header" style="margin-bottom:10px;">
+              <h2 class="section-title" style="font-size:14px;">🎯 Create Task</h2>
+              <span style="font-size:10.5px; color:#00ff88; font-weight:800;">Clan Admin</span>
+            </div>
+            <label class="pf-label">Clan</label>
+            <select id="tk-owner-clan-select" class="search-input pf-select"></select>
+            <label class="pf-label">Task Type</label>
+            <select id="tk-kind-select" class="search-input pf-select" onchange="onTaskKindChange()">
+              <option value="clan_points">⚔️ Clan war points target (checked automatically)</option>
+              <option value="telegram_join">📢 Join a Telegram channel / group (checked automatically)</option>
+              <option value="manual">🎮 In-game activity (an admin approves)</option>
+            </select>
+            <input type="text" id="tk-title-input" class="search-input" style="padding:9px 12px; font-size:13px; margin-bottom:8px;" placeholder="Title (e.g. Collect 500 clan points today)">
+            <textarea id="tk-desc-input" class="share-desc-textarea" style="min-height:48px; margin-bottom:8px;" placeholder="Description (optional)"></textarea>
+            <div id="tk-points-fields">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div>
+                  <span style="font-size:10px; color:#8faac4; display:block; margin-bottom:3px; font-weight:700;">Counts</span>
+                  <select id="tk-scope-select" class="search-input pf-select">
+                    <option value="player">Player's own points</option>
+                    <option value="clan">Whole clan's total</option>
+                  </select>
+                </div>
+                <div>
+                  <span style="font-size:10px; color:#8faac4; display:block; margin-bottom:3px; font-weight:700;">Target (PTS)</span>
+                  <input type="number" id="tk-target-input" class="search-input" style="padding:9px; text-align:center; margin-bottom:10px;" value="500" min="1">
+                </div>
+              </div>
+            </div>
+            <div id="tk-chat-fields" style="display:none;">
+              <input type="text" id="tk-chat-input" class="search-input" style="padding:9px 12px; font-size:13px; margin-bottom:6px;" placeholder="@HegemonyGames or https://t.me/HegemonyGames">
+              <div style="font-size:10.5px; color:#8faac4; margin-bottom:10px;">The bot must be an admin of a channel (or a member of a group) to check who joined.</div>
+            </div>
+            <div id="tk-link-fields" style="display:none;">
+              <input type="text" id="tk-link-input" class="search-input" style="padding:9px 12px; font-size:13px; margin-bottom:10px;" placeholder="Optional link (https://...)">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div id="tk-period-wrap">
+                <span style="font-size:10px; color:#8faac4; display:block; margin-bottom:3px; font-weight:700;">Repeats</span>
+                <select id="tk-period-select" class="search-input pf-select">
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="season">Season (monthly)</option>
+                  <option value="once">One-time</option>
+                </select>
+              </div>
+              <div>
+                <span style="font-size:10px; color:#ffcc4d; display:block; margin-bottom:3px; font-weight:700;">Reward (HGY PTS)</span>
+                <input type="number" id="tk-reward-input" class="search-input" style="padding:9px; text-align:center; margin-bottom:10px;" value="200" min="1">
+              </div>
+            </div>
+            <button type="button" class="done-confirm-btn" style="width:100%; padding:11px;" onclick="adminCreateTask()">
+              <span>➕</span><span>Add Task</span>
+            </button>
+          </div>
+          <div id="tk-pending-box"></div>
+          <div id="tasks-list"></div>
+        </div>
+
         <!-- SUB-VIEW B: CREATE GIVEAWAY (ADMIN ONLY: @TheRizzller / Admin ID) -->
         <div id="gw-subview-create" style="display:none;">
           <div id="gw-admin-locked-notice" class="glass-card" style="display:none; text-align:center; padding:22px 16px;">
             <div style="font-size:34px; margin-bottom:8px;">🔒</div>
             <h3 style="margin:0 0 6px; color:var(--cyan); font-size:16px;">Admin Access Only</h3>
             <p style="margin:0 0 12px; font-size:12.5px; color:#9ab3c9; line-height:1.5;">
-              Only the bot admins (<strong>@TheRizzller</strong>, <strong>@erenlil</strong>) can create and launch official giveaways.
+              Only clan admins approved by the main admin can create giveaways for their clan.
             </p>
             <div style="font-size:11px; color:#8ab4f8; font-family:monospace;" id="gw-current-user-debug"></div>
           </div>
@@ -3116,6 +3404,9 @@
             <div class="gw-creator-badge" id="gw-creator-identity-badge">
               👤 Host: @Player (Bot will DM you the winner results automatically)
             </div>
+
+            <label class="pf-label">Clan (who runs this giveaway)</label>
+            <select id="gw-owner-clan-select" class="search-input pf-select"></select>
 
             <label style="display:block; font-size:11px; font-weight:800; color:#9ab3c9; text-transform:uppercase; margin-bottom:5px;">Giveaway Title</label>
             <input type="text" id="gw-title-input" class="search-input" style="padding:10px 12px; font-size:13px; margin-bottom:10px;" placeholder="e.g. Special Clan War Skin Giveaway!">
@@ -3133,7 +3424,7 @@
               </button>
             </div>
             <div id="gw-min-points-wrap" style="display:none; margin-bottom:10px;">
-              <label style="display:block; font-size:10.5px; font-weight:700; color:#ffcc4d; margin-bottom:4px;">Entry Cost (deducted from the player's HEGEMONY points on join):</label>
+              <label style="display:block; font-size:10.5px; font-weight:700; color:#ffcc4d; margin-bottom:4px;">Entry Cost (deducted from the player's HGY points on join):</label>
               <input type="number" id="gw-min-points-input" class="search-input" style="padding:9px 12px; font-size:13px;" value="1000" min="1">
             </div>
 
@@ -3625,6 +3916,20 @@
       <div class="modal-body-scroll" style="padding:0;">
         <div class="rank-list" id="profile-clan-roster-list"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== 14. PLATFORM ADMIN PANEL (MAIN ADMIN: CLANS, FEATURES, ADMINS) ==================== -->
+  <div class="modal-overlay" id="platform-admin-modal" onclick="closePlatformAdminModal(event)">
+    <div class="modal-box" style="max-width:445px; padding:18px; max-height:90vh;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="text-align:left;">
+          <h3 class="section-title" style="font-size:15px; margin:0;">👑 Admin Panel</h3>
+          <span style="font-size:10.5px; color:#8ab4f8;" id="pf-admin-role-sub"></span>
+        </div>
+        <button class="modal-close-btn" style="position:static; width:30px; height:30px;" onclick="closePlatformAdminModal()">✕</button>
+      </div>
+      <div class="modal-body-scroll" style="padding:0; text-align:left;" id="pf-admin-body"></div>
     </div>
   </div>
 
@@ -4411,6 +4716,7 @@
       initBotUserProfileView();
       renderGiveawayClanPointsBadge();
       initAppLanguageAndAutoShare();
+      loadPlatformState();
       loadGiveawaysData();
       loadRewardsData();
       fetch(`${API_BASE}/tg-bot-publish`, {
@@ -5443,6 +5749,7 @@
       if (!profile) return;
       botUserProfileData = profile;
       isBotUserLinked = true;
+      ensurePlatformLink(profile);
 
       const card = document.querySelector('#view-profile .glass-card');
       if (!card) return;
@@ -6589,6 +6896,21 @@
         return;
       }
       badge.onclick = refreshGiveawayClanPoints;
+      const server = getServerPointsBalance();
+      if (server) {
+        const clan = botUserProfileData.clan || {};
+        const avatar = (getPlatformClan(server.team_id) || {}).avatar || clan.avatar || '';
+        badge.innerHTML = `
+          ${avatar ? `<img src="${escapeHtml(avatar)}" alt="" onerror="this.style.display='none'">` : ''}
+          <div class="gw-clan-points-meta">
+            <span class="gw-clan-points-label">${escapeHtml(server.clan_name || 'HGY')} • HGY Points</span>
+            <span class="gw-clan-points-value">${server.rank_in_clan ? `<span class="gw-clan-points-rank">#${server.rank_in_clan}</span>` : ''}${server.balance.toLocaleString()} PTS</span>
+            <span class="gw-clan-points-week">Month ${server.month_points.toLocaleString()}${server.task_points ? ` + Tasks ${server.task_points.toLocaleString()}` : ''}</span>
+            ${server.spent > 0 ? `<span class="gw-clan-points-spent">−${server.spent.toLocaleString()} spent this month</span>` : ''}
+          </div>
+        `;
+        return;
+      }
       if (!isBotUserInHegemony()) {
         badge.innerHTML = `
           <div class="gw-clan-points-meta">
@@ -6662,6 +6984,7 @@
         renderGiveawayClanPointsBadge();
         return;
       }
+      loadPlatformState();
       renderGiveawayClanPointsBadge();
       await Promise.all([fetchHegemonyRoster(0, 'month'), fetchHegemonyRoster(0, 'week')]);
       renderGiveawayClanPointsBadge();
@@ -6759,6 +7082,7 @@
     // 16C. REWARDS SHOP (CLAIM A REWARD FOR A FIXED POINT COST)
     // =========================================================================
     // Giveaways and rewards live in the app's own server store (D1); writes are signed with Telegram initData
+    // Reads also carry initData, so the server can add this user's own status and rights
     async function storeRequest(path, body) {
       const tgInitData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || '';
       try {
@@ -6766,9 +7090,9 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': tgInitData },
           body: JSON.stringify(body)
-        } : { cache: 'no-store' });
+        } : { cache: 'no-store', headers: tgInitData ? { 'X-Telegram-Init-Data': tgInitData } : {} });
         const data = await res.json().catch(() => null);
-        if (data && data.ok && Array.isArray(data.items)) return { ok: true, items: data.items };
+        if (data && data.ok) return { ok: true, items: Array.isArray(data.items) ? data.items : [], data };
         return { ok: false, error: (data && data.error) || `Server error (${res.status})` };
       } catch (e) {
         return { ok: false, error: 'Server unreachable, try again' };
@@ -6841,7 +7165,7 @@
 
     async function adminAddReward() {
       if (!isCurrentUserGiveawayAdmin()) {
-        showCyberToast('⚠️ Only the authorized Admin can add rewards.');
+        showCyberToast('⚠️ Only clan admins approved by the main admin can add rewards.');
         return;
       }
       const name = document.getElementById('rw-name-input').value.trim();
@@ -6862,7 +7186,8 @@
         claims: [],
         createdAt: Date.now()
       };
-      const res = await storeRequest('/rewards', { action: 'create', reward: newReward });
+      const ownerSel = document.getElementById('rw-owner-clan-select');
+      const res = await storeRequest('/rewards', { action: 'create', clan_id: Number(ownerSel && ownerSel.value) || 0, reward: newReward });
       if (!res.ok) {
         showCyberToast(`⚠️ ${res.error}`);
         return;
@@ -6880,9 +7205,8 @@
     }
 
     async function adminDeleteReward(rewardId) {
-      if (!isCurrentUserGiveawayAdmin()) return;
       const rw = rewardsList.find(r => r.id === rewardId);
-      if (!rw) return;
+      if (!rw || !getPlatformPerm(rw.clanId, 'giveaways')) return;
       const ok = await askUserConfirm(`Delete "${rw.name}" from the shop?\nPoints already paid for it stay spent.`);
       if (!ok) return;
       // The server keeps the claims so spent points stay counted; it only hides the reward
@@ -6907,7 +7231,12 @@
       }
       const balance = getHegemonyPointsBalance();
       if (balance === null) {
-        showCyberToast('⚠️ Link your Pixel World UUID in Profile (HEGEMONY members only) to use points.');
+        showCyberToast('⚠️ Link your Pixel World UUID in Profile to use points.');
+        return;
+      }
+      const myClan = getMyPlatformClanId();
+      if (myClan && rw.clanId && myClan !== rw.clanId) {
+        showCyberToast(`⚠️ This reward is for ${rw.clanName || 'its clan'} members only.`);
         return;
       }
       if (balance < cost) {
@@ -6936,20 +7265,19 @@
       saveRewardsLocal();
 
       renderRewardsList();
-      renderGiveawayClanPointsBadge();
+      loadPlatformState();
       showCyberToast(`🎁 "${rw.name}" claimed! ${cost.toLocaleString()} PTS deducted. An admin will deliver it.`);
     }
 
     function renderRewardsList() {
       const box = document.getElementById('rewards-list');
       if (!box) return;
-      const visible = rewardsList.filter(r => !r.deleted);
+      const visible = rewardsList.filter(r => !r.deleted && isInSelectedPlatformClan(r.clanId));
       if (!visible.length) {
         box.innerHTML = '<div class="glass-card" style="text-align:center; color:#8faac4; font-size:13px;">No rewards in the shop yet.</div>';
         return;
       }
 
-      const isAdmin = isCurrentUserGiveawayAdmin();
       const userId = getGiveawayUserId();
       const balance = getHegemonyPointsBalance();
 
@@ -6960,6 +7288,7 @@
         const myClaims = (rw.claims || []).filter(c => c.id === userId).length;
         const canAfford = balance !== null && balance >= cost;
         const btnLabel = soldOut ? 'Sold Out' : `Claim • ${cost.toLocaleString()} PTS`;
+        const isAdmin = getPlatformPerm(rw.clanId, 'giveaways');
         const claimsHtml = isAdmin ? `
           <div class="rw-admin-claims">
             ${(rw.claims || []).length
@@ -6973,6 +7302,7 @@
           <div class="rw-card ${soldOut ? 'sold-out' : ''}">
             ${rw.image ? `<img src="${escapeHtml(rw.image)}" alt="" onerror="this.style.visibility='hidden'">` : '<img alt="">'}
             <div class="rw-card-body">
+              ${renderPlatformOwnerPill(rw.clanName, rw.clanAvatar)}
               <div class="rw-name" title="${escapeHtml(rw.name)}">${escapeHtml(rw.name)}</div>
               <div class="rw-meta">
                 <span>${stockLeft === Infinity ? '∞ in stock' : `${stockLeft} left`}</span>
@@ -6991,20 +7321,9 @@
     // 17. GIVEAWAYS ENGINE V16 (ADMIN-CREATED, SERVER-STORED, CREATOR TRACKING, ACTIVE/ENDED TABS & CLAN AVATARS)
     // =========================================================================
     const GIVEAWAYS_STORAGE_KEY = 'cyber_wolf_giveaways_v16_clean';
-    // Keep in sync with ADMINS in worker/hgy-store.js (the server is what actually enforces it)
-    const AUTHORIZED_ADMINS = ['therizzller', '5332662287', 'erenlil', '1563597048'];
-
+    // Rights come from the server (/api/platform), which also enforces them on every write
     function isCurrentUserGiveawayAdmin() {
-      const tgUser = getCurrentTelegramUser();
-      if (tgUser) {
-        const uname = String(tgUser.username || '').toLowerCase();
-        const uid = String(tgUser.id || '');
-        if (AUTHORIZED_ADMINS.includes(uname) || AUTHORIZED_ADMINS.includes(uid)) {
-          return true;
-        }
-      }
-      // Outside Telegram there is no verified user, so nobody is admin there
-      return false;
+      return getManageablePlatformClans('giveaways').length > 0;
     }
 
     let giveawaysList = [];
@@ -7145,19 +7464,25 @@
       const lockedNotice = document.getElementById('gw-admin-locked-notice');
       const creatorBadge = document.getElementById('gw-creator-identity-badge');
 
-      ['join', 'rewards', 'create'].forEach(name => {
+      ['join', 'rewards', 'tasks', 'create'].forEach(name => {
         const btn = document.getElementById(`gw-tab-${name}-btn`);
         const view = document.getElementById(`gw-subview-${name}`);
         if (btn) btn.classList.toggle('active', name === subTab);
         if (view) view.style.display = name === subTab ? 'block' : 'none';
       });
 
+      currentGwSubTab = subTab;
       if (subTab === 'rewards') {
         const rwForm = document.getElementById('rw-admin-form');
         if (rwForm) rwForm.style.display = isCurrentUserGiveawayAdmin() ? 'block' : 'none';
+        fillPlatformClanSelect('rw-owner-clan-select', 'giveaways');
         renderRewardsList();
+      } else if (subTab === 'tasks') {
+        renderTasksView();
+        loadTasksData();
       } else if (subTab === 'create') {
         const isAdmin = isCurrentUserGiveawayAdmin();
+        fillPlatformClanSelect('gw-owner-clan-select', 'giveaways');
         if (adminForm) adminForm.style.display = isAdmin ? 'block' : 'none';
         if (lockedNotice) {
           lockedNotice.style.display = isAdmin ? 'none' : 'block';
@@ -7279,7 +7604,7 @@
     // Admins create giveaways; the server records the verified creator id and username
     async function submitAndLaunchGiveaway() {
       if (!isCurrentUserGiveawayAdmin()) {
-        showCyberToast('⚠️ Only the authorized Admin can create giveaways.');
+        showCyberToast('⚠️ Only clan admins approved by the main admin can create giveaways.');
         return;
       }
       const creator = getCurrentGiveawayCreatorInfo();
@@ -7319,7 +7644,9 @@
         ended: false
       };
 
-      const res = await storeRequest('/giveaways', { action: 'create', giveaway: newGw });
+      const ownerSel = document.getElementById('gw-owner-clan-select');
+      const ownerClanId = Number(ownerSel && ownerSel.value) || 0;
+      const res = await storeRequest('/giveaways', { action: 'create', clan_id: ownerClanId, giveaway: newGw });
       if (!res.ok) {
         showCyberToast(`⚠️ ${res.error}`);
         return;
@@ -7370,6 +7697,8 @@
 
     // Remaining HEGEMONY points = clan points - points spent on giveaways (null when the player is not on the roster)
     function getHegemonyPointsBalance() {
+      const server = getServerPointsBalance();
+      if (server) return server.balance;
       if (!isBotUserInHegemony()) return null;
       const rec = findBotUserHegemonyRecord();
       if (!rec) return null;
@@ -7426,7 +7755,7 @@
       if (cost > 0) {
         const balance = getHegemonyPointsBalance();
         if (balance === null) {
-          showCyberToast('⚠️ Link your Pixel World UUID in Profile (HEGEMONY members only) to use points.');
+          showCyberToast('⚠️ Link your Pixel World UUID in Profile to use points.');
           return;
         }
         if (balance < cost) {
@@ -7449,7 +7778,7 @@
       try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
 
       renderGiveawaysList();
-      renderGiveawayClanPointsBadge();
+      loadPlatformState();
       showCyberToast(cost > 0
         ? `🎉 Joined! ${cost.toLocaleString()} PTS deducted. Good luck!`
         : '🎉 You have entered the Giveaway! Good luck!');
@@ -7520,8 +7849,9 @@
         }
       });
 
-      const activeItems = giveawaysList.filter(g => !g.ended && g.endsAtMs > nowMs);
-      const endedItems = giveawaysList.filter(g => g.ended || g.endsAtMs <= nowMs);
+      const clanItems = giveawaysList.filter(g => isInSelectedPlatformClan(g.clanId));
+      const activeItems = clanItems.filter(g => !g.ended && g.endsAtMs > nowMs);
+      const endedItems = clanItems.filter(g => g.ended || g.endsAtMs <= nowMs);
 
       const actCountEl = document.getElementById('gw-active-count-lbl');
       const endCountEl = document.getElementById('gw-ended-count-lbl');
@@ -7560,6 +7890,7 @@
           <div class="gw-card ${gw.ended ? 'ended' : ''}" id="gw-card-${escapeHtml(gw.id)}">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
               <div style="min-width:0; flex:1;">
+                ${renderPlatformOwnerPill(gw.clanName, gw.clanAvatar)}
                 <h3 style="margin:0 0 3px; font-size:15.5px; font-weight:900; color:#fff;">${escapeHtml(gw.title)}</h3>
                 <div style="font-size:11px; color:#8ab4f8; font-weight:700; margin-bottom:3px;">
                   👤 Hosted by: <span style="color:var(--cyan);">${escapeHtml(gw.creatorUsername || '@Player')}</span>
@@ -7588,6 +7919,11 @@
               </span>
             </div>
 
+            ${getPlatformPerm(gw.clanId, 'giveaways') ? `
+              <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+                <button type="button" class="pf-manage-btn" onclick="adminDeleteGiveaway(${jsArg(gw.id)})">🗑 Delete giveaway</button>
+              </div>
+            ` : ''}
             ${gw.ended && gw.winner ? `
               <div style="background:rgba(255,215,0,0.14); border:1.5px solid #ffd700; border-radius:12px; padding:10px; text-align:center; margin-top:8px;">
                 <div style="font-size:11px; color:#ffd700; font-weight:800; text-transform:uppercase;">🏆 Winner Selected</div>
@@ -7608,6 +7944,638 @@
           </div>
         `;
       }).join('');
+    }
+
+    // =========================================================================
+    // 17B. MULTI-CLAN PLATFORM: CLANS, RIGHTS, CLAN FILTER, TASKS & ADMIN PANEL
+    // =========================================================================
+    // The server (/api/platform) decides every right; the UI only hides what the user cannot do
+    let platformState = { clans: [], me: null, staff: [] };
+    let platformLoadPromise = null;
+    let selectedPlatformClanId = 0; // 0 = all clans
+    let currentGwSubTab = 'join';
+
+    function applyPlatformState(data) {
+      if (!data) return;
+      platformState = { clans: data.clans || [], me: data.me || null, staff: data.staff || [] };
+      if (selectedPlatformClanId && !getPlatformClan(selectedPlatformClanId)) selectedPlatformClanId = 0;
+      renderPlatformClanFilter();
+      renderPlatformAdminEntry();
+      renderGiveawayClanPointsBadge();
+      renderGiveawaysList();
+      renderRewardsList();
+      const rwForm = document.getElementById('rw-admin-form');
+      if (rwForm && currentGwSubTab === 'rewards') rwForm.style.display = isCurrentUserGiveawayAdmin() ? 'block' : 'none';
+      if (currentGwSubTab === 'tasks') renderTasksView();
+      if (currentGwSubTab === 'create') switchGiveawaySubTab('create');
+      const modal = document.getElementById('platform-admin-modal');
+      if (modal && modal.classList.contains('open')) renderPlatformAdminPanel();
+    }
+
+    function loadPlatformState() {
+      if (platformLoadPromise && platformLoadPromise.pending) return platformLoadPromise;
+      const p = (async () => {
+        const res = await storeRequest('/platform');
+        if (res.ok) applyPlatformState(res.data);
+        p.pending = false;
+      })();
+      p.pending = true;
+      platformLoadPromise = p;
+      return p;
+    }
+
+    function getPlatformClan(teamId) {
+      return platformState.clans.find(c => c.team_id === Number(teamId)) || null;
+    }
+
+    function getPlatformPerm(clanId, feature) {
+      const me = platformState.me;
+      const p = me && me.perms && me.perms[clanId];
+      return Boolean(p && p[feature]);
+    }
+
+    function getManageablePlatformClans(feature) {
+      return platformState.clans.filter(c => getPlatformPerm(c.team_id, feature));
+    }
+
+    // Balance computed by the server (null when not linked or not known yet)
+    function getServerPointsBalance() {
+      const me = platformState.me;
+      return me && me.link && me.balance ? me.balance : null;
+    }
+
+    function getMyPlatformClanId() {
+      const b = getServerPointsBalance();
+      return b ? Number(b.team_id) || 0 : 0;
+    }
+
+    function isInSelectedPlatformClan(clanId) {
+      return !selectedPlatformClanId || Number(clanId) === selectedPlatformClanId;
+    }
+
+    function renderPlatformOwnerPill(name, avatar) {
+      if (!name) return '';
+      return `<div class="pf-owner-pill">${avatar ? `<img src="${escapeHtml(avatar)}" alt="" onerror="this.style.display='none'">` : '🛡'}<span>${escapeHtml(name)}</span></div>`;
+    }
+
+    function renderPlatformClanFilter() {
+      const box = document.getElementById('pf-clan-filter');
+      if (!box) return;
+      if (platformState.clans.length < 2) {
+        box.style.display = 'none';
+        return;
+      }
+      box.style.display = 'flex';
+      const chip = (id, label, avatar) => `
+        <button type="button" class="pf-chip ${selectedPlatformClanId === id ? 'active' : ''}" onclick="selectPlatformClanFilter(${id})">
+          ${avatar ? `<img src="${escapeHtml(avatar)}" alt="" onerror="this.style.display='none'">` : ''}<span>${escapeHtml(label)}</span>
+        </button>`;
+      box.innerHTML = chip(0, '🌍 All Clans', '') + platformState.clans.map(c => chip(c.team_id, c.name, c.avatar)).join('');
+    }
+
+    function selectPlatformClanFilter(teamId) {
+      selectedPlatformClanId = Number(teamId) || 0;
+      renderPlatformClanFilter();
+      renderGiveawaysList();
+      renderRewardsList();
+      if (currentGwSubTab === 'tasks') renderTasksView();
+      if (currentGwSubTab === 'create') fillPlatformClanSelect('gw-owner-clan-select', 'giveaways');
+      if (currentGwSubTab === 'rewards') fillPlatformClanSelect('rw-owner-clan-select', 'giveaways');
+    }
+
+    // Clan picker of a create form: only clans this user may manage, the filtered clan first
+    function fillPlatformClanSelect(selectId, feature) {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      const clans = getManageablePlatformClans(feature);
+      const keep = Number(sel.value) || selectedPlatformClanId;
+      sel.innerHTML = clans.map(c => `<option value="${c.team_id}">${escapeHtml(c.name)}</option>`).join('');
+      if (clans.some(c => c.team_id === keep)) sel.value = String(keep);
+    }
+
+    // Each Telegram account owns its Pixel World player on the server too (needed for points)
+    let platformLinkInFlight = '';
+    async function ensurePlatformLink(profile) {
+      const uuid = profile && profile.uuid;
+      if (!uuid || !getCurrentTelegramUser()) return;
+      await (platformLoadPromise || loadPlatformState());
+      const me = platformState.me;
+      if (!me || (me.link && me.link.uuid === uuid) || platformLinkInFlight === uuid) return;
+      platformLinkInFlight = uuid;
+      const res = await storeRequest('/platform', { action: 'link', uuid, nickname: profile.nickname || '' });
+      platformLinkInFlight = '';
+      if (res.ok) applyPlatformState(res.data);
+      else showCyberToast(`⚠️ ${res.error}`);
+    }
+
+    async function adminDeleteGiveaway(gwId) {
+      const gw = giveawaysList.find(g => g.id === gwId);
+      if (!gw || !getPlatformPerm(gw.clanId, 'giveaways')) return;
+      const ok = await askUserConfirm(`Delete "${gw.title}"?\nEntries are removed and points paid to join are given back.`);
+      if (!ok) return;
+      const res = await storeRequest('/giveaways', { action: 'delete', giveaway_id: gwId });
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        return;
+      }
+      giveawaysList = res.items;
+      try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
+      renderGiveawaysList();
+      loadPlatformState();
+    }
+
+    // ---------------------------------------------------------------- tasks
+    let tasksList = [];
+    let tasksPending = [];
+    let tasksLoaded = false;
+    const taskRosterCache = {}; // `${clanId}|${range}` -> { at, items }
+    const TASK_PERIOD_RANGE = { daily: 'day', weekly: 'week', season: 'month' };
+    const TASK_PERIOD_LABEL = { daily: '📅 Daily', weekly: '🗓 Weekly', season: '🏆 Season', once: '⭐ One-time' };
+
+    async function loadTasksData() {
+      const res = await storeRequest('/tasks');
+      if (res.ok) {
+        tasksList = res.items;
+        tasksPending = res.data.pending || [];
+        tasksLoaded = true;
+      }
+      if (currentGwSubTab === 'tasks') renderTasksView();
+    }
+
+    function taskTypeLabel(t) {
+      if (t.kind === 'clan_points') return t.scope === 'clan' ? '🏰 Clan total points' : '⚔️ Your clan war points';
+      if (t.kind === 'telegram_join') return '📢 Join ' + t.chat;
+      return '🎮 In-game (admin checks)';
+    }
+
+    // Progress of a points task from the live clan list of its period
+    function getTaskProgress(t) {
+      if (t.kind !== 'clan_points') return null;
+      const range = TASK_PERIOD_RANGE[t.period] || 'day';
+      const cached = taskRosterCache[`${t.clanId}|${range}`];
+      if (!cached) return { loading: true, value: 0, target: t.target };
+      let value;
+      if (t.scope === 'clan') {
+        value = cached.items.reduce((sum, p) => sum + (Number(p.points) || 0), 0);
+      } else {
+        const uuid = botUserProfileData && botUserProfileData.uuid;
+        const me = uuid ? cached.items.find(p => p.uuid === uuid) : null;
+        value = me ? Number(me.points) || 0 : 0;
+      }
+      return { loading: false, value, target: t.target };
+    }
+
+    async function fetchTaskRosters(list) {
+      const wanted = new Set();
+      list.forEach(t => {
+        if (t.kind === 'clan_points') wanted.add(`${t.clanId}|${TASK_PERIOD_RANGE[t.period] || 'day'}`);
+      });
+      const stale = [...wanted].filter(k => !taskRosterCache[k] || Date.now() - taskRosterCache[k].at > 120000);
+      if (!stale.length) return;
+      await Promise.all(stale.map(async key => {
+        const [clanId, range] = key.split('|');
+        try {
+          const res = await apiFetch(`/clans/${clanId}/members?range=${range}`, { timeoutMs: 30000 });
+          if (res && Array.isArray(res.items)) taskRosterCache[key] = { at: Date.now(), items: res.items };
+        } catch (e) {}
+      }));
+      if (currentGwSubTab === 'tasks') renderTasksView(false);
+    }
+
+    function renderTasksView(allowFetch = true) {
+      const form = document.getElementById('tk-admin-form');
+      const canCreate = getManageablePlatformClans('tasks').length > 0;
+      if (form) form.style.display = canCreate ? 'block' : 'none';
+      if (canCreate) fillPlatformClanSelect('tk-owner-clan-select', 'tasks');
+
+      const pendingBox = document.getElementById('tk-pending-box');
+      const pending = tasksPending.filter(p => isInSelectedPlatformClan(p.clan_id));
+      if (pendingBox) {
+        pendingBox.innerHTML = pending.length ? `
+          <div class="glass-card" style="padding:13px;">
+            <div class="section-header" style="margin-bottom:8px;">
+              <h2 class="section-title" style="font-size:13.5px;">⏳ Waiting for approval (${pending.length})</h2>
+            </div>
+            ${pending.map(p => `
+              <div class="pf-row" style="flex-wrap:wrap;">
+                <div style="min-width:0; flex:1;">
+                  <div class="pf-row-name">${escapeHtml(p.user_name)} • ${escapeHtml(p.task_title)}</div>
+                  <div class="pf-row-sub">+${Number(p.reward).toLocaleString()} HGY • ${escapeHtml((getPlatformClan(p.clan_id) || {}).name || '')}${p.note ? ` • “${escapeHtml(p.note)}”` : ''}</div>
+                </div>
+                <div style="display:flex; gap:6px;">
+                  <button type="button" class="pf-toggle on" onclick="reviewTaskClaim(${jsArg(p.task_id)}, ${jsArg(p.user_id)}, ${jsArg(p.period_key)}, true)">✓ Approve</button>
+                  <button type="button" class="pf-manage-btn" onclick="reviewTaskClaim(${jsArg(p.task_id)}, ${jsArg(p.user_id)}, ${jsArg(p.period_key)}, false)">✕</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>` : '';
+      }
+
+      const box = document.getElementById('tasks-list');
+      if (!box) return;
+      const visible = tasksList.filter(t => isInSelectedPlatformClan(t.clanId));
+      if (!visible.length) {
+        box.innerHTML = `<div class="glass-card" style="text-align:center; color:#8faac4; font-size:13px;">${tasksLoaded ? 'No tasks yet.' : 'Loading tasks…'}</div>`;
+        return;
+      }
+      const linked = Boolean(getServerPointsBalance());
+      const myClan = getMyPlatformClanId();
+
+      box.innerHTML = visible.map(t => {
+        const prog = getTaskProgress(t);
+        const done = t.myStatus === 'done';
+        const pend = t.myStatus === 'pending';
+        const otherClan = linked && myClan && myClan !== t.clanId;
+        let progressHtml = '';
+        if (prog) {
+          const pct = Math.min(100, Math.round((prog.value / Math.max(1, prog.target)) * 100));
+          progressHtml = `
+            <div class="tk-progress"><div style="width:${done ? 100 : pct}%;"></div></div>
+            <div class="tk-progress-label">
+              <span>${prog.loading ? 'Loading progress…' : `${prog.value.toLocaleString()} / ${Number(prog.target).toLocaleString()} PTS`}</span>
+              <span>${done ? '100' : pct}%</span>
+            </div>`;
+        }
+        let actions;
+        if (done) {
+          actions = `<div class="tk-status done">✓ Completed${t.period === 'once' ? '' : ' this period'}</div>`;
+        } else if (pend) {
+          actions = '<div class="tk-status pending">⏳ Waiting for an admin</div>';
+        } else if (otherClan) {
+          actions = `<div class="tk-status pending">🔒 ${escapeHtml(t.clanName)} members only</div>`;
+        } else if (t.kind === 'telegram_join') {
+          actions = `
+            <button type="button" class="gw-share-btn" onclick="openTaskLink(${jsArg(t.url)})"><span>📢</span><span>Open</span></button>
+            <button type="button" class="gw-join-btn" onclick="claimTaskById(${jsArg(t.id)})"><span>✓</span><span>Check & Claim</span></button>`;
+        } else if (t.kind === 'manual') {
+          actions = `
+            ${t.url ? `<button type="button" class="gw-share-btn" onclick="openTaskLink(${jsArg(t.url)})"><span>🔗</span><span>Open</span></button>` : ''}
+            <button type="button" class="gw-join-btn" onclick="claimTaskById(${jsArg(t.id)})"><span>📨</span><span>${t.myStatus === 'rejected' ? 'Rejected, send again' : 'I did it'}</span></button>`;
+        } else {
+          const reached = prog && !prog.loading && prog.value >= prog.target;
+          actions = `<button type="button" class="gw-join-btn" style="${reached ? '' : 'opacity:0.6;'}" onclick="claimTaskById(${jsArg(t.id)})"><span>${reached ? '🎁' : '⚔️'}</span><span>${reached ? 'Claim Reward' : 'Check Progress'}</span></button>`;
+        }
+        return `
+          <div class="tk-card ${done ? 'done' : ''}">
+            ${renderPlatformOwnerPill(t.clanName, t.clanAvatar)}
+            <div class="tk-top">
+              <div class="tk-title">${escapeHtml(t.title)}</div>
+              <div class="tk-reward">+${Number(t.reward).toLocaleString()} HGY</div>
+            </div>
+            ${t.description ? `<p class="tk-desc">${escapeHtml(t.description)}</p>` : ''}
+            <div class="gw-meta-pills" style="margin-bottom:4px;">
+              <span class="gw-pill">${TASK_PERIOD_LABEL[t.period] || ''}</span>
+              <span class="gw-pill">${escapeHtml(taskTypeLabel(t))}</span>
+            </div>
+            ${progressHtml}
+            ${t.kind === 'manual' && !done && !pend && !otherClan ? `<input type="text" id="tk-note-${escapeHtml(t.id)}" class="search-input" style="padding:8px 11px; font-size:12px; margin-top:8px;" placeholder="Note for the admin (optional)">` : ''}
+            <div class="tk-actions">${actions}</div>
+            ${t.canManage ? `<div style="display:flex; justify-content:flex-end; margin-top:8px;"><button type="button" class="pf-manage-btn" onclick="adminDeleteTask(${jsArg(t.id)})">🗑 Delete task</button></div>` : ''}
+          </div>`;
+      }).join('');
+
+      if (allowFetch) fetchTaskRosters(visible);
+    }
+
+    function openTaskLink(url) {
+      if (!/^https:\/\//i.test(String(url || ''))) return;
+      try {
+        const wa = window.Telegram && window.Telegram.WebApp;
+        if (wa && /^https:\/\/t\.me\//i.test(url) && typeof wa.openTelegramLink === 'function') {
+          wa.openTelegramLink(url);
+          return;
+        }
+        if (wa && typeof wa.openLink === 'function') {
+          wa.openLink(url);
+          return;
+        }
+      } catch (e) {}
+      window.open(url, '_blank', 'noopener');
+    }
+
+    function onTaskKindChange() {
+      const kind = document.getElementById('tk-kind-select').value;
+      document.getElementById('tk-points-fields').style.display = kind === 'clan_points' ? 'block' : 'none';
+      document.getElementById('tk-chat-fields').style.display = kind === 'telegram_join' ? 'block' : 'none';
+      document.getElementById('tk-link-fields').style.display = kind === 'manual' ? 'block' : 'none';
+      document.getElementById('tk-period-wrap').style.display = kind === 'telegram_join' ? 'none' : 'block';
+      const onceOpt = document.querySelector('#tk-period-select option[value="once"]');
+      if (onceOpt) onceOpt.disabled = kind === 'clan_points';
+      if (kind === 'clan_points' && document.getElementById('tk-period-select').value === 'once') {
+        document.getElementById('tk-period-select').value = 'daily';
+      }
+    }
+
+    async function adminCreateTask() {
+      const clanSel = document.getElementById('tk-owner-clan-select');
+      const kind = document.getElementById('tk-kind-select').value;
+      const task = {
+        kind,
+        title: document.getElementById('tk-title-input').value.trim(),
+        description: document.getElementById('tk-desc-input').value.trim(),
+        period: kind === 'telegram_join' ? 'once' : document.getElementById('tk-period-select').value,
+        scope: document.getElementById('tk-scope-select').value,
+        target: Number(document.getElementById('tk-target-input').value) || 0,
+        chat: document.getElementById('tk-chat-input').value.trim(),
+        url: document.getElementById('tk-link-input').value.trim(),
+        reward: Number(document.getElementById('tk-reward-input').value) || 0
+      };
+      if (!task.title) {
+        showCyberToast('⚠️ Enter a task title.');
+        return;
+      }
+      const res = await storeRequest('/tasks', { action: 'create', clan_id: Number(clanSel && clanSel.value) || 0, task });
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        return;
+      }
+      tasksList = res.items;
+      tasksPending = res.data.pending || [];
+      ['tk-title-input', 'tk-desc-input', 'tk-chat-input', 'tk-link-input'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      renderTasksView();
+      showCyberToast(`✓ Task "${task.title}" added`);
+    }
+
+    async function claimTaskById(taskId) {
+      const t = tasksList.find(x => x.id === taskId);
+      if (!t) return;
+      if (!getServerPointsBalance()) {
+        showCyberToast('⚠️ Link your Pixel World UUID in Profile first.');
+        return;
+      }
+      const noteEl = document.getElementById(`tk-note-${taskId}`);
+      const res = await storeRequest('/tasks', { action: 'claim', task_id: taskId, note: noteEl ? noteEl.value.trim() : '' });
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        return;
+      }
+      tasksList = res.items;
+      tasksPending = res.data.pending || [];
+      renderTasksView();
+      loadPlatformState();
+      const now = tasksList.find(x => x.id === taskId);
+      showCyberToast(now && now.myStatus === 'pending'
+        ? '📨 Sent! An admin will check it.'
+        : `🎉 Task completed! +${Number(t.reward).toLocaleString()} HGY points`);
+    }
+
+    async function reviewTaskClaim(taskId, userId, periodKey, approve) {
+      const res = await storeRequest('/tasks', { action: 'review', task_id: taskId, user_id: userId, period_key: periodKey, approve });
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        loadTasksData();
+        return;
+      }
+      tasksList = res.items;
+      tasksPending = res.data.pending || [];
+      renderTasksView();
+      showCyberToast(approve ? '✓ Approved, points added' : '✕ Rejected');
+    }
+
+    async function adminDeleteTask(taskId) {
+      const t = tasksList.find(x => x.id === taskId);
+      if (!t) return;
+      const ok = await askUserConfirm(`Delete task "${t.title}"?\nPoints already earned stay.`);
+      if (!ok) return;
+      const res = await storeRequest('/tasks', { action: 'delete', task_id: taskId });
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        return;
+      }
+      tasksList = res.items;
+      tasksPending = res.data.pending || [];
+      renderTasksView();
+    }
+
+    // ---------------------------------------------------------------- admin panel
+    const PF_ROLE_LABEL = { super: 'Main Admin', clan_admin: 'Clan Admin', staff: 'Staff' };
+
+    function renderPlatformAdminEntry() {
+      const btn = document.getElementById('pf-admin-entry-btn');
+      if (!btn) return;
+      const me = platformState.me;
+      const show = Boolean(me && (me.is_super || Object.keys(me.perms || {}).length));
+      btn.style.display = show ? 'flex' : 'none';
+      const txt = document.getElementById('pf-admin-entry-txt');
+      if (txt) txt.textContent = me && me.is_super ? 'Main Admin Panel' : 'Clan Admin Panel';
+    }
+
+    function openPlatformAdminModal() {
+      renderPlatformAdminPanel();
+      document.getElementById('platform-admin-modal').classList.add('open');
+      loadPlatformState();
+    }
+
+    function closePlatformAdminModal(e) {
+      if (e && e.target && e.target.id !== 'platform-admin-modal') return;
+      document.getElementById('platform-admin-modal').classList.remove('open');
+    }
+
+    // Clans seen in the live clan ranking (for the add-clan picker)
+    function getKnownGameClans() {
+      const seen = new Map();
+      const g = HAR_SNAPSHOT.globalClans || {};
+      ['month', 'week', 'day'].forEach(r => (g[r] || []).forEach(c => {
+        if (c && c.team_id && !seen.has(Number(c.team_id))) seen.set(Number(c.team_id), { team_id: Number(c.team_id), name: c.name, avatar: c.avatar || '' });
+      }));
+      return [...seen.values()];
+    }
+
+    function renderPlatformAdminPanel() {
+      const body = document.getElementById('pf-admin-body');
+      const sub = document.getElementById('pf-admin-role-sub');
+      const me = platformState.me;
+      if (!body) return;
+      if (!me) {
+        body.innerHTML = '<div style="color:#8faac4; font-size:12.5px; padding:10px;">Open the app from Telegram to manage clans.</div>';
+        return;
+      }
+      if (sub) sub.textContent = me.is_super ? 'Main Admin • full control' : 'Your clan rights';
+
+      const myRights = Object.keys(me.perms || {}).map(id => {
+        const c = getPlatformClan(id);
+        const p = me.perms[id];
+        if (!c) return '';
+        return `
+          <div class="pf-row">
+            <div class="pf-row-main">
+              ${c.avatar ? `<img src="${escapeHtml(c.avatar)}" alt="" onerror="this.style.display='none'">` : ''}
+              <div style="min-width:0;">
+                <div class="pf-row-name">${escapeHtml(c.name)}</div>
+                <div class="pf-row-sub">${PF_ROLE_LABEL[p.role] || p.role} • 🎁 Giveaways ${p.giveaways ? '✓' : '✕'} • 🎯 Tasks ${p.tasks ? '✓' : '✕'}</div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+
+      if (!me.is_super) {
+        body.innerHTML = `
+          <div class="pf-section-title">Your rights</div>
+          ${myRights || '<div style="color:#8faac4; font-size:12px;">No rights yet.</div>'}
+          <div style="font-size:11.5px; color:#8faac4; margin-top:10px; line-height:1.5;">
+            Create giveaways and rewards in the Giveaways tab, and tasks in the Tasks tab. Only the main admin can change rights.
+          </div>`;
+        return;
+      }
+
+      const clans = platformState.clans;
+      const clanRows = clans.map(c => `
+        <div class="pf-row" style="flex-wrap:wrap;">
+          <div class="pf-row-main" style="flex:1;">
+            ${c.avatar ? `<img src="${escapeHtml(c.avatar)}" alt="" onerror="this.style.display='none'">` : ''}
+            <div style="min-width:0;">
+              <div class="pf-row-name">${escapeHtml(c.name)}</div>
+              <div class="pf-row-sub">Team #${c.team_id}</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:5px; flex-wrap:wrap;">
+            <button type="button" class="pf-toggle ${c.giveaways_enabled ? 'on' : ''}" onclick="toggleClanFeature(${c.team_id}, 'giveaways_enabled')">🎁 ${c.giveaways_enabled ? 'ON' : 'OFF'}</button>
+            <button type="button" class="pf-toggle ${c.tasks_enabled ? 'on' : ''}" onclick="toggleClanFeature(${c.team_id}, 'tasks_enabled')">🎯 ${c.tasks_enabled ? 'ON' : 'OFF'}</button>
+            <button type="button" class="pf-manage-btn" onclick="adminRemoveClan(${c.team_id})">🗑</button>
+          </div>
+        </div>`).join('');
+
+      const known = getKnownGameClans().filter(k => !getPlatformClan(k.team_id));
+      const staffRows = platformState.staff.map(s => {
+        const c = getPlatformClan(s.team_id);
+        const rights = s.role === 'clan_admin' ? 'All clan rights' : [s.can_giveaways ? '🎁 Giveaways' : '', s.can_tasks ? '🎯 Tasks' : ''].filter(Boolean).join(' • ');
+        return `
+          <div class="pf-row">
+            <div style="min-width:0; flex:1;">
+              <div class="pf-row-name">${escapeHtml(s.label || s.user_key)} <span style="color:#ffd700; font-size:10.5px;">${PF_ROLE_LABEL[s.role] || s.role}</span></div>
+              <div class="pf-row-sub">${escapeHtml(c ? c.name : '#' + s.team_id)} • ${rights}</div>
+            </div>
+            <button type="button" class="pf-manage-btn" onclick="adminRemoveStaff(${s.team_id}, ${jsArg(s.user_key)})">🗑</button>
+          </div>`;
+      }).join('');
+
+      body.innerHTML = `
+        <div style="font-size:11.5px; color:#8faac4; line-height:1.5;">
+          You decide which clans may run giveaways (🎁) and tasks (🎯), and who manages them. Clan admins can only touch their own clan; the server checks every action.
+        </div>
+
+        <div class="pf-section-title">🏰 Clans (${clans.length})</div>
+        ${clanRows || '<div style="color:#8faac4; font-size:12px;">No clans yet.</div>'}
+        <div class="glass-card" style="padding:11px; margin-top:8px;">
+          <label class="pf-label">Add a clan</label>
+          <select id="pf-new-clan-pick" class="search-input pf-select" onchange="onAdminClanPick()">
+            <option value="">Pick from the game ranking…</option>
+            ${known.map(k => `<option value="${k.team_id}">${escapeHtml(k.name)} (#${k.team_id})</option>`).join('')}
+          </select>
+          <div style="display:grid; grid-template-columns:1fr 2fr; gap:7px;">
+            <input type="number" id="pf-new-clan-id" class="search-input" style="padding:9px; font-size:12.5px; margin-bottom:8px;" placeholder="Team ID">
+            <input type="text" id="pf-new-clan-name" class="search-input" style="padding:9px; font-size:12.5px; margin-bottom:8px;" placeholder="Clan name">
+          </div>
+          <input type="text" id="pf-new-clan-avatar" class="search-input" style="padding:9px; font-size:12px; margin-bottom:8px;" placeholder="Avatar URL (optional)">
+          <label class="pf-check"><input type="checkbox" id="pf-new-clan-gw" checked> 🎁 Allow giveaways & rewards</label>
+          <label class="pf-check"><input type="checkbox" id="pf-new-clan-tk" checked> 🎯 Allow tasks</label>
+          <button type="button" class="done-confirm-btn" style="width:100%; padding:10px;" onclick="adminAddClan()"><span>➕</span><span>Add Clan</span></button>
+        </div>
+
+        <div class="pf-section-title">👥 Clan admins & staff (${platformState.staff.length})</div>
+        ${staffRows || '<div style="color:#8faac4; font-size:12px;">No admins yet.</div>'}
+        <div class="glass-card" style="padding:11px; margin-top:8px;">
+          <label class="pf-label">Grant rights</label>
+          <select id="pf-staff-clan" class="search-input pf-select">
+            ${clans.map(c => `<option value="${c.team_id}">${escapeHtml(c.name)}</option>`).join('')}
+          </select>
+          <input type="text" id="pf-staff-user" class="search-input" style="padding:9px; font-size:12.5px; margin-bottom:8px;" placeholder="Telegram @username or numeric ID">
+          <select id="pf-staff-role" class="search-input pf-select" onchange="onStaffRoleChange()">
+            <option value="clan_admin">Clan Admin (everything in this clan)</option>
+            <option value="staff">Staff (only the rights below)</option>
+          </select>
+          <div id="pf-staff-flags" style="display:none;">
+            <label class="pf-check"><input type="checkbox" id="pf-staff-gw"> 🎁 Giveaways & rewards</label>
+            <label class="pf-check"><input type="checkbox" id="pf-staff-tk" checked> 🎯 Tasks</label>
+          </div>
+          <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">A numeric ID keeps working even if the person changes their username.</div>
+          <button type="button" class="done-confirm-btn" style="width:100%; padding:10px;" onclick="adminSaveStaff()"><span>✓</span><span>Save Rights</span></button>
+        </div>
+
+        <div class="pf-section-title">🔗 Reset a player link</div>
+        <div class="glass-card" style="padding:11px;">
+          <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">If someone linked a Pixel World player that is not theirs, reset it so the real owner can link it.</div>
+          <input type="text" id="pf-reset-link" class="search-input" style="padding:9px; font-size:12.5px; margin-bottom:8px;" placeholder="Telegram ID or player UUID">
+          <button type="button" class="unlink-account-btn" style="display:flex;" onclick="adminResetLink()">Reset Link</button>
+        </div>
+      `;
+    }
+
+    function onAdminClanPick() {
+      const id = Number(document.getElementById('pf-new-clan-pick').value) || 0;
+      const k = getKnownGameClans().find(c => c.team_id === id);
+      if (!k) return;
+      document.getElementById('pf-new-clan-id').value = String(k.team_id);
+      document.getElementById('pf-new-clan-name').value = k.name;
+      document.getElementById('pf-new-clan-avatar').value = k.avatar;
+    }
+
+    function onStaffRoleChange() {
+      const role = document.getElementById('pf-staff-role').value;
+      document.getElementById('pf-staff-flags').style.display = role === 'staff' ? 'block' : 'none';
+    }
+
+    async function platformAdminAction(body, okMsg) {
+      const res = await storeRequest('/platform', body);
+      if (!res.ok) {
+        showCyberToast(`⚠️ ${res.error}`);
+        return false;
+      }
+      applyPlatformState(res.data);
+      loadGiveawaysData();
+      loadRewardsData();
+      loadTasksData();
+      if (okMsg) showCyberToast(okMsg);
+      return true;
+    }
+
+    function toggleClanFeature(teamId, flag) {
+      const c = getPlatformClan(teamId);
+      if (!c) return;
+      platformAdminAction({ action: 'clan_save', clan: { ...c, [flag]: !c[flag] } });
+    }
+
+    function adminAddClan() {
+      const clan = {
+        team_id: Number(document.getElementById('pf-new-clan-id').value) || 0,
+        name: document.getElementById('pf-new-clan-name').value.trim(),
+        avatar: document.getElementById('pf-new-clan-avatar').value.trim(),
+        giveaways_enabled: document.getElementById('pf-new-clan-gw').checked,
+        tasks_enabled: document.getElementById('pf-new-clan-tk').checked
+      };
+      platformAdminAction({ action: 'clan_save', clan }, `✓ ${clan.name} added`);
+    }
+
+    async function adminRemoveClan(teamId) {
+      const c = getPlatformClan(teamId);
+      if (!c) return;
+      const ok = await askUserConfirm(`Remove ${c.name} from the platform?\nIts admins lose their rights. Its giveaways, rewards and tasks stay stored.`);
+      if (ok) platformAdminAction({ action: 'clan_remove', team_id: teamId }, `✓ ${c.name} removed`);
+    }
+
+    function adminSaveStaff() {
+      const role = document.getElementById('pf-staff-role').value;
+      const staff = {
+        team_id: Number(document.getElementById('pf-staff-clan').value) || 0,
+        user: document.getElementById('pf-staff-user').value.trim(),
+        role,
+        can_giveaways: role === 'clan_admin' || document.getElementById('pf-staff-gw').checked,
+        can_tasks: role === 'clan_admin' || document.getElementById('pf-staff-tk').checked
+      };
+      platformAdminAction({ action: 'staff_save', staff }, '✓ Rights saved');
+    }
+
+    async function adminRemoveStaff(teamId, userKey) {
+      const ok = await askUserConfirm(`Remove all rights of ${userKey} in ${(getPlatformClan(teamId) || {}).name || 'this clan'}?`);
+      if (ok) platformAdminAction({ action: 'staff_remove', team_id: teamId, user_key: userKey }, '✓ Rights removed');
+    }
+
+    function adminResetLink() {
+      const value = document.getElementById('pf-reset-link').value.trim();
+      if (value) platformAdminAction({ action: 'link_reset', value }, '✓ Link reset');
     }
 
     function tickGiveawayTimers() {
@@ -7827,6 +8795,9 @@
       renderUnlinkedBotUserState();
       updateProfileLinkedClanCardUI();
       showCyberToast(getV18Text().unlinkedToast);
+      storeRequest('/platform', { action: 'unlink' }).then(res => {
+        if (res.ok) applyPlatformState(res.data);
+      });
     }
 
     async function fetchTelegramUserAvatarFallback() {
