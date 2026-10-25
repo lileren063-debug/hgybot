@@ -60,3 +60,14 @@ npx wrangler pages secret put PW_COOKIE --project-name hgybot
 ```
 
 HAR dosyalarını da repoya koyma.
+
+## Bot profile, commands and welcome message
+
+`worker/telegram-bot.js` handles the chat side of the bot. The main admin opens
+Profile → Main Admin Panel → **Apply Bot Setup** once; that sets the bot name,
+description, short description, command list (English + Turkish), the menu button
+and the webhook `/api/telegram/webhook`. After that `/start` sends the welcome
+message with an Open App button, and `/giveaways`, `/tasks`, `/rewards`, `/profile`
+and `/help` answer with buttons that open the app on that page. The webhook secret
+is derived from `BOT_TOKEN`, so no extra secret is needed. Edit the texts in
+`TEXT` and press the button again to change them.
