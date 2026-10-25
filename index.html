@@ -8651,6 +8651,16 @@
 
         ${me.is_super ? renderAnnounceAdmin() : ''}
 
+        <div class="pf-section-title">🔎 Check a player</div>
+        <div class="glass-card" style="padding:11px; margin-bottom:8px;">
+          <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">Shows the player's link, clan, points and history, and lists likely problems.</div>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="pf-inspect-q" class="search-input" style="padding:9px; font-size:12px; margin:0; flex:1;" placeholder="Player UUID, Telegram ID or @username">
+            <button type="button" class="pf-manage-btn" style="background:rgba(91,141,239,0.15); color:#5b8def;" onclick="adminInspectPlayer()">🔎</button>
+          </div>
+          <div id="pf-inspect-result" style="font-size:11.5px; color:#cfd8e6; margin-top:8px; line-height:1.55;"></div>
+        </div>
+
         <div class="pf-section-title">🔗 Reset a player link</div>
         <div class="glass-card" style="padding:11px;">
           <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">If someone linked a Pixel World player that is not theirs, reset it so the real owner can link it.</div>
@@ -8780,6 +8790,29 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
         const b = platformState.announce && platformState.announce.broadcast;
         if (b) showCyberToast(`📤 Sent to ${b.sent} users${b.failed ? `, ${b.failed} failed` : ''}`);
       }
+    }
+
+    async function adminInspectPlayer() {
+      const q = document.getElementById('pf-inspect-q').value.trim();
+      const out = document.getElementById('pf-inspect-result');
+      if (!q || !out) return;
+      out.textContent = 'Checking…';
+      const res = await storeRequest('/platform', { action: 'inspect', value: q });
+      const r = res.ok && res.data.inspect;
+      if (!r) { out.textContent = `⚠️ ${res.error || 'Check failed'}`; return; }
+      if (r.error) { out.textContent = `⚠️ ${r.error}`; return; }
+      const d = ms => ms ? new Date(ms).toISOString().slice(0, 16).replace('T', ' ') : '—';
+      const rank = x => x === null ? 'not ranked' : typeof x === 'string' ? x : `${escapeHtml(x.nickname)} • ${escapeHtml(x.clan_name || '—')} • ${x.points} PTS • #${x.rank || '?'}`;
+      const tg = r.telegram;
+      out.innerHTML = `
+        ${r.problems.length ? `<div style="color:#e05a5a; margin-bottom:6px;">${r.problems.map(p => '⚠️ ' + escapeHtml(p)).join('<br>')}</div>` : '<div style="color:#3fbf7f; margin-bottom:6px;">✅ No obvious problem found</div>'}
+        <b>Telegram:</b> ${tg ? `${escapeHtml(tg.first_name || '')} ${tg.username ? '@' + escapeHtml(tg.username) : ''} • ID ${escapeHtml(r.telegram_id)} • first seen ${d(tg.first_seen)}${tg.blocked ? ' • blocked the bot' : ''}` : (r.telegram_id ? 'ID ' + escapeHtml(r.telegram_id) + ' (never opened the app)' : '—')}<br>
+        <b>Linked player:</b> ${r.link ? `${escapeHtml(r.link.nickname || '')} • ${escapeHtml(r.link.uuid)} • ${escapeHtml(r.link.clan_name || 'no clan')} • ${d(r.link.linked_at)}` : 'not linked'}<br>
+        ${r.ranking ? `<b>Game today:</b> ${rank(r.ranking.day)}<br><b>Week:</b> ${rank(r.ranking.week)}<br><b>Month:</b> ${rank(r.ranking.month)}<br>` : ''}
+        ${r.points ? `<b>Points:</b> ${r.points.balance} (earned ${r.points.earned}, spent ${r.points.spent})<br>` : ''}
+        ${r.tasks && r.tasks.length ? `<b>Tasks:</b><br>${r.tasks.map(t => `• ${escapeHtml(t.task)} • ${escapeHtml(t.status)} • +${t.points} • ${d(t.at)}`).join('<br>')}<br>` : ''}
+        ${r.giveaways && r.giveaways.length ? `<b>Giveaways joined:</b> ${r.giveaways.length}<br>` : ''}
+        ${r.rewards && r.rewards.length ? `<b>Rewards claimed:</b> ${r.rewards.length}<br>` : ''}`;
     }
 
     async function adminSetupBot(btn) {

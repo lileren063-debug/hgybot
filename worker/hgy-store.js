@@ -246,6 +246,7 @@ async function platform(app, url, body) {
     link,
     balance
   };
+  if (app.inspect) out.inspect = app.inspect;
   if (app.isSuper) {
     out.announce = await getAnnouncement(app.db);
     out.announce.broadcast = await broadcastStatus(app.db);
@@ -363,6 +364,11 @@ async function postPlatform(app, body) {
     await db.prepare('DELETE FROM clan_staff WHERE team_id = ? AND user_key = ?').bind(Number(body.team_id) || 0, normalizeUserKey(body.user_key)).run();
     return {};
   }
+  if (action === 'inspect') {
+    app.inspect = await inspectPlayer(app, cleanText(body.value, 64).replace(/^@/, ''));
+    return {};
+  }
+
   if (action === 'link_reset') {
     const v = cleanText(body.value, 64);
     if (!v) return { error: 'Enter a Telegram id or player UUID' };
@@ -372,6 +378,67 @@ async function postPlatform(app, body) {
   }
 
   return { error: 'Unknown action' };
+}
+
+// Main admin support tool: everything the server knows about one player (UUID, Telegram id or @username)
+async function inspectPlayer(app, q) {
+  const db = app.db;
+  if (!q) return { error: 'Enter a player UUID, Telegram id or @username' };
+  let link = await db.prepare('SELECT user_id, uuid, nickname, team_id, clan_name, linked_at FROM user_links WHERE uuid = ? OR user_id = ?').bind(q, q).first();
+  let seen = null;
+  if (!link) {
+    seen = await db.prepare("SELECT user_id, data, first_seen, blocked FROM users_seen WHERE user_id = ? OR lower(json_extract(data, '$.username')) = lower(?)").bind(q, q).first();
+    if (seen) link = await db.prepare('SELECT user_id, uuid, nickname, team_id, clan_name, linked_at FROM user_links WHERE user_id = ?').bind(seen.user_id).first();
+  }
+  const userId = link ? link.user_id : seen ? seen.user_id : (/^\d{4,20}$/.test(q) ? q : '');
+  if (!seen && userId) seen = await db.prepare('SELECT user_id, data, first_seen, blocked FROM users_seen WHERE user_id = ?').bind(userId).first();
+  const uuid = link ? link.uuid : (/^[A-Za-z0-9-]{20,64}$/.test(q) ? q : '');
+
+  const out = { query: q, telegram_id: userId, uuid, problems: [] };
+  out.telegram = seen ? { ...JSON.parse(seen.data || '{}'), first_seen: seen.first_seen, blocked: Boolean(seen.blocked) } : null;
+  out.link = link ? { uuid: link.uuid, nickname: link.nickname, team_id: Number(link.team_id), clan_name: link.clan_name, linked_at: link.linked_at } : null;
+
+  // Live game ranking for this uuid
+  if (uuid) {
+    out.ranking = {};
+    for (const range of ['day', 'week', 'month']) {
+      try {
+        const p = await findPlayer(app, range, uuid);
+        out.ranking[range] = p ? { nickname: p.nickname, team_id: p.team_id, clan_name: p.clan_name, points: p.points, rank: p.global_rank } : null;
+      } catch (e) {
+        out.ranking[range] = 'game data unavailable';
+      }
+    }
+  }
+
+  if (userId) {
+    const since = HGY_SPEND_SINCE;
+    const [claims, entries, rclaims, earned, gwSpent, rwSpent] = await Promise.all([
+      db.prepare('SELECT task_id, period_key, status, points, created_at FROM task_claims WHERE user_id = ? ORDER BY created_at DESC LIMIT 20').bind(userId).all(),
+      db.prepare('SELECT giveaway_id, data, joined_at FROM giveaway_participants WHERE user_id = ? ORDER BY joined_at DESC LIMIT 20').bind(userId).all(),
+      db.prepare('SELECT reward_id, data, claimed_at FROM reward_claims WHERE user_id = ? ORDER BY claimed_at DESC LIMIT 20').bind(userId).all(),
+      db.prepare("SELECT COALESCE(SUM(points), 0) AS s FROM task_claims WHERE user_id = ? AND status = 'done'").bind(userId).first(),
+      db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM giveaway_participants WHERE user_id = ? AND joined_at >= ?").bind(userId, since).first(),
+      db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM reward_claims WHERE user_id = ? AND claimed_at >= ?").bind(userId, since).first()
+    ]);
+    const titles = new Map((await db.prepare('SELECT id, data FROM tasks').all()).results.map(r => [r.id, JSON.parse(r.data).title]));
+    out.points = { earned: Number(earned.s) || 0, spent: (Number(gwSpent.s) || 0) + (Number(rwSpent.s) || 0) };
+    out.points.balance = out.points.earned - out.points.spent;
+    out.tasks = claims.results.map(c => ({ task: titles.get(c.task_id) || c.task_id, period: c.period_key, status: c.status, points: c.points, at: c.created_at }));
+    out.giveaways = entries.results.map(e => ({ id: e.giveaway_id, paid: JSON.parse(e.data).paidPoints || 0, at: e.joined_at }));
+    out.rewards = rclaims.results.map(e => ({ id: e.reward_id, paid: JSON.parse(e.data).paidPoints || 0, at: e.claimed_at }));
+  }
+
+  // Common causes, in plain words
+  if (!out.telegram && !out.link) out.problems.push('This player never opened the app (or opened it outside Telegram).');
+  if (uuid && !out.link) out.problems.push('No Telegram account has linked this Pixel World UUID yet.');
+  if (out.link && out.ranking && out.ranking.month === null) out.problems.push('UUID not found in this month\'s game ranking (0 points this month or wrong UUID), so clan tasks/rewards cannot see their clan.');
+  if (out.link && out.ranking && out.ranking.month && out.ranking.month.team_id && !(await db.prepare('SELECT 1 AS x FROM clans WHERE team_id = ?').bind(out.ranking.month.team_id).first())) {
+    out.problems.push(`Their clan ${out.ranking.month.clan_name} (#${out.ranking.month.team_id}) is not added to the platform.`);
+  }
+  if (out.telegram && out.telegram.blocked) out.problems.push('They blocked the bot.');
+  if (out.tasks && out.tasks.some(t => t.status === 'pending')) out.problems.push('They have task requests waiting for a clan admin.');
+  return out;
 }
 
 // '@Name' or a numeric Telegram id -> 'name' / '123'
