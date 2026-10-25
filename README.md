@@ -76,8 +76,10 @@ is derived from `BOT_TOKEN`, so no extra secret is needed. Edit the texts in
 
 The bot sends the main admin (or the ids in the optional `NOTIFY_IDS` variable) a
 Telegram message when someone opens the app for the first time, links a Pixel World
-player, completes or requests a task, joins a giveaway or claims a reward. The main
-admin's own actions are not reported. The receiver must have started the bot once.
+player, completes or requests a task, joins a giveaway or claims a reward, and when a
+clan leader creates or deletes a giveaway, reward or task, approves or rejects a task,
+or a giveaway is drawn. Default receiver: Eren only. The main admin's own actions are
+not reported (draw results always are). The receiver must have started the bot once.
 
 ## Daily announcement
 

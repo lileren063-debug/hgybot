@@ -17,7 +17,7 @@
 //   DB               D1 database binding (tables are created on first use)
 //   BOT_TOKEN        secret: the BotFather token of the bot that opens the Mini App
 //   SUPER_ADMIN_IDS  optional: comma separated Telegram ids of main admins (default: Eren)
-//   NOTIFY_IDS       optional: Telegram ids that get activity messages from the bot (default: SUPER_ADMIN_IDS)
+//   NOTIFY_IDS       optional: Telegram ids that get activity messages from the bot (default: Eren only)
 //
 // HGY points: the bot's own currency, one wallet per Telegram user, kept (no monthly reset):
 //   task rewards - giveaway entries - reward claims
@@ -65,7 +65,8 @@ export async function handleStore(request, env, ctx) {
   const user = await verifyInitData(request.headers.get('X-Telegram-Init-Data') || '', env.BOT_TOKEN);
   const superIds = String(env.SUPER_ADMIN_IDS || DEFAULT_SUPER_ADMIN_IDS).split(',').map(s => s.trim()).filter(Boolean);
   const app = { db: env.DB, env, ctx, origin: url.origin, user, isSuper: Boolean(user && superIds.includes(user.id)) };
-  app.notifyIds = String(env.NOTIFY_IDS || superIds.join(',')).split(',').map(s => s.trim()).filter(Boolean);
+  // Activity messages go only to Eren unless NOTIFY_IDS says otherwise
+  app.notifyIds = String(env.NOTIFY_IDS || DEFAULT_SUPER_ADMIN_IDS).split(',').map(s => s.trim()).filter(Boolean);
   if (user) await noteFirstVisit(app);
   // Any visit may post today's announcement once it is due; /api/cron/daily is the hourly backup
   if (ctx && ctx.waitUntil && kind !== '/api/cron/daily') ctx.waitUntil(sendDailyAnnouncement(app).catch(() => null));
@@ -524,6 +525,8 @@ async function postGiveaway(app, body) {
     const data = JSON.stringify(gw);
     if (data.length > MAX_RECORD_BYTES) return { error: 'Prize images are too large' };
     await db.prepare('INSERT INTO giveaways (id, data, created_at, clan_id) VALUES (?, ?, ?, ?)').bind(gw.id, data, now, clan.team_id).run();
+    const prizeList = gw.prizes.map(p => p.name).filter(Boolean).join(', ');
+    notifyAdmins(app, `🎉 <b>Yeni çekiliş</b> • ${esc(clan.name)}\n${who(user)}\n${esc(gw.title)}${prizeList ? '\n🏆 ' + esc(prizeList) : ''}\n🎟 ${gw.entryMode === 'points' ? gw.minPoints + ' Points' : 'Ücretsiz'}${gw.eligibleClan !== 'ALL' ? ' • sadece ' + esc(gw.eligibleClan) : ''}\n⏳ Bitiş: ${new Date(gw.endsAtMs).toISOString().slice(0, 16).replace('T', ' ')} UTC`);
     return {};
   }
 
@@ -538,6 +541,7 @@ async function postGiveaway(app, body) {
       db.prepare('DELETE FROM giveaway_participants WHERE giveaway_id = ?').bind(gw.id),
       db.prepare('DELETE FROM giveaways WHERE id = ?').bind(gw.id)
     ]);
+    notifyAdmins(app, `🗑 <b>Çekiliş silindi</b> • ${esc(await clanLabel(db, clanId))}\n${who(user)}\n${esc(gw.title)}`);
     return {};
   }
 
@@ -586,8 +590,12 @@ async function postGiveaway(app, body) {
     gw.winner = list.length ? list[randomIndex(list.length)] : { name: 'No Participants', clan: '—' };
     gw.drawnAt = now;
     // Only the first draw counts, even when several clients ask at the same moment
-    await db.prepare("UPDATE giveaways SET data = ? WHERE id = ? AND json_extract(data, '$.ended') = 0")
+    const drawn = await db.prepare("UPDATE giveaways SET data = ? WHERE id = ? AND json_extract(data, '$.ended') = 0")
       .bind(JSON.stringify(gw), gw.id).run();
+    if (drawn.meta && drawn.meta.changes) {
+      const w = gw.winner;
+      notifyAdmins(app, `🏁 <b>Çekiliş bitti</b> • ${esc(await clanLabel(db, clanId))}\n${esc(gw.title)}\n👥 Katılımcı: ${list.length}\n🥇 Kazanan: ${w && w.id ? `<a href="tg://user?id=${encodeURIComponent(w.id)}">${esc(w.name)}</a> • ID <code>${esc(w.id)}</code>` : 'yok'}`, true);
+    }
     return {};
   }
 
@@ -656,6 +664,7 @@ async function postReward(app, body) {
     const data = JSON.stringify(rw);
     if (data.length > MAX_RECORD_BYTES) return { error: 'Reward image is too large' };
     await db.prepare('INSERT INTO rewards (id, data, created_at, clan_id) VALUES (?, ?, ?, ?)').bind(rw.id, data, now, clan.team_id).run();
+    notifyAdmins(app, `🛍 <b>Yeni ödül</b> • ${esc(clan.name)}\n${who(user)}\n${esc(rw.name)} • ${rw.cost} Points • stok: ${rw.stock == null ? 'sınırsız' : rw.stock}`);
     return {};
   }
 
@@ -668,6 +677,7 @@ async function postReward(app, body) {
     if (!(await can(app, clanId, 'giveaways'))) return { error: "You cannot manage this clan's rewards", status: 403 };
     // Soft delete: claims stay, so points already spent stay counted
     await db.prepare('UPDATE rewards SET deleted = 1 WHERE id = ?').bind(rw.id).run();
+    notifyAdmins(app, `🗑 <b>Ödül silindi</b> • ${esc(await clanLabel(db, clanId))}\n${who(user)}\n${esc(rw.name)}`);
     return {};
   }
 
@@ -839,6 +849,8 @@ async function postTask(app, body) {
     }
     task.period = period;
     await db.prepare('INSERT INTO tasks (id, clan_id, data, created_at) VALUES (?, ?, ?, ?)').bind(task.id, clan.team_id, JSON.stringify(task), now).run();
+    const what = kind === 'clan_points' ? `${task.target} PTS (${task.scope === 'clan' ? 'klan toplamı' : 'oyuncu'})` : kind === 'telegram_join' ? `${task.chat} katıl` : 'manuel onay';
+    notifyAdmins(app, `📝 <b>Yeni görev</b> • ${esc(clan.name)}\n${who(user)}\n${esc(task.title)} • +${task.reward} Points\n${esc(what)} • ${esc(period)}`);
     return {};
   }
 
@@ -849,6 +861,7 @@ async function postTask(app, body) {
     if (!(await canManageTasks(app, task.clanId))) return { error: "You cannot manage this clan's tasks", status: 403 };
     // Soft delete: points already earned stay counted
     await db.prepare('UPDATE tasks SET deleted = 1 WHERE id = ?').bind(task.id).run();
+    notifyAdmins(app, `🗑 <b>Görev silindi</b> • ${esc(await clanLabel(db, task.clanId))}\n${who(user)}\n${esc(task.title)}`);
     return {};
   }
 
@@ -858,6 +871,7 @@ async function postTask(app, body) {
     const res = await db.prepare("UPDATE task_claims SET status = ?, points = ?, decided_at = ? WHERE task_id = ? AND user_id = ? AND period_key = ? AND status = 'pending'")
       .bind(approve ? 'done' : 'rejected', approve ? task.reward : 0, now, task.id, String(body.user_id || ''), String(body.period_key || '')).run();
     if (!res.meta || !res.meta.changes) return { error: 'This request was already handled' };
+    notifyAdmins(app, `${approve ? '✅ <b>Görev onaylandı</b>' : '❌ <b>Görev reddedildi</b>'} • ${esc(await clanLabel(db, task.clanId))}\n${who(user)}\n${esc(task.title)}${approve ? ` (+${task.reward} Points)` : ''} → ID <code>${esc(body.user_id)}</code>`);
     return {};
   }
 
@@ -1093,15 +1107,21 @@ async function noteFirstVisit(app) {
 
 // Sends a short message from the bot to the main admin(s); never slows down or breaks the user's request.
 // The main admin's own actions are not reported.
-function notifyAdmins(app, html) {
+function notifyAdmins(app, html, always = false) {
   const token = app.env.BOT_TOKEN;
-  if (!token || !app.user || app.notifyIds.includes(app.user.id)) return;
+  if (!token || (!always && (!app.user || app.notifyIds.includes(app.user.id)))) return;
   const send = Promise.all(app.notifyIds.map(chatId => fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true })
   }).catch(() => null)));
   if (app.ctx && app.ctx.waitUntil) app.ctx.waitUntil(send);
+}
+
+async function clanLabel(db, teamId) {
+  if (Number(teamId) === 0) return 'Herkes';
+  const c = await db.prepare('SELECT name FROM clans WHERE team_id = ?').bind(Number(teamId)).first();
+  return c ? c.name : '#' + teamId;
 }
 
 function who(user) {
