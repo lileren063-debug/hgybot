@@ -514,7 +514,7 @@ async function postGiveaway(app, body) {
         return { error: `Only ${gw.eligibleClan} members can join this giveaway` };
       }
       if (cost > bal.balance) {
-        return { error: `Not enough HGY points: you have ${bal.balance}, entry costs ${cost}` };
+        return { error: `Not enough points: you have ${bal.balance}, entry costs ${cost}` };
       }
     }
 
@@ -630,7 +630,7 @@ async function postReward(app, body) {
     if (!link) return { error: 'Link your Pixel World UUID in Profile first' };
     const bal = await getBalance(app, link);
     if (bal.team_id !== clanId) return { error: 'This reward is for members of its clan only' };
-    if (rw.cost > bal.balance) return { error: `Not enough HGY points: you have ${bal.balance}, this reward costs ${rw.cost}` };
+    if (rw.cost > bal.balance) return { error: `Not enough points: you have ${bal.balance}, this reward costs ${rw.cost}` };
     const claim = {
       id: user.id,
       name: displayName(user),
@@ -765,7 +765,7 @@ async function postTask(app, body) {
     const title = cleanText(t.title, 120);
     if (!title) return { error: 'Task title is required' };
     const reward = Math.floor(Number(t.reward) || 0);
-    if (reward <= 0 || reward > 1000000) return { error: 'Reward must be between 1 and 1,000,000 HGY points' };
+    if (reward <= 0 || reward > 1000000) return { error: 'Reward must be between 1 and 1,000,000 points' };
     let period = TASK_PERIODS.includes(t.period) ? t.period : 'once';
     const task = {
       id: 'tk_' + now + '_' + randomIndex(1000),
