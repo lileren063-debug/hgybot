@@ -6110,15 +6110,15 @@
 
       if (plainText) {
         if (isBattleStarted) {
-          return `🤖 @HGYinfo_bot\n⚔️ WAR STARTED!\n🗺 ${cleanName}\nJoin the battle!`;
+          return `🤖 @hgyhelp_bot\n⚔️ WAR STARTED!\n🗺 ${cleanName}\nJoin the battle!`;
         }
-        return `🤖 @HGYinfo_bot\n🗺 Map: ${cleanName}\n🛡 Clan: ${mapObj.controller} (${mapObj.score} PTS)\n⏳ Starts In: ${timeStr}`;
+        return `🤖 @hgyhelp_bot\n🗺 Map: ${cleanName}\n🛡 Clan: ${mapObj.controller} (${mapObj.score} PTS)\n⏳ Starts In: ${timeStr}`;
       }
 
       if (isBattleStarted) {
-        return `🤖 @HGYinfo_bot\n⚔️ <b>WAR STARTED!</b>\n🗺 <b>${cleanName}</b>\nJoin the battle!`;
+        return `🤖 @hgyhelp_bot\n⚔️ <b>WAR STARTED!</b>\n🗺 <b>${cleanName}</b>\nJoin the battle!`;
       }
-      return `🤖 @HGYinfo_bot\n🗺 <b>Map:</b> ${cleanName}\n🛡 <b>Clan:</b> ${mapObj.controller} (${mapObj.score} PTS)\n⏳ <b>Starts In:</b> <code>${timeStr}</code>`;
+      return `🤖 @hgyhelp_bot\n🗺 <b>Map:</b> ${cleanName}\n🛡 <b>Clan:</b> ${mapObj.controller} (${mapObj.score} PTS)\n⏳ <b>Starts In:</b> <code>${timeStr}</code>`;
     }
 
     async function dispatchBotDirectToGroup(mapObj, captionText, options = {}) {
@@ -7788,12 +7788,12 @@
       const gw = giveawaysList.find(g => g.id === gwId);
       if (!gw) return;
 
-      const deepLinkUrl = `https://t.me/HGYinfo_bot?startapp=giveaway_${encodeURIComponent(gw.id)}`;
+      const deepLinkUrl = `https://t.me/hgyhelp_bot?startapp=giveaway_${encodeURIComponent(gw.id)}`;
       const clanStr = gw.eligibleClan === 'ALL' ? 'All Clans' : `${gw.eligibleClan} Clan Only`;
       const entryStr = gw.entryMode === 'points' ? `Entry: ${Number(gw.minPoints).toLocaleString()} PTS` : 'FREE Entry';
       const prizeNames = (gw.prizes || []).map(p => `${p.name} (${p.tag})`).join(', ');
 
-      const shareText = `🤖 @HGYinfo_bot\n🎁 GIVEAWAY: ${gw.title}\n👤 Hosted by: ${gw.creatorUsername || '@Player'}\n🏆 Prizes: ${prizeNames}\n🛡 Eligibility: ${clanStr} • ${entryStr}\n\n👇 Tap the link above to open the Giveaway directly in the bot!`;
+      const shareText = `🤖 @hgyhelp_bot\n🎁 GIVEAWAY: ${gw.title}\n👤 Hosted by: ${gw.creatorUsername || '@Player'}\n🏆 Prizes: ${prizeNames}\n🛡 Eligibility: ${clanStr} • ${entryStr}\n\n👇 Tap the link above to open the Giveaway directly in the bot!`;
       const fullShareUrl = `https://t.me/share/url?url=${encodeURIComponent(deepLinkUrl)}&text=${encodeURIComponent(shareText)}`;
 
       try {
