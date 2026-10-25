@@ -3795,7 +3795,8 @@
         try {
           const res = await fetch(candidateUrl, {
             method: fetchMethod,
-            headers: headers,
+            // The Telegram login goes to our own API only, never to the third-party fallback
+            headers: candidateUrl.startsWith(DIRECT_UPSTREAM_API) ? { ...headers, 'X-Telegram-Init-Data': undefined } : headers,
             body: fetchBody,
             cache: 'no-store',
             signal: controller.signal

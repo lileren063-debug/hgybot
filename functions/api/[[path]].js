@@ -1,32 +1,35 @@
 // Cloudflare Pages Function: everything under /api on hgybot.pages.dev
-//   /api/clans/5/members -> public clan-players ranking (no login needed),
-//                           or pw.game directly when a PW_AUTHORIZATION / PW_COOKIE secret is set
-//   /api/giveaways, /api/rewards -> our own D1 store (worker/hgy-store.js)
-//   anything else        -> the existing data API (mrktsticker.alwaysdata.net)
+//   /api/clans/:teamId/members -> public clan-players ranking for any clan (no login needed),
+//                                 or pw.game directly for HEGEMONY when a PW_AUTHORIZATION / PW_COOKIE secret is set
+//   /api/platform, /api/giveaways, /api/rewards, /api/tasks -> our own D1 store (worker/hgy-store.js)
+//   anything else              -> the existing data API (mrktsticker.alwaysdata.net)
 
-import { handleClanMembers } from '../../worker/hegemony-members-worker.js';
-import { handleClanMembersFromUpstream } from '../../worker/hegemony-from-upstream.js';
+import { handleClanMembers as handleHegemonyFromGame } from '../../worker/hegemony-members-worker.js';
+import { handleClanMembers } from '../../worker/clan-points.js';
 import { handleStore } from '../../worker/hgy-store.js';
 
 const UPSTREAM_API = 'https://mrktsticker.alwaysdata.net/api';
 
 export async function onRequest(context) {
   const { request, env } = context;
+  const url = new URL(request.url);
 
-  const storeRes = await handleStore(request, env);
+  const storeRes = await handleStore(request, env, context);
   if (storeRes) return storeRes;
 
-  const clanRes = (env.PW_AUTHORIZATION || env.PW_COOKIE)
-    ? await handleClanMembers(request, env, context)
-    : await handleClanMembersFromUpstream(request, env, context);
+  if ((env.PW_AUTHORIZATION || env.PW_COOKIE) && /^\/api\/clans\/5\/members\/?$/.test(url.pathname)) {
+    return handleHegemonyFromGame(request, env, context);
+  }
+  const clanRes = await handleClanMembers(request, env, context);
   if (clanRes) return clanRes;
 
-  const url = new URL(request.url);
   const upstreamUrl = UPSTREAM_API + url.pathname.replace(/^\/api/, '') + url.search;
 
   const headers = new Headers(request.headers);
   headers.delete('host');
   headers.delete('cookie');
+  // The signed Telegram login is for our own API only, never for the third-party data API
+  headers.delete('x-telegram-init-data');
 
   return fetch(upstreamUrl, {
     method: request.method,
