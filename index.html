@@ -8019,14 +8019,14 @@
     // 17B. MULTI-CLAN PLATFORM: CLANS, RIGHTS, CLAN FILTER, TASKS & ADMIN PANEL
     // =========================================================================
     // The server (/api/platform) decides every right; the UI only hides what the user cannot do
-    let platformState = { clans: [], me: null, staff: [] };
+    let platformState = { clans: [], me: null, staff: [], announce: null };
     let platformLoadPromise = null;
     let selectedPlatformClanId = 0; // 0 = all clans
     let currentGwSubTab = 'join';
 
     function applyPlatformState(data) {
       if (!data) return;
-      platformState = { clans: data.clans || [], me: data.me || null, staff: data.staff || [] };
+      platformState = { clans: data.clans || [], me: data.me || null, staff: data.staff || [], announce: data.announce || null };
       if (selectedPlatformClanId && !getPlatformClan(selectedPlatformClanId)) selectedPlatformClanId = 0;
       renderPlatformClanFilter();
       renderPlatformAdminEntry();
@@ -8649,6 +8649,8 @@
           <div id="pf-bot-setup-result" style="font-size:11px; color:#8faac4; margin-top:8px; line-height:1.5;"></div>
         </div>` : ''}
 
+        ${me.is_super ? renderAnnounceAdmin() : ''}
+
         <div class="pf-section-title">🔗 Reset a player link</div>
         <div class="glass-card" style="padding:11px;">
           <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">If someone linked a Pixel World player that is not theirs, reset it so the real owner can link it.</div>
@@ -8670,6 +8672,51 @@
     function onStaffRoleChange() {
       const role = document.getElementById('pf-staff-role').value;
       document.getElementById('pf-staff-flags').style.display = role === 'staff' ? 'block' : 'none';
+    }
+
+    const ANNOUNCE_SAMPLE_TEXT = `🏆 CLAN LEADER SYSTEM
+
+Each clan leader can create and manage their own daily tasks and giveaways. Players earn points by completing tasks and can use them to enter giveaways or claim rewards set by their clan leaders.
+
+🔑 Clan leaders have been granted permissions within the app to manage their own tasks and rewards.
+
+👑 Authorized Clan Leaders
+
+- OL_LEGION: @Domino_Rus
+- RONIN ONLY: @radja13
+- EVERY ONLY: @Garmata_EVERY`;
+
+    // Daily message the bot posts to channels/groups; the hour is UTC (Türkiye = UTC+3)
+    function renderAnnounceAdmin() {
+      const a = platformState.announce || { enabled: false, chats: [], text: '', hour: 12, last_sent: '' };
+      const hours = Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === a.hour ? 'selected' : ''}>${String(h).padStart(2, '0')}:00 UTC (TR ${String((h + 3) % 24).padStart(2, '0')}:00)</option>`).join('');
+      return `
+        <div class="pf-section-title">📣 Daily announcement</div>
+        <div class="glass-card" style="padding:11px; margin-bottom:8px;">
+          <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">The bot posts this message once a day. The bot must be an admin of the channel (or a member of the group).</div>
+          <label class="pf-label">Send to (@channel or group id, comma separated)</label>
+          <input type="text" id="pf-ann-chats" class="search-input" style="padding:9px; font-size:12.5px; margin-bottom:8px;" placeholder="@hegemonyprivate" value="${escapeHtml((a.chats || []).join(', '))}">
+          <label class="pf-label">Time</label>
+          <select id="pf-ann-hour" class="search-input pf-select">${hours}</select>
+          <label class="pf-label">Message</label>
+          <textarea id="pf-ann-text" class="search-input" style="padding:9px; font-size:12px; min-height:170px; margin-bottom:8px; resize:vertical;">${escapeHtml(a.text || ANNOUNCE_SAMPLE_TEXT)}</textarea>
+          <label class="pf-check"><input type="checkbox" id="pf-ann-on" ${a.enabled ? 'checked' : ''}> Send every day</label>
+          <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">${a.last_sent ? 'Last sent: ' + escapeHtml(a.last_sent) : 'Not sent yet'}</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px;">
+            <button type="button" class="done-confirm-btn" style="padding:10px;" onclick="adminSaveAnnounce(false)"><span>💾</span><span>Save</span></button>
+            <button type="button" class="done-confirm-btn" style="padding:10px;" onclick="adminSaveAnnounce(true)"><span>📤</span><span>Send now</span></button>
+          </div>
+        </div>`;
+    }
+
+    function adminSaveAnnounce(sendNow) {
+      const announce = {
+        chats: document.getElementById('pf-ann-chats').value,
+        hour: Number(document.getElementById('pf-ann-hour').value) || 0,
+        text: document.getElementById('pf-ann-text').value,
+        enabled: document.getElementById('pf-ann-on').checked
+      };
+      platformAdminAction({ action: sendNow ? 'announce_send_now' : 'announce_save', announce }, sendNow ? '📤 Announcement sent' : '💾 Announcement saved');
     }
 
     async function adminSetupBot(btn) {

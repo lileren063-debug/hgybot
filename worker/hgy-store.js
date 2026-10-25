@@ -52,7 +52,7 @@ let schemaReady = false;
 export async function handleStore(request, env, ctx) {
   const url = new URL(request.url);
   const kind = url.pathname.replace(/\/+$/, '');
-  const handlers = { '/api/platform': platform, '/api/giveaways': giveaways, '/api/rewards': rewards, '/api/tasks': tasks };
+  const handlers = { '/api/platform': platform, '/api/giveaways': giveaways, '/api/rewards': rewards, '/api/tasks': tasks, '/api/cron/daily': cronDaily };
   const handler = handlers[kind];
   if (!handler) return null;
 
@@ -66,6 +66,8 @@ export async function handleStore(request, env, ctx) {
   const app = { db: env.DB, env, ctx, origin: url.origin, user, isSuper: Boolean(user && superIds.includes(user.id)) };
   app.notifyIds = String(env.NOTIFY_IDS || superIds.join(',')).split(',').map(s => s.trim()).filter(Boolean);
   if (user) await noteFirstVisit(app);
+  // Any visit may post today's announcement once it is due; /api/cron/daily is the hourly backup
+  if (ctx && ctx.waitUntil && kind !== '/api/cron/daily') ctx.waitUntil(sendDailyAnnouncement(app).catch(() => null));
 
   let body = null;
   if (request.method === 'POST') {
@@ -239,6 +241,7 @@ async function platform(app, url, body) {
     balance
   };
   if (app.isSuper) {
+    out.announce = await getAnnouncement(app.db);
     const staff = await app.db.prepare('SELECT team_id, user_key, label, role, can_giveaways, can_tasks, added_at FROM clan_staff ORDER BY team_id, added_at').all();
     out.staff = staff.results.map(s => ({
       team_id: Number(s.team_id),
@@ -282,6 +285,27 @@ async function postPlatform(app, body) {
 
   // Everything else belongs to the main admin
   if (!app.isSuper) return { error: 'Only the main admin can do this', status: 403 };
+
+  if (action === 'announce_save' || action === 'announce_send_now') {
+    const a = body.announce || {};
+    const prev = await getAnnouncement(db);
+    const next = {
+      enabled: Boolean(a.enabled),
+      chats: cleanText(a.chats, 300).split(/[\s,]+/).filter(c => /^(@[A-Za-z0-9_]{4,64}|-?\d{5,20})$/.test(c)).slice(0, 5),
+      text: cleanText(a.text, 3500),
+      hour: Math.min(23, Math.max(0, Math.floor(Number(a.hour) || 0))),
+      last_sent: prev.last_sent
+    };
+    if (next.enabled && (!next.chats.length || !next.text)) return { error: 'Enter the message and at least one chat (@channel or chat id)' };
+    await db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('announce_v1', ?)").bind(JSON.stringify(next)).run();
+    if (action === 'announce_send_now') {
+      if (!next.chats.length || !next.text) return { error: 'Enter the message and at least one chat first' };
+      const results = await postAnnouncement(app, next);
+      const failed = results.filter(r => !r.ok);
+      if (failed.length) return { error: failed.map(f => `${f.chat}: ${f.error}`).join(' • ') };
+    }
+    return {};
+  }
 
   if (action === 'clan_save') {
     const c = body.clan || {};
@@ -886,6 +910,56 @@ async function isChatMember(botToken, chat, userId) {
   }
   const st = data.result && data.result.status;
   return { member: ['creator', 'administrator', 'member'].includes(st) || (st === 'restricted' && Boolean(data.result.is_member)) };
+}
+
+// ---------------------------------------------------------------- daily announcement
+
+const ANNOUNCE_DEFAULT = { enabled: false, chats: [], text: '', hour: 12, last_sent: '' };
+
+async function getAnnouncement(db) {
+  const row = await db.prepare("SELECT value FROM meta WHERE key = 'announce_v1'").first();
+  try {
+    return { ...ANNOUNCE_DEFAULT, ...(row ? JSON.parse(row.value) : {}) };
+  } catch (e) {
+    return { ...ANNOUNCE_DEFAULT };
+  }
+}
+
+// Called by the hourly cron and by app visits; the compare-and-swap on meta makes sure it goes out once a day
+async function sendDailyAnnouncement(app) {
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const row = await app.db.prepare("SELECT value FROM meta WHERE key = 'announce_v1'").first();
+  if (!row) return { sent: false };
+  const a = { ...ANNOUNCE_DEFAULT, ...JSON.parse(row.value) };
+  if (!a.enabled || !a.text || !a.chats.length || a.last_sent === today || now.getUTCHours() < a.hour) return { sent: false };
+  const claimed = await app.db.prepare("UPDATE meta SET value = ? WHERE key = 'announce_v1' AND value = ?")
+    .bind(JSON.stringify({ ...a, last_sent: today }), row.value).run();
+  if (!claimed.meta || !claimed.meta.changes) return { sent: false };
+  await postAnnouncement(app, a);
+  return { sent: true };
+}
+
+async function postAnnouncement(app, a) {
+  const token = app.env.BOT_TOKEN;
+  if (!token) return a.chats.map(chat => ({ chat, ok: false, error: 'BOT_TOKEN is not set' }));
+  return Promise.all(a.chats.map(async chat => {
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chat, text: a.text, disable_web_page_preview: true })
+      });
+      const data = await res.json().catch(() => ({}));
+      return data.ok ? { chat, ok: true } : { chat, ok: false, error: data.description || `HTTP ${res.status}` };
+    } catch (e) {
+      return { chat, ok: false, error: 'Telegram unreachable' };
+    }
+  }));
+}
+
+async function cronDaily(app) {
+  return sendDailyAnnouncement(app);
 }
 
 // ---------------------------------------------------------------- activity messages

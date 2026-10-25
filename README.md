@@ -78,3 +78,11 @@ The bot sends the main admin (or the ids in the optional `NOTIFY_IDS` variable) 
 Telegram message when someone opens the app for the first time, links a Pixel World
 player, completes or requests a task, joins a giveaway or claims a reward. The main
 admin's own actions are not reported. The receiver must have started the bot once.
+
+## Daily announcement
+
+Main Admin Panel → **Daily announcement**: message, target chats (@channel or group id),
+hour and an on/off switch, plus **Send now**. The server posts it at most once a day
+(state in D1 `meta.announce_v1`). It is triggered by app visits and by the hourly
+GitHub Actions workflow `.github/workflows/daily-announcement.yml`, which calls
+`/api/cron/daily`. The bot must be an admin of each channel (or a member of the group).

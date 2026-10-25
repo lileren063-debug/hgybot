@@ -1,0 +1,12 @@
+# Hourly nudge so the bot's daily announcement goes out even when nobody opens the app.
+# The server sends it at most once a day, at the hour set in the admin panel.
+name: Daily announcement
+on:
+  schedule:
+    - cron: '5 * * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS https://hgybot.pages.dev/api/cron/daily
