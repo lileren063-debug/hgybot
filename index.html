@@ -2422,6 +2422,22 @@
     gap: 7px;
     box-shadow: 0 0 14px rgba(255, 215, 0, 0.18);
   }
+  .hgy-wallet-card {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: linear-gradient(135deg, rgba(255, 170, 0, 0.16), rgba(0, 240, 255, 0.1));
+    border: 1.5px solid rgba(255, 204, 77, 0.6);
+    border-radius: 16px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 0 16px rgba(255, 170, 0, 0.18);
+    text-align: left;
+  }
+  .hgy-wallet-label { font-size: 10.5px; font-weight: 900; color: #ffcc4d; text-transform: uppercase; letter-spacing: 0.5px; }
+  .hgy-wallet-value { font-size: 24px; font-weight: 900; color: #fff; line-height: 1.1; text-shadow: 0 0 12px rgba(255, 204, 77, 0.5); }
+  .hgy-wallet-sub { font-size: 10.5px; font-weight: 700; color: #9ab3c9; margin-top: 3px; line-height: 1.4; }
   .tk-card {
     background: linear-gradient(165deg, rgba(12, 28, 46, 0.95) 0%, rgba(6, 15, 26, 0.96) 100%);
     border: 1.5px solid rgba(0, 240, 255, 0.32);
@@ -3228,6 +3244,9 @@
             <span class="score-badge" style="font-size:11px;">👥 Members →</span>
           </div>
 
+          <!-- HGY point balance (filled by renderHgyWalletCards) -->
+          <div class="hgy-wallet-card" id="hgy-wallet-profile" style="margin-bottom:12px;"></div>
+
           <!-- Personal Player Activity Card (7-Day Squares + 30-Day Heatmap) -->
           <div class="activity-section-card" id="bot-user-activity-box">
             <!-- Populated via JS -->
@@ -3325,6 +3344,7 @@
 
         <!-- SUB-VIEW T: CLAN TASKS (EARN HGY POINTS; CREATED BY AUTHORIZED CLAN ADMINS) -->
         <div id="gw-subview-tasks" style="display:none;">
+          <div class="hgy-wallet-card" id="hgy-wallet-tasks"></div>
           <div id="tk-admin-form" class="glass-card" style="display:none; padding:14px;">
             <div class="section-header" style="margin-bottom:10px;">
               <h2 class="section-title" style="font-size:14px;">🎯 Create Task</h2>
@@ -7961,6 +7981,7 @@
       if (selectedPlatformClanId && !getPlatformClan(selectedPlatformClanId)) selectedPlatformClanId = 0;
       renderPlatformClanFilter();
       renderPlatformAdminEntry();
+      renderHgyWalletCards();
       renderGiveawayClanPointsBadge();
       renderGiveawaysList();
       renderRewardsList();
@@ -8002,6 +8023,33 @@
     function getServerPointsBalance() {
       const me = platformState.me;
       return me && me.link && me.balance ? me.balance : null;
+    }
+
+    // HGY point balance and where it comes from (shown in the Tasks tab and Profile)
+    function renderHgyWalletCards() {
+      const me = platformState.me;
+      const b = me && me.balance;
+      ['hgy-wallet-tasks', 'hgy-wallet-profile'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (!b) {
+          el.style.display = 'none';
+          return;
+        }
+        const parts = [];
+        if (me.link) parts.push(`⚔️ Clan points this month ${b.month_points.toLocaleString()}`);
+        parts.push(`🎯 Tasks +${b.task_points.toLocaleString()}`);
+        if (b.spent) parts.push(`🎁 Spent −${b.spent.toLocaleString()}`);
+        el.style.display = 'flex';
+        el.innerHTML = `
+          <div style="min-width:0;">
+            <div class="hgy-wallet-label">💎 Your HGY Points</div>
+            <div class="hgy-wallet-value">${b.balance.toLocaleString()}</div>
+            <div class="hgy-wallet-sub">${parts.join(' • ')}</div>
+            <div class="hgy-wallet-sub" style="color:#8faac4;">${me.link ? 'Resets on the 1st of each month (UTC)' : '🔗 Link your Pixel World account in Profile to add your clan points'}</div>
+          </div>
+          <div style="font-size:30px; flex-shrink:0;">💎</div>`;
+      });
     }
 
     function getMyPlatformClanId() {
