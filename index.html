@@ -8048,6 +8048,8 @@
       const sel = document.getElementById(selectId);
       if (!sel) return;
       const clans = getManageablePlatformClans(feature);
+      // The main admin may also add tasks for every user (clan 0)
+      if (feature === 'tasks' && platformState.me && platformState.me.is_super) clans.unshift({ team_id: 0, name: '🌍 Everyone (all clans)' });
       const keep = Number(sel.value) || selectedPlatformClanId;
       sel.innerHTML = clans.map(c => `<option value="${c.team_id}">${escapeHtml(c.name)}</option>`).join('');
       if (clans.some(c => c.team_id === keep)) sel.value = String(keep);
@@ -8149,7 +8151,7 @@
       if (canCreate) fillPlatformClanSelect('tk-owner-clan-select', 'tasks');
 
       const pendingBox = document.getElementById('tk-pending-box');
-      const pending = tasksPending.filter(p => isInSelectedPlatformClan(p.clan_id));
+      const pending = tasksPending.filter(p => p.clan_id === 0 || isInSelectedPlatformClan(p.clan_id));
       if (pendingBox) {
         pendingBox.innerHTML = pending.length ? `
           <div class="glass-card" style="padding:13px;">
@@ -8160,7 +8162,7 @@
               <div class="pf-row" style="flex-wrap:wrap;">
                 <div style="min-width:0; flex:1;">
                   <div class="pf-row-name">${escapeHtml(p.user_name)} • ${escapeHtml(p.task_title)}</div>
-                  <div class="pf-row-sub">+${Number(p.reward).toLocaleString()} HGY • ${escapeHtml((getPlatformClan(p.clan_id) || {}).name || '')}${p.note ? ` • “${escapeHtml(p.note)}”` : ''}</div>
+                  <div class="pf-row-sub">+${Number(p.reward).toLocaleString()} HGY • ${escapeHtml(p.clan_id === 0 ? 'Everyone' : (getPlatformClan(p.clan_id) || {}).name || '')}${p.note ? ` • “${escapeHtml(p.note)}”` : ''}</div>
                 </div>
                 <div style="display:flex; gap:6px;">
                   <button type="button" class="pf-toggle on" onclick="reviewTaskClaim(${jsArg(p.task_id)}, ${jsArg(p.user_id)}, ${jsArg(p.period_key)}, true)">✓ Approve</button>
@@ -8173,7 +8175,7 @@
 
       const box = document.getElementById('tasks-list');
       if (!box) return;
-      const visible = tasksList.filter(t => isInSelectedPlatformClan(t.clanId));
+      const visible = tasksList.filter(t => t.clanId === 0 || isInSelectedPlatformClan(t.clanId));
       if (!visible.length) {
         box.innerHTML = `<div class="glass-card" style="text-align:center; color:#8faac4; font-size:13px;">${tasksLoaded ? 'No tasks yet.' : 'Loading tasks…'}</div>`;
         return;
@@ -8185,7 +8187,7 @@
         const prog = getTaskProgress(t);
         const done = t.myStatus === 'done';
         const pend = t.myStatus === 'pending';
-        const otherClan = linked && myClan && myClan !== t.clanId;
+        const otherClan = t.clanId !== 0 && linked && myClan && myClan !== t.clanId;
         let progressHtml = '';
         if (prog) {
           const pct = Math.min(100, Math.round((prog.value / Math.max(1, prog.target)) * 100));
@@ -8217,7 +8219,7 @@
         }
         return `
           <div class="tk-card ${done ? 'done' : ''}">
-            ${renderPlatformOwnerPill(t.clanName, t.clanAvatar)}
+            ${t.clanId === 0 ? '<div class="pf-owner-pill" style="color:var(--cyan); border-color:rgba(0,240,255,0.45); background:rgba(0,240,255,0.1);">🌍 <span>For everyone</span></div>' : renderPlatformOwnerPill(t.clanName, t.clanAvatar)}
             <div class="tk-top">
               <div class="tk-title">${escapeHtml(t.title)}</div>
               <div class="tk-reward">+${Number(t.reward).toLocaleString()} HGY</div>
@@ -8302,7 +8304,7 @@
     async function claimTaskById(taskId) {
       const t = tasksList.find(x => x.id === taskId);
       if (!t) return;
-      if (!getServerPointsBalance()) {
+      if (t.clanId !== 0 && !getServerPointsBalance()) {
         showCyberToast('⚠️ Link your Pixel World UUID in Profile first.');
         return;
       }

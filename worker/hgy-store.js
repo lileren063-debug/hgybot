@@ -30,6 +30,12 @@ const SEED_CLAN = {
   avatar: 'https://static.pw.game/teams/34ca79e23c5a8670af7397dee3d9d815c10d8c4f255aa71dcc4c21859cd48c8b.jpg'
 };
 const SEED_STAFF = [{ team_id: 5, user_key: '5332662287', label: '@therizzller', role: 'clan_admin' }];
+// Tasks with clan_id 0 are open to every user and managed by the main admin only
+const GLOBAL_CLAN = { team_id: 0, name: 'All Clans', avatar: '', giveaways_enabled: false, tasks_enabled: true };
+const SEED_GLOBAL_TASKS = [
+  { title: 'Follow HegemonyGames', chat: '@HegemonyGames', reward: 100 },
+  { title: 'Join the hegemonyprivate chat', chat: '@hegemonyprivate', reward: 50 }
+];
 
 const INIT_DATA_MAX_AGE_SECONDS = 7 * 86400;
 const MAX_RECORD_BYTES = 1500000; // images are data URLs; D1 rows hold up to 2 MB
@@ -109,6 +115,29 @@ async function ensureSchema(db) {
       db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('seeded_v1', ?)").bind(String(now))
     ]);
   }
+  const seededTasks = await db.prepare("SELECT value FROM meta WHERE key = 'seeded_global_tasks_v1'").first();
+  if (!seededTasks) {
+    const now = Date.now();
+    await db.batch([
+      ...SEED_GLOBAL_TASKS.map((t, i) => {
+        const task = {
+          id: `tk_global_${i + 1}`,
+          kind: 'telegram_join',
+          title: t.title,
+          description: '',
+          reward: t.reward,
+          chat: t.chat,
+          url: 'https://t.me/' + t.chat.slice(1),
+          period: 'once',
+          createdBy: 'seed',
+          createdByName: 'HEGEMONY',
+          createdAt: now
+        };
+        return db.prepare('INSERT OR IGNORE INTO tasks (id, clan_id, data, created_at) VALUES (?, 0, ?, ?)').bind(task.id, JSON.stringify(task), now + SEED_GLOBAL_TASKS.length - i); // newest first, so keep list order
+      }),
+      db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('seeded_global_tasks_v1', ?)").bind(String(now))
+    ]);
+  }
   schemaReady = true;
 }
 
@@ -161,6 +190,14 @@ async function getPerms(app) {
   }
   app.perms = perms;
   return perms;
+}
+
+async function getTaskClan(db, teamId) {
+  return Number(teamId) === 0 ? GLOBAL_CLAN : getClan(db, teamId);
+}
+
+async function canManageTasks(app, teamId) {
+  return Number(teamId) === 0 ? app.isSuper : can(app, teamId, 'tasks');
 }
 
 async function can(app, teamId, feature) {
@@ -642,9 +679,11 @@ async function listTasks(app, clanId) {
     listClans(db),
     getPerms(app),
     clanId
-      ? db.prepare('SELECT data, clan_id FROM tasks WHERE deleted = 0 AND clan_id = ? ORDER BY created_at DESC').bind(clanId).all()
-      : db.prepare('SELECT data, clan_id FROM tasks WHERE deleted = 0 ORDER BY created_at DESC').all()
+      ? db.prepare('SELECT data, clan_id FROM tasks WHERE deleted = 0 AND clan_id IN (?, 0) ORDER BY clan_id = 0 DESC, created_at DESC').bind(clanId).all()
+      : db.prepare('SELECT data, clan_id FROM tasks WHERE deleted = 0 ORDER BY clan_id = 0 DESC, created_at DESC').all()
   ]);
+  clans.push(GLOBAL_CLAN);
+  if (app.isSuper) perms[0] = { role: 'super', giveaways: false, tasks: true };
 
   // Tasks of a clan with tasks turned off are only shown to its managers
   const items = [];
@@ -670,7 +709,7 @@ async function listTasks(app, clanId) {
 
   // Manual tasks waiting for a decision, for the clans this user may review
   let pending = [];
-  const reviewClans = Object.keys(perms).filter(id => perms[id].tasks && (!clanId || Number(id) === clanId)).map(Number);
+  const reviewClans = Object.keys(perms).filter(id => perms[id].tasks && (!clanId || Number(id) === clanId || Number(id) === 0)).map(Number);
   if (reviewClans.length) {
     const res = await db.prepare(
       'SELECT c.task_id, c.user_id, c.period_key, c.data, c.created_at, t.clan_id, t.data AS task FROM task_claims c JOIN tasks t ON t.id = c.task_id ' +
@@ -692,6 +731,7 @@ async function listTasks(app, clanId) {
       };
     });
   }
+  delete perms[0];
   return { items, pending };
 }
 
@@ -715,12 +755,13 @@ async function postTask(app, body) {
   const now = Date.now();
 
   if (body.action === 'create') {
-    const clan = await getClan(db, body.clan_id);
+    const clan = await getTaskClan(db, body.clan_id);
     if (!clan) return { error: 'Choose the clan this task belongs to' };
-    if (!(await can(app, clan.team_id, 'tasks'))) return { error: `You cannot create tasks for ${clan.name}`, status: 403 };
+    if (!(await canManageTasks(app, clan.team_id))) return { error: `You cannot create tasks for ${clan.name}`, status: 403 };
     const t = body.task || {};
     const kind = TASK_KINDS.includes(t.kind) ? t.kind : '';
     if (!kind) return { error: 'Choose a task type' };
+    if (clan.team_id === 0 && kind === 'clan_points') return { error: 'Points targets need a clan; choose a clan for this task' };
     const title = cleanText(t.title, 120);
     if (!title) return { error: 'Task title is required' };
     const reward = Math.floor(Number(t.reward) || 0);
@@ -758,14 +799,14 @@ async function postTask(app, body) {
   if (!task) return { error: 'Task not found', status: 404 };
 
   if (body.action === 'delete') {
-    if (!(await can(app, task.clanId, 'tasks'))) return { error: "You cannot manage this clan's tasks", status: 403 };
+    if (!(await canManageTasks(app, task.clanId))) return { error: "You cannot manage this clan's tasks", status: 403 };
     // Soft delete: points already earned stay counted
     await db.prepare('UPDATE tasks SET deleted = 1 WHERE id = ?').bind(task.id).run();
     return {};
   }
 
   if (body.action === 'review') {
-    if (!(await can(app, task.clanId, 'tasks'))) return { error: "You cannot review this clan's tasks", status: 403 };
+    if (!(await canManageTasks(app, task.clanId))) return { error: "You cannot review this clan's tasks", status: 403 };
     const approve = Boolean(body.approve);
     const res = await db.prepare("UPDATE task_claims SET status = ?, points = ?, decided_at = ? WHERE task_id = ? AND user_id = ? AND period_key = ? AND status = 'pending'")
       .bind(approve ? 'done' : 'rejected', approve ? task.reward : 0, now, task.id, String(body.user_id || ''), String(body.period_key || '')).run();
@@ -774,19 +815,21 @@ async function postTask(app, body) {
   }
 
   if (body.action === 'claim') {
-    const clan = await getClan(db, task.clanId);
+    const clan = await getTaskClan(db, task.clanId);
     if (!clan || !clan.tasks_enabled) return { error: 'Tasks are turned off for this clan' };
+    const forEveryone = clan.team_id === 0;
     const key = periodKey(task.period);
     const existing = await db.prepare('SELECT status FROM task_claims WHERE task_id = ? AND user_id = ? AND period_key = ?').bind(task.id, user.id, key).first();
     if (existing && existing.status === 'done') return { error: 'You already completed this task' + (task.period === 'once' ? '' : ' for this period') };
     if (existing && existing.status === 'pending') return { error: 'Your request is waiting for an admin' };
 
+    // Tasks for everyone need no Pixel World link; clan tasks need a linked member of that clan
     const link = await getLink(db, user.id);
-    if (!link) return { error: 'Link your Pixel World UUID in Profile first' };
+    if (!link && !forEveryone) return { error: 'Link your Pixel World UUID in Profile first' };
     const notMember = { error: `This task is for ${clan.name} members only` };
 
     let status = 'done';
-    const data = { name: displayName(user), uuid: link.uuid };
+    const data = { name: displayName(user), uuid: link ? link.uuid : '' };
     if (task.kind === 'clan_points') {
       // Only this period's list is read: one request may build one list at most
       const players = await rankedPlayers(app, PERIOD_RANGE[task.period]);
@@ -797,7 +840,7 @@ async function postTask(app, body) {
         : (me ? me.points : 0);
       if (value < task.target) return { error: `Not reached yet: ${value} / ${task.target} PTS` };
       data.value = value;
-    } else if ((await getMembership(app, link)).team_id !== task.clanId) {
+    } else if (!forEveryone && (await getMembership(app, link)).team_id !== task.clanId) {
       return notMember;
     } else if (task.kind === 'telegram_join') {
       const check = await isChatMember(app.env.BOT_TOKEN, task.chat, user.id);
