@@ -17,6 +17,7 @@
 //   DB               D1 database binding (tables are created on first use)
 //   BOT_TOKEN        secret: the BotFather token of the bot that opens the Mini App
 //   SUPER_ADMIN_IDS  optional: comma separated Telegram ids of main admins (default: Eren)
+//   NOTIFY_IDS       optional: Telegram ids that get activity messages from the bot (default: SUPER_ADMIN_IDS)
 //
 // HGY points: the bot's own currency, one wallet per Telegram user, kept (no monthly reset):
 //   task rewards - giveaway entries - reward claims
@@ -63,6 +64,8 @@ export async function handleStore(request, env, ctx) {
   const user = await verifyInitData(request.headers.get('X-Telegram-Init-Data') || '', env.BOT_TOKEN);
   const superIds = String(env.SUPER_ADMIN_IDS || DEFAULT_SUPER_ADMIN_IDS).split(',').map(s => s.trim()).filter(Boolean);
   const app = { db: env.DB, env, ctx, origin: url.origin, user, isSuper: Boolean(user && superIds.includes(user.id)) };
+  app.notifyIds = String(env.NOTIFY_IDS || superIds.join(',')).split(',').map(s => s.trim()).filter(Boolean);
+  if (user) await noteFirstVisit(app);
 
   let body = null;
   if (request.method === 'POST') {
@@ -98,7 +101,8 @@ async function ensureSchema(db) {
     db.prepare("CREATE TABLE IF NOT EXISTS user_links (user_id TEXT PRIMARY KEY, uuid TEXT NOT NULL UNIQUE, nickname TEXT NOT NULL DEFAULT '', team_id INTEGER NOT NULL DEFAULT 0, clan_name TEXT NOT NULL DEFAULT '', linked_at INTEGER NOT NULL)"),
     db.prepare('CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, clan_id INTEGER NOT NULL, data TEXT NOT NULL, created_at INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0)'),
     db.prepare('CREATE TABLE IF NOT EXISTS task_claims (task_id TEXT NOT NULL, user_id TEXT NOT NULL, period_key TEXT NOT NULL, status TEXT NOT NULL, points INTEGER NOT NULL DEFAULT 0, data TEXT NOT NULL, created_at INTEGER NOT NULL, decided_at INTEGER, PRIMARY KEY (task_id, user_id, period_key))'),
-    db.prepare('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)')
+    db.prepare('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS users_seen (user_id TEXT PRIMARY KEY, data TEXT NOT NULL, first_seen INTEGER NOT NULL)')
   ]);
   // Giveaways and rewards from before the multi-clan version belong to HEGEMONY
   for (const table of ['giveaways', 'rewards']) {
@@ -268,6 +272,7 @@ async function postPlatform(app, body) {
     } catch (e) { /* link anyway; the clan is filled in on the next balance check */ }
     await db.prepare('INSERT OR REPLACE INTO user_links (user_id, uuid, nickname, team_id, clan_name, linked_at) VALUES (?, ?, ?, ?, ?, ?)')
       .bind(app.user.id, uuid, cleanText(player ? player.nickname : body.nickname, 60), player ? player.team_id : 0, player ? player.clan_name : '', now).run();
+    notifyAdmins(app, `🔗 <b>Oyuncu bağladı</b>\n${who(app.user)}\nPixel World: ${esc(player ? player.nickname : body.nickname || uuid)}${player && player.clan_name ? ' (' + esc(player.clan_name) + ')' : ''}`);
     return {};
   }
   if (action === 'unlink') {
@@ -528,6 +533,7 @@ async function postGiveaway(app, body) {
     const res = await db.prepare('INSERT OR IGNORE INTO giveaway_participants (giveaway_id, user_id, data, joined_at) VALUES (?, ?, ?, ?)')
       .bind(gw.id, user.id, JSON.stringify(participant), now).run();
     if (!res.meta || !res.meta.changes) return { error: 'You have already joined this giveaway' };
+    notifyAdmins(app, `🎁 <b>Çekilişe katıldı</b>\n${who(user)}\n${esc(gw.title)}${cost ? ` (−${cost} Points)` : ''}`);
     return {};
   }
 
@@ -645,6 +651,7 @@ async function postReward(app, body) {
       'SELECT ?, ?, ?, ? WHERE ? IS NULL OR (SELECT COUNT(*) FROM reward_claims WHERE reward_id = ?) < ?'
     ).bind(rw.id, user.id, JSON.stringify(claim), now, rw.stock, rw.id, rw.stock).run();
     if (!res.meta || !res.meta.changes) return { error: 'This reward is sold out' };
+    notifyAdmins(app, `🏆 <b>Ödül aldı</b>\n${who(user)}\n${esc(rw.name)} (−${rw.cost} Points)\nPixel World: ${esc(link.nickname || link.uuid)}${bal.clan_name ? ' (' + esc(bal.clan_name) + ')' : ''}`);
     return {};
   }
 
@@ -854,6 +861,9 @@ async function postTask(app, body) {
     // A rejected request may be sent again
     await db.prepare('INSERT OR REPLACE INTO task_claims (task_id, user_id, period_key, status, points, data, created_at, decided_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(task.id, user.id, key, status, status === 'done' ? task.reward : 0, JSON.stringify(data), now, status === 'done' ? now : null).run();
+    notifyAdmins(app, status === 'done'
+      ? `🎯 <b>Görev tamamladı</b>\n${who(user)}\n${esc(task.title)} (+${task.reward} Points) • ${esc(clan.name)}`
+      : `⏳ <b>Görev onayı bekliyor</b>\n${who(user)}\n${esc(task.title)} • ${esc(clan.name)}${data.note ? '\nNot: ' + esc(data.note) : ''}`);
     return {};
   }
 
@@ -876,6 +886,45 @@ async function isChatMember(botToken, chat, userId) {
   }
   const st = data.result && data.result.status;
   return { member: ['creator', 'administrator', 'member'].includes(st) || (st === 'restricted' && Boolean(data.result.is_member)) };
+}
+
+// ---------------------------------------------------------------- activity messages
+
+// Telegram ids already recorded in this worker instance, so a returning user costs no write
+const seenUsers = new Set();
+
+async function noteFirstVisit(app) {
+  const u = app.user;
+  if (seenUsers.has(u.id)) return;
+  const res = await app.db.prepare('INSERT OR IGNORE INTO users_seen (user_id, data, first_seen) VALUES (?, ?, ?)')
+    .bind(u.id, JSON.stringify({ username: u.username, first_name: u.first_name }), Date.now()).run();
+  seenUsers.add(u.id);
+  if (res.meta && res.meta.changes) {
+    const total = await app.db.prepare('SELECT COUNT(*) AS n FROM users_seen').first();
+    notifyAdmins(app, `🆕 <b>Uygulamaya yeni giriş</b>\n${who(u)}\nToplam kullanıcı: ${total ? total.n : '?'}`);
+  }
+}
+
+// Sends a short message from the bot to the main admin(s); never slows down or breaks the user's request.
+// The main admin's own actions are not reported.
+function notifyAdmins(app, html) {
+  const token = app.env.BOT_TOKEN;
+  if (!token || !app.user || app.notifyIds.includes(app.user.id)) return;
+  const send = Promise.all(app.notifyIds.map(chatId => fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true })
+  }).catch(() => null)));
+  if (app.ctx && app.ctx.waitUntil) app.ctx.waitUntil(send);
+}
+
+function who(user) {
+  const name = esc(user.first_name || user.username || 'Player');
+  return `👤 <a href="tg://user?id=${encodeURIComponent(user.id)}">${name}</a>${user.username ? ' @' + esc(user.username) : ''} • ID <code>${esc(user.id)}</code>`;
+}
+
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
 // ---------------------------------------------------------------- helpers

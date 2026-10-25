@@ -71,3 +71,10 @@ message with an Open App button, and `/giveaways`, `/tasks`, `/rewards`, `/profi
 and `/help` answer with buttons that open the app on that page. The webhook secret
 is derived from `BOT_TOKEN`, so no extra secret is needed. Edit the texts in
 `TEXT` and press the button again to change them.
+
+## Activity messages to the main admin
+
+The bot sends the main admin (or the ids in the optional `NOTIFY_IDS` variable) a
+Telegram message when someone opens the app for the first time, links a Pixel World
+player, completes or requests a task, joins a giveaway or claims a reward. The main
+admin's own actions are not reported. The receiver must have started the bot once.
