@@ -1,0 +1,20 @@
+name: probe
+on: push
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          A=https://mrktsticker.alwaysdata.net/api
+          date -u
+          for r in day week month; do
+            echo "== $r"; curl -fsS "$A/global/clan-players?range=$r&page=1" | jq -c 'del(.items) , (.items[0:2])'
+          done
+          echo "== HGY-Erenlil in day/week (team 5)"
+          for r in day week; do
+            for p in $(seq 1 45); do
+              curl -fsS "$A/global/clan-players?range=$r&page=$p" | jq -c --arg r $r '.items[] | select(.team_id==5) | {r:$r, nickname, points, uuid}' ; done | grep -i eren
+          done
+          echo "== other endpoints"
+          curl -fsS "$A/global/players?range=day&page=1" | jq -c 'del(.items)' || true
+          curl -fsS "$A/meta" || true; echo
