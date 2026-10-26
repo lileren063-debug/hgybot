@@ -518,6 +518,23 @@ async function rankedPlayers(app, range) {
   }
 }
 
+// Points of one player for a range from the data API's player page (stats when ranked, else last_seen)
+async function playerPagePoints(uuid, range) {
+  try {
+    const res = await fetch(`https://mrktsticker.alwaysdata.net/api/player/${encodeURIComponent(uuid)}`, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return null;
+    const d = await res.json();
+    const stat = d && d.stats && d.stats[range] && d.stats[range].points;
+    const seen = d && d.activity && d.activity.last_seen;
+    const points = stat != null ? Number(stat) : seen && seen[range + '_points'] != null ? Number(seen[range + '_points']) : null;
+    if (points == null) return null;
+    const teamId = Number((d.clan && d.clan.team_id) || (seen && seen.clan_id)) || 0;
+    return { uuid, points, team_id: teamId, clan_name: (d.clan && d.clan.name) || (seen && seen.clan_name) || '' };
+  } catch (e) {
+    return null;
+  }
+}
+
 async function findPlayer(app, range, uuid) {
   return (await rankedPlayers(app, range)).find(p => p.uuid === uuid) || null;
 }
@@ -1068,7 +1085,9 @@ async function postTask(app, body) {
     if (task.kind === 'clan_points') {
       // Only this period's list is read: one request may build one list at most
       const players = await rankedPlayers(app, PERIOD_RANGE[task.period]);
-      const me = players.find(p => p.uuid === link.uuid);
+      let me = players.find(p => p.uuid === link.uuid);
+      // The ranking lists only the top ~900 players; anyone below is read from their own player page
+      if (!me && task.scope !== 'clan') me = await playerPagePoints(link.uuid, PERIOD_RANGE[task.period]);
       if ((me ? me.team_id : link.team_id) !== task.clanId) return notMember;
       const value = task.scope === 'clan'
         ? players.filter(p => p.team_id === task.clanId).reduce((s, p) => s + p.points, 0)

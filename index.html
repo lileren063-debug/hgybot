@@ -8472,6 +8472,14 @@
     }
 
     // Progress of a points task from the live clan list of its period
+    function playerPagePoints(profile, range) {
+      if (!profile) return 0;
+      const stat = profile.stats && profile.stats[range] && profile.stats[range].points;
+      if (stat != null) return Number(stat) || 0;
+      const seen = profile.activity && profile.activity.last_seen;
+      return seen && seen[range + '_points'] != null ? Number(seen[range + '_points']) || 0 : 0;
+    }
+
     function getTaskProgress(t) {
       if (t.kind !== 'clan_points') return null;
       const range = TASK_PERIOD_RANGE[t.period] || 'day';
@@ -8486,7 +8494,8 @@
         const me = uuid ? cached.items.find(p => p.uuid === uuid) : null;
         // Points already used by the player's other finished tasks of this clan and period don't count again
         // (claims made with more points than now belong to the game's previous day/week and are ignored)
-        const current = me ? Number(me.points) || 0 : 0;
+        // Players below the ranking's top ~900 are not in the list: use their own player page (as Profile does)
+        const current = me ? Number(me.points) || 0 : playerPagePoints(botUserProfileData, range);
         used = (t.usedClaims || []).filter(c => c.value <= current).reduce((sum, c) => sum + c.target, 0);
         value = Math.max(0, current - used);
       }
