@@ -66,7 +66,8 @@ export async function getClanPlayers(range, ctx, origin) {
     const age = (Date.now() - Number(cached.headers.get('X-Built-At') || 0)) / 1000;
     if (age > CACHE_SECONDS && !ctx.clanPlayersBuild) {
       ctx.clanPlayersBuild = true;
-      ctx.waitUntil(buildAndStore(range, cache, cacheKey).catch(() => null));
+      const prev = { builtAt: Number(cached.headers.get('X-Built-At') || 0), data: await cached.clone().json() };
+      ctx.waitUntil(buildAndStore(range, cache, cacheKey, prev, ctx.env && ctx.env.DB).catch(() => null));
     }
     return cached.json();
   }
@@ -76,7 +77,7 @@ export async function getClanPlayers(range, ctx, origin) {
   return fresh.json();
 }
 
-async function buildAndStore(range, cache, cacheKey) {
+async function buildAndStore(range, cache, cacheKey, prev = null, db = null) {
   const first = await fetchPage(range, 1);
   const pageSize = Number(first.page_size) || (first.items || []).length || 20;
   const total = Number(first.total) || 0;
@@ -122,7 +123,40 @@ async function buildAndStore(range, cache, cacheKey) {
   }, 200, { 'Cache-Control': 'public, max-age=86400', 'X-Built-At': String(Date.now()) });
 
   await cache.put(cacheKey, response.clone());
+  if (prev && db) await noteGameReset(db, range, prev, players).catch(() => null);
   return response;
+}
+
+// The game resets day/week/month points at its own hour. When the total of a list falls sharply between
+// two builds, the reset happened in between; the narrowest such window tells the reset time (see resetOffset).
+async function noteGameReset(db, range, prev, players) {
+  const sum = list => list.reduce((s, p) => s + (Number(p.points) || 0), 0);
+  const before = sum((prev.data && prev.data.players) || []);
+  const after = sum(players);
+  if (!prev.builtAt || before < 1000 || after > before * 0.5) return;
+  const row = await db.prepare("SELECT value FROM meta WHERE key = 'game_reset_v1'").first();
+  const state = row ? JSON.parse(row.value) : {};
+  const windows = (state[range] || []).concat([{ start: prev.builtAt, end: Date.now() }]).slice(-10);
+  state[range] = windows;
+  await db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('game_reset_v1', ?)").bind(JSON.stringify(state)).run();
+}
+
+// Minutes after 00:00 UTC at which the game's day starts, from the narrowest seen reset window (null = unknown)
+export function resetMinuteOfDay(state) {
+  // Only windows of 90 minutes or less are precise enough to pick the hour
+  const windows = ((state && state.day) || []).filter(w => w.end - w.start <= 90 * 60000);
+  if (!windows.length) return null;
+  const best = windows.reduce((a, b) => (b.end - b.start < a.end - a.start ? b : a));
+  // Prefer a round time inside the window (the game resets on the hour or half hour)
+  for (const step of [60, 30, 15, 5, 1]) {
+    const ms = step * 60000;
+    const t = Math.ceil(best.start / ms) * ms;
+    if (t <= best.end) {
+      const d = new Date(t);
+      return d.getUTCHours() * 60 + d.getUTCMinutes();
+    }
+  }
+  return null;
 }
 
 async function fetchPage(range, page) {

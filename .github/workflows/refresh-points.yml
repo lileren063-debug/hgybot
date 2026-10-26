@@ -1,0 +1,12 @@
+# Reads the daily ranking every 15 minutes, so the server notices the moment the game resets
+# daily points and can start daily/weekly/season tasks at that time. Read-only, public data.
+name: Refresh game points
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS -o /dev/null https://hgybot.pages.dev/api/clans/5/members?range=day

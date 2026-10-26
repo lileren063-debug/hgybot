@@ -23,7 +23,7 @@
 //   task rewards - giveaway entries - reward claims
 // In-game clan points are separate: they only decide clan-points tasks and clan membership.
 
-import { getClanPlayers } from './clan-points.js';
+import { getClanPlayers, resetMinuteOfDay } from './clan-points.js';
 
 const DEFAULT_SUPER_ADMIN_IDS = '1563597048'; // @erenlil
 const SEED_CLAN = {
@@ -250,6 +250,8 @@ async function platform(app, url, body) {
   if (app.isSuper) {
     out.announce = await getAnnouncement(app.db);
     out.announce.broadcast = await broadcastStatus(app.db);
+    const reset = await app.db.prepare("SELECT value FROM meta WHERE key = 'game_reset_v1'").first();
+    out.game_reset_minute = resetMinuteOfDay(reset ? JSON.parse(reset.value) : null);
     const staff = await app.db.prepare('SELECT team_id, user_key, label, role, can_giveaways, can_tasks, added_at FROM clan_staff ORDER BY team_id, added_at').all();
     out.staff = staff.results.map(s => ({
       team_id: Number(s.team_id),
@@ -830,7 +832,23 @@ async function postReward(app, body) {
 // ---------------------------------------------------------------- tasks
 
 // Daily: UTC date. Weekly: Monday of the UTC week. Season: UTC month (the game's monthly reset). Once: forever.
-export function periodKey(period, now = new Date()) {
+// Task periods follow the game's own reset hour. offsetMin moves the clock so that the game's reset
+// falls on 00:00: +(1440 - R) for a reset late in the UTC day, -R for one early in it (R = reset minute).
+export function periodOffset(resetMinute) {
+  if (!resetMinute) return 0;
+  return resetMinute >= 720 ? 1440 - resetMinute : -resetMinute;
+}
+
+async function getPeriodOffset(app) {
+  if (app.periodOffset == null) {
+    const row = await app.db.prepare("SELECT value FROM meta WHERE key = 'game_reset_v1'").first();
+    app.periodOffset = periodOffset(resetMinuteOfDay(row ? JSON.parse(row.value) : null));
+  }
+  return app.periodOffset;
+}
+
+export function periodKey(period, at = new Date(), offsetMin = 0) {
+  const now = new Date(at.getTime() + offsetMin * 60000);
   const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   if (period === 'daily') return day.toISOString().slice(0, 10);
   if (period === 'weekly') {
@@ -860,6 +878,7 @@ async function listTasks(app, clanId) {
   ]);
   clans.push(GLOBAL_CLAN);
   if (app.isSuper) perms[0] = { role: 'super', giveaways: false, tasks: true };
+  const offset = await getPeriodOffset(app);
 
   // Tasks of a clan with tasks turned off are only shown to its managers
   const items = [];
@@ -871,7 +890,7 @@ async function listTasks(app, clanId) {
     t.clanId = clan.team_id;
     t.clanName = clan.name;
     t.clanAvatar = clan.avatar;
-    t.periodKey = periodKey(t.period);
+    t.periodKey = periodKey(t.period, new Date(), offset);
     t.canManage = manager;
     t.myStatus = null;
     items.push(t);
@@ -916,7 +935,7 @@ async function listTasks(app, clanId) {
     });
   }
   delete perms[0];
-  return { items, pending };
+  return { items, pending, period_offset_min: offset };
 }
 
 function stackKey(clanId, period, key) {
@@ -1034,7 +1053,7 @@ async function postTask(app, body) {
     const clan = await getTaskClan(db, task.clanId);
     if (!clan || !clan.tasks_enabled) return { error: 'Tasks are turned off for this clan' };
     const forEveryone = clan.team_id === 0;
-    const key = periodKey(task.period);
+    const key = periodKey(task.period, new Date(), await getPeriodOffset(app));
     const existing = await db.prepare('SELECT status FROM task_claims WHERE task_id = ? AND user_id = ? AND period_key = ?').bind(task.id, user.id, key).first();
     if (existing && existing.status === 'done') return { error: 'You already completed this task' + (task.period === 'once' ? '' : ' for this period') };
     if (existing && existing.status === 'pending') return { error: 'Your request is waiting for an admin' };

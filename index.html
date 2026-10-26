@@ -8207,7 +8207,7 @@
 
     function applyPlatformState(data) {
       if (!data) return;
-      platformState = { clans: data.clans || [], me: data.me || null, staff: data.staff || [], announce: data.announce || null };
+      platformState = { clans: data.clans || [], me: data.me || null, staff: data.staff || [], announce: data.announce || null, gameResetMinute: data.game_reset_minute == null ? null : Number(data.game_reset_minute) };
       if (selectedPlatformClanId && !getPlatformClan(selectedPlatformClanId)) selectedPlatformClanId = 0;
       renderPlatformClanFilter();
       renderPlatformAdminEntry();
@@ -8416,13 +8416,19 @@
     let tasksLoaded = false;
     const taskRosterCache = {}; // `${clanId}|${range}` -> { at, items }
     const TASK_PERIOD_RANGE = { daily: 'day', weekly: 'week', season: 'month' };
-    // When the current task period ends (UTC, same periods as the server): day, Monday-based week, game month
-    function taskPeriodEndMs(period, now = new Date()) {
+    // Minutes the server shifts the clock so task periods start at the game's own reset hour
+    let taskPeriodOffsetMin = 0;
+
+    // When the current task period ends (same periods as the server): day, Monday-based week, game month
+    function taskPeriodEndMs(period, at = new Date()) {
+      const off = taskPeriodOffsetMin * 60000;
+      const now = new Date(at.getTime() + off);
       const y = now.getUTCFullYear(), m = now.getUTCMonth(), d = now.getUTCDate();
-      if (period === 'daily') return Date.UTC(y, m, d + 1);
-      if (period === 'weekly') return Date.UTC(y, m, d + 7 - ((now.getUTCDay() + 6) % 7));
-      if (period === 'season') return Date.UTC(y, m + 1, 1);
-      return 0;
+      let end = 0;
+      if (period === 'daily') end = Date.UTC(y, m, d + 1);
+      else if (period === 'weekly') end = Date.UTC(y, m, d + 7 - ((now.getUTCDay() + 6) % 7));
+      else if (period === 'season') end = Date.UTC(y, m + 1, 1);
+      return end ? end - off : 0;
     }
 
     function formatTaskCountdown(endsMs, done) {
@@ -8452,7 +8458,7 @@
       const res = await storeRequest('/tasks');
       if (res.ok) {
         tasksList = res.items;
-        tasksPending = res.data.pending || [];
+        tasksPending = res.data.pending || []; taskPeriodOffsetMin = Number(res.data.period_offset_min) || 0;
         tasksLoaded = true;
       }
       renderHomeClanList();
@@ -8654,7 +8660,7 @@
         return;
       }
       tasksList = res.items;
-      tasksPending = res.data.pending || [];
+      tasksPending = res.data.pending || []; taskPeriodOffsetMin = Number(res.data.period_offset_min) || 0;
       ['tk-title-input', 'tk-desc-input', 'tk-chat-input', 'tk-link-input'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -8677,7 +8683,7 @@
         return;
       }
       tasksList = res.items;
-      tasksPending = res.data.pending || [];
+      tasksPending = res.data.pending || []; taskPeriodOffsetMin = Number(res.data.period_offset_min) || 0;
       renderTasksView();
       loadPlatformState();
       const now = tasksList.find(x => x.id === taskId);
@@ -8694,7 +8700,7 @@
         return;
       }
       tasksList = res.items;
-      tasksPending = res.data.pending || [];
+      tasksPending = res.data.pending || []; taskPeriodOffsetMin = Number(res.data.period_offset_min) || 0;
       renderTasksView();
       showCyberToast(approve ? '✓ Approved, points added' : '✕ Rejected');
     }
@@ -8710,7 +8716,7 @@
         return;
       }
       tasksList = res.items;
-      tasksPending = res.data.pending || [];
+      tasksPending = res.data.pending || []; taskPeriodOffsetMin = Number(res.data.period_offset_min) || 0;
       renderTasksView();
     }
 
@@ -8820,6 +8826,7 @@
         <div style="font-size:11.5px; color:#8faac4; line-height:1.5;">
           You decide which clans may run giveaways (🎁) and tasks (🎯), and who manages them. Clan admins can only touch their own clan; the server checks every action.
         </div>
+        <div style="font-size:11px; color:#8faac4; margin-top:6px;">🕛 Game day reset: ${platformState.gameResetMinute == null ? 'not detected yet (tasks use 00:00 UTC until the server sees the game reset once)' : (() => { const m = platformState.gameResetMinute; const f = x => String(Math.floor(x / 60) % 24).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'); return `${f(m)} UTC (TR ${f(m + 180)}) • daily, weekly and season tasks reset then`; })()}</div>
 
         <div class="pf-section-title">🏰 Clans (${clans.length})</div>
         ${clanRows || '<div style="color:#8faac4; font-size:12px;">No clans yet.</div>'}
