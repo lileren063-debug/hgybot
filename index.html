@@ -342,6 +342,24 @@
   }
 
   /* ==================== 5. Views Wrapper & Cards ==================== */
+  .tk-countdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    color: #d4af37;
+    background: rgba(212, 175, 55, 0.08);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 9px;
+    padding: 3px 9px;
+    margin: 2px 0 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tk-card.done .tk-countdown {
+    color: #8faac4;
+    background: rgba(143, 170, 196, 0.08);
+    border-color: rgba(143, 170, 196, 0.3);
+  }
   #tg-fullscreen-btn {
     position: fixed;
     top: calc(10px + var(--tg-top-inset, 0px));
@@ -8397,6 +8415,36 @@
     let tasksLoaded = false;
     const taskRosterCache = {}; // `${clanId}|${range}` -> { at, items }
     const TASK_PERIOD_RANGE = { daily: 'day', weekly: 'week', season: 'month' };
+    // When the current task period ends (UTC, same periods as the server): day, Monday-based week, game month
+    function taskPeriodEndMs(period, now = new Date()) {
+      const y = now.getUTCFullYear(), m = now.getUTCMonth(), d = now.getUTCDate();
+      if (period === 'daily') return Date.UTC(y, m, d + 1);
+      if (period === 'weekly') return Date.UTC(y, m, d + 7 - ((now.getUTCDay() + 6) % 7));
+      if (period === 'season') return Date.UTC(y, m + 1, 1);
+      return 0;
+    }
+
+    function formatTaskCountdown(endsMs, done) {
+      let sec = Math.max(0, Math.floor((endsMs - Date.now()) / 1000));
+      const days = Math.floor(sec / 86400); sec %= 86400;
+      const h = Math.floor(sec / 3600); sec %= 3600;
+      const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+      const ss = String(sec % 60).padStart(2, '0');
+      const time = days ? `${days}d ${h}h ${mm}m` : `${String(h).padStart(2, '0')}:${mm}:${ss}`;
+      return `⏳ ${done ? 'New round in' : 'Ends in'} <b>${time}</b>`;
+    }
+
+    // One ticker for every visible task countdown; a finished period reloads the tasks
+    setInterval(() => {
+      let ended = false;
+      document.querySelectorAll('.tk-countdown').forEach(el => {
+        const ends = Number(el.dataset.ends) || 0;
+        if (ends && ends <= Date.now()) ended = true;
+        el.innerHTML = formatTaskCountdown(ends, el.dataset.done === '1');
+      });
+      if (ended && typeof loadTasksData === 'function') loadTasksData();
+    }, 1000);
+
     const TASK_PERIOD_LABEL = { daily: '📅 Daily', weekly: '🗓 Weekly', season: '🏆 Season', once: '⭐ One-time' };
 
     async function loadTasksData() {
@@ -8535,6 +8583,7 @@
               <span class="gw-pill">${TASK_PERIOD_LABEL[t.period] || ''}</span>
               <span class="gw-pill">${escapeHtml(taskTypeLabel(t))}</span>
             </div>
+            ${taskPeriodEndMs(t.period) ? `<div class="tk-countdown" data-ends="${taskPeriodEndMs(t.period)}" data-done="${done ? 1 : 0}">${formatTaskCountdown(taskPeriodEndMs(t.period), done)}</div>` : ''}
             ${progressHtml}
             ${t.kind === 'manual' && !done && !pend && !otherClan ? `<input type="text" id="tk-note-${escapeHtml(t.id)}" class="search-input" style="padding:8px 11px; font-size:12px; margin-top:8px;" placeholder="Note for the admin (optional)">` : ''}
             <div class="tk-actions">${actions}</div>
