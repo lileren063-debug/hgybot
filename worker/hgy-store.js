@@ -881,6 +881,13 @@ async function listTasks(app, clanId) {
     const mine = await db.prepare('SELECT task_id, period_key, status FROM task_claims WHERE user_id = ?').bind(app.user.id).all();
     const byTask = new Map(mine.results.map(c => [c.task_id + '|' + c.period_key, c.status]));
     for (const t of items) t.myStatus = byTask.get(t.id + '|' + t.periodKey) || null;
+    // Player points tasks of one clan and period stack: points used by one task cannot count for another
+    const used = await usedPlayerPoints(db, app.user.id);
+    for (const t of items) {
+      if (t.kind === 'clan_points' && t.scope !== 'clan') {
+        t.usedPoints = (used.get(stackKey(t.clanId, t.period, t.periodKey)) || 0) - (t.myStatus === 'done' ? t.target : 0);
+      }
+    }
   }
 
   // Manual tasks waiting for a decision, for the clans this user may review
@@ -909,6 +916,26 @@ async function listTasks(app, clanId) {
   }
   delete perms[0];
   return { items, pending };
+}
+
+function stackKey(clanId, period, key) {
+  return `${clanId}|${period}|${key}`;
+}
+
+// clan|period|periodKey -> PTS already used by this user's completed player points tasks in that period
+async function usedPlayerPoints(db, userId) {
+  const rows = (await db.prepare(
+    "SELECT c.period_key, t.clan_id, t.data FROM task_claims c JOIN tasks t ON t.id = c.task_id " +
+    "WHERE c.user_id = ? AND c.status = 'done' AND json_extract(t.data, '$.kind') = 'clan_points'"
+  ).bind(userId).all()).results;
+  const used = new Map();
+  for (const r of rows) {
+    const t = JSON.parse(r.data);
+    if (t.scope === 'clan') continue;
+    const k = stackKey(Number(r.clan_id), t.period, r.period_key);
+    used.set(k, (used.get(k) || 0) + (Number(t.target) || 0));
+  }
+  return used;
 }
 
 async function getTask(db, id) {
@@ -1018,8 +1045,14 @@ async function postTask(app, body) {
       const value = task.scope === 'clan'
         ? players.filter(p => p.team_id === task.clanId).reduce((s, p) => s + p.points, 0)
         : (me ? me.points : 0);
-      if (value < task.target) return { error: `Not reached yet: ${value} / ${task.target} PTS` };
+      const usedPts = task.scope === 'clan' ? 0 : ((await usedPlayerPoints(db, user.id)).get(stackKey(task.clanId, task.period, key)) || 0);
+      if (value - usedPts < task.target) {
+        return { error: usedPts
+          ? `Not reached yet: ${Math.max(0, value - usedPts)} / ${task.target} PTS (${value} earned, ${usedPts} already used by your other tasks)`
+          : `Not reached yet: ${value} / ${task.target} PTS` };
+      }
       data.value = value;
+      data.used_before = usedPts;
     } else if (!forEveryone && (await getMembership(app, link)).team_id !== task.clanId) {
       return notMember;
     } else if (task.kind === 'telegram_join') {

@@ -3493,6 +3493,7 @@
                   <input type="number" id="tk-target-input" class="search-input" style="padding:9px; text-align:center; margin-bottom:10px;" value="500" min="1">
                 </div>
               </div>
+              <div style="font-size:10.5px; color:#8faac4; margin:-4px 0 10px;">Player tasks of the same clan and period add up: with 300, 700 and 1000 PTS daily tasks, a player needs 2,000 PTS that day to finish all three.</div>
             </div>
             <div id="tk-chat-fields" style="display:none;">
               <input type="text" id="tk-chat-input" class="search-input" style="padding:9px 12px; font-size:13px; margin-bottom:6px;" placeholder="@HegemonyGames or https://t.me/HegemonyGames">
@@ -8476,9 +8477,10 @@
       } else {
         const uuid = botUserProfileData && botUserProfileData.uuid;
         const me = uuid ? cached.items.find(p => p.uuid === uuid) : null;
-        value = me ? Number(me.points) || 0 : 0;
+        // Points already used by the player's other finished tasks of this clan and period don't count again
+        value = Math.max(0, (me ? Number(me.points) || 0 : 0) - (Number(t.usedPoints) || 0));
       }
-      return { loading: false, value, target: t.target };
+      return { loading: false, value, target: t.target, used: t.scope === 'clan' ? 0 : Number(t.usedPoints) || 0 };
     }
 
     async function fetchTaskRosters(list) {
@@ -8550,7 +8552,8 @@
             <div class="tk-progress-label">
               <span>${prog.loading ? 'Loading progress…' : `${prog.value.toLocaleString()} / ${Number(prog.target).toLocaleString()} PTS`}</span>
               <span>${done ? '100' : pct}%</span>
-            </div>`;
+            </div>
+            ${!done && !prog.loading && prog.used ? `<div style="font-size:10.5px; color:#8faac4; margin-top:3px;">ℹ️ ${prog.used.toLocaleString()} PTS already used by your other ${escapeHtml(TASK_PERIOD_LABEL[t.period] || '')} tasks</div>` : ''}`;
         }
         let actions;
         if (done) {
