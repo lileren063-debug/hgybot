@@ -8472,15 +8472,19 @@
       const cached = taskRosterCache[`${t.clanId}|${range}`];
       if (!cached) return { loading: true, value: 0, target: t.target };
       let value;
+      let used = 0;
       if (t.scope === 'clan') {
         value = cached.items.reduce((sum, p) => sum + (Number(p.points) || 0), 0);
       } else {
         const uuid = botUserProfileData && botUserProfileData.uuid;
         const me = uuid ? cached.items.find(p => p.uuid === uuid) : null;
         // Points already used by the player's other finished tasks of this clan and period don't count again
-        value = Math.max(0, (me ? Number(me.points) || 0 : 0) - (Number(t.usedPoints) || 0));
+        // (claims made with more points than now belong to the game's previous day/week and are ignored)
+        const current = me ? Number(me.points) || 0 : 0;
+        used = (t.usedClaims || []).filter(c => c.value <= current).reduce((sum, c) => sum + c.target, 0);
+        value = Math.max(0, current - used);
       }
-      return { loading: false, value, target: t.target, used: t.scope === 'clan' ? 0 : Number(t.usedPoints) || 0 };
+      return { loading: false, value, target: t.target, used };
     }
 
     async function fetchTaskRosters(list) {

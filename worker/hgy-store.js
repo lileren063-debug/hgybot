@@ -885,7 +885,8 @@ async function listTasks(app, clanId) {
     const used = await usedPlayerPoints(db, app.user.id);
     for (const t of items) {
       if (t.kind === 'clan_points' && t.scope !== 'clan') {
-        t.usedPoints = (used.get(stackKey(t.clanId, t.period, t.periodKey)) || 0) - (t.myStatus === 'done' ? t.target : 0);
+        // The app compares these with the player's current points (see usedFor)
+        t.usedClaims = (used.get(stackKey(t.clanId, t.period, t.periodKey)) || []).filter(c => c.task_id !== t.id).map(c => ({ target: c.target, value: c.value }));
       }
     }
   }
@@ -922,10 +923,10 @@ function stackKey(clanId, period, key) {
   return `${clanId}|${period}|${key}`;
 }
 
-// clan|period|periodKey -> PTS already used by this user's completed player points tasks in that period
+// clan|period|periodKey -> this user's completed player points tasks in that period, with the points they had then
 async function usedPlayerPoints(db, userId) {
   const rows = (await db.prepare(
-    "SELECT c.period_key, t.clan_id, t.data FROM task_claims c JOIN tasks t ON t.id = c.task_id " +
+    "SELECT c.task_id, c.period_key, c.data AS claim, t.clan_id, t.data FROM task_claims c JOIN tasks t ON t.id = c.task_id " +
     "WHERE c.user_id = ? AND c.status = 'done' AND json_extract(t.data, '$.kind') = 'clan_points'"
   ).bind(userId).all()).results;
   const used = new Map();
@@ -933,9 +934,17 @@ async function usedPlayerPoints(db, userId) {
     const t = JSON.parse(r.data);
     if (t.scope === 'clan') continue;
     const k = stackKey(Number(r.clan_id), t.period, r.period_key);
-    used.set(k, (used.get(k) || 0) + (Number(t.target) || 0));
+    if (!used.has(k)) used.set(k, []);
+    used.get(k).push({ task_id: r.task_id, target: Number(t.target) || 0, value: Number(JSON.parse(r.claim || '{}').value) || 0 });
   }
   return used;
+}
+
+// Points used by earlier claims. The game's own day/week may reset at another hour than our UTC period:
+// points only grow within one game period, so a claim made with more points than the player has now
+// belongs to the previous game period and must not use up today's points.
+function usedFor(claims, current) {
+  return (claims || []).filter(c => c.value <= current).reduce((sum, c) => sum + c.target, 0);
 }
 
 async function getTask(db, id) {
@@ -1045,7 +1054,7 @@ async function postTask(app, body) {
       const value = task.scope === 'clan'
         ? players.filter(p => p.team_id === task.clanId).reduce((s, p) => s + p.points, 0)
         : (me ? me.points : 0);
-      const usedPts = task.scope === 'clan' ? 0 : ((await usedPlayerPoints(db, user.id)).get(stackKey(task.clanId, task.period, key)) || 0);
+      const usedPts = task.scope === 'clan' ? 0 : usedFor((await usedPlayerPoints(db, user.id)).get(stackKey(task.clanId, task.period, key)), value);
       if (value - usedPts < task.target) {
         return { error: usedPts
           ? `Not reached yet: ${Math.max(0, value - usedPts)} / ${task.target} PTS (${value} earned, ${usedPts} already used by your other tasks)`
