@@ -919,6 +919,7 @@ async function listTasks(app, clanId) {
     for (const t of items) t.myStatus = byTask.get(t.id + '|' + t.periodKey) || null;
     // Player points tasks of one clan and period stack: points used by one task cannot count for another
     const used = await usedPlayerPoints(db, app.user.id);
+    await addTaskProgress(app, items);
     for (const t of items) {
       if (t.kind === 'clan_points' && t.scope !== 'clan') {
         // The app compares these with the player's current points (see usedFor)
@@ -953,6 +954,31 @@ async function listTasks(app, clanId) {
   }
   delete perms[0];
   return { items, pending, period_offset_min: offset };
+}
+
+// The points each clan points task will be judged on, from the same source the claim check uses,
+// so the progress bar and Check Progress always agree
+async function addTaskProgress(app, items) {
+  const pointTasks = items.filter(t => t.kind === 'clan_points');
+  if (!pointTasks.length) return;
+  const link = await getLink(app.db, app.user.id);
+  const ranges = [...new Set(pointTasks.map(t => PERIOD_RANGE[t.period]).filter(Boolean))];
+  for (const range of ranges) {
+    let players = null;
+    try {
+      players = await rankedPlayers(app, range);
+    } catch (e) {
+      continue; // list not ready in this request; the app falls back to its own reading
+    }
+    let me = link ? players.find(p => p.uuid === link.uuid) : null;
+    const needMine = link && pointTasks.some(t => PERIOD_RANGE[t.period] === range && t.scope !== 'clan');
+    if (!me && needMine) me = await playerPagePoints(link.uuid, range);
+    for (const t of pointTasks) {
+      if (PERIOD_RANGE[t.period] !== range) continue;
+      if (t.scope === 'clan') t.progressValue = players.filter(p => p.team_id === t.clanId).reduce((sum, p) => sum + p.points, 0);
+      else if (link) t.progressValue = me ? me.points : 0;
+    }
+  }
 }
 
 function stackKey(clanId, period, key) {

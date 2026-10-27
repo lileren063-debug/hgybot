@@ -8483,6 +8483,12 @@
     function getTaskProgress(t) {
       if (t.kind !== 'clan_points') return null;
       const range = TASK_PERIOD_RANGE[t.period] || 'day';
+      // Prefer the server's number: it is exactly what Check Progress is judged on
+      if (t.progressValue != null) {
+        const raw = Number(t.progressValue) || 0;
+        const used = t.scope === 'clan' ? 0 : (t.usedClaims || []).filter(c => c.value <= raw).reduce((sum, c) => sum + c.target, 0);
+        return { loading: false, value: Math.max(0, raw - used), target: t.target, used };
+      }
       const cached = taskRosterCache[`${t.clanId}|${range}`];
       if (!cached) return { loading: true, value: 0, target: t.target };
       let value;
