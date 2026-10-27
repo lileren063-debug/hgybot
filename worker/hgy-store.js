@@ -509,7 +509,12 @@ async function getLink(db, userId) {
 async function rankedPlayers(app, range) {
   app.players = app.players || {};
   try {
-    if (!app.players[range]) app.players[range] = (await getClanPlayers(range, app.ctx, app.origin)).players;
+    if (!app.players[range]) {
+      const data = await getClanPlayers(range, app.ctx, app.origin);
+      app.players[range] = data.players;
+      app.playersAge = app.playersAge || {};
+      app.playersAge[range] = Date.now() - (Date.parse(data.generated_at) || 0);
+    }
     return app.players[range];
   } catch (e) {
     const err = new Error('Data API unreachable');
@@ -533,6 +538,14 @@ async function playerPagePoints(uuid, range) {
   } catch (e) {
     return null;
   }
+}
+
+// One player's points: from the ranking while it is fresh, else (or when not ranked) from their player page
+const FRESH_LIST_MS = 10 * 60000;
+async function myPoints(app, range, uuid, players) {
+  const listed = players.find(p => p.uuid === uuid) || null;
+  if (listed && (app.playersAge && app.playersAge[range]) <= FRESH_LIST_MS) return listed;
+  return (await playerPagePoints(uuid, range)) || listed;
 }
 
 async function findPlayer(app, range, uuid) {
@@ -970,9 +983,8 @@ async function addTaskProgress(app, items) {
     } catch (e) {
       continue; // list not ready in this request; the app falls back to its own reading
     }
-    let me = link ? players.find(p => p.uuid === link.uuid) : null;
     const needMine = link && pointTasks.some(t => PERIOD_RANGE[t.period] === range && t.scope !== 'clan');
-    if (!me && needMine) me = await playerPagePoints(link.uuid, range);
+    const me = needMine ? await myPoints(app, range, link.uuid, players) : null;
     for (const t of pointTasks) {
       if (PERIOD_RANGE[t.period] !== range) continue;
       if (t.scope === 'clan') t.progressValue = players.filter(p => p.team_id === t.clanId).reduce((sum, p) => sum + p.points, 0);
@@ -1111,9 +1123,8 @@ async function postTask(app, body) {
     if (task.kind === 'clan_points') {
       // Only this period's list is read: one request may build one list at most
       const players = await rankedPlayers(app, PERIOD_RANGE[task.period]);
-      let me = players.find(p => p.uuid === link.uuid);
-      // The ranking lists only the top ~900 players; anyone below is read from their own player page
-      if (!me && task.scope !== 'clan') me = await playerPagePoints(link.uuid, PERIOD_RANGE[task.period]);
+      // The ranking lists only the top players and may be a few minutes old; the player page fills both gaps
+      const me = task.scope === 'clan' ? players.find(p => p.uuid === link.uuid) : await myPoints(app, PERIOD_RANGE[task.period], link.uuid, players);
       if ((me ? me.team_id : link.team_id) !== task.clanId) return notMember;
       const value = task.scope === 'clan'
         ? players.filter(p => p.team_id === task.clanId).reduce((s, p) => s + p.points, 0)

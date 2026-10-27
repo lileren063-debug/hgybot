@@ -8,7 +8,9 @@
 
 const UPSTREAM_API = 'https://mrktsticker.alwaysdata.net/api';
 const CACHE_SECONDS = 120;
-const MAX_PAGES = 45;   // stays under the 50 subrequests a free Pages Function may make
+const MAX_PAGES = 25;   // 25 pages + up to 15 retries stay under the 50 subrequests of a free Pages Function
+const MAX_RETRIES = 15;
+const PAGE_CONCURRENCY = 6;
 const RANGES = ['day', 'week', 'month'];
 
 export function normalizeRange(value, fallback = 'month') {
@@ -83,11 +85,18 @@ async function buildAndStore(range, cache, cacheKey, prev = null, db = null) {
   const total = Number(first.total) || 0;
   const pageCount = Math.min(MAX_PAGES, Math.max(1, Math.ceil(total / pageSize)));
 
-  const rest = [];
-  for (let page = 2; page <= pageCount; page++) {
-    rest.push(fetchPage(range, page).catch(() => null));
+  // A few pages at a time, each retried once: 44 requests at once get some of them refused upstream,
+  // and one missing page used to stop every rebuild, leaving an old list in use
+  const pages = [first];
+  const numbers = [];
+  for (let page = 2; page <= pageCount; page++) numbers.push(page);
+  let retries = MAX_RETRIES;
+  const retry = page => (retries-- > 0 ? fetchPage(range, page) : Promise.reject(new Error('no retries left')));
+  for (let i = 0; i < numbers.length; i += PAGE_CONCURRENCY) {
+    const batch = await Promise.all(numbers.slice(i, i + PAGE_CONCURRENCY).map(page =>
+      fetchPage(range, page).catch(() => retry(page)).catch(() => null)));
+    pages.push(...batch);
   }
-  const pages = [first, ...(await Promise.all(rest))];
   // A partial list would show members with 0 points, so keep the previous one instead
   if (pages.some(p => !p)) throw new Error('Some pages could not be read');
 
