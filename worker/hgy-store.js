@@ -523,7 +523,8 @@ async function rankedPlayers(app, range) {
   }
 }
 
-// Points of one player for a range from the data API's player page (stats when ranked, else last_seen)
+// Points of one player for a range from the data API's player page: last_seen (what Profile shows,
+// confirmed by Eren to match the game), else the ranking stats
 async function playerPagePoints(uuid, range) {
   try {
     const res = await fetch(`https://mrktsticker.alwaysdata.net/api/player/${encodeURIComponent(uuid)}`, { headers: { Accept: 'application/json' } });
@@ -531,7 +532,7 @@ async function playerPagePoints(uuid, range) {
     const d = await res.json();
     const stat = d && d.stats && d.stats[range] && d.stats[range].points;
     const seen = d && d.activity && d.activity.last_seen;
-    const points = stat != null ? Number(stat) : seen && seen[range + '_points'] != null ? Number(seen[range + '_points']) : null;
+    const points = seen && seen[range + '_points'] != null ? Number(seen[range + '_points']) : stat != null ? Number(stat) : null;
     if (points == null) return null;
     const teamId = Number((d.clan && d.clan.team_id) || (seen && seen.clan_id)) || 0;
     return { uuid, points, team_id: teamId, clan_name: (d.clan && d.clan.name) || (seen && seen.clan_name) || '' };
@@ -540,12 +541,9 @@ async function playerPagePoints(uuid, range) {
   }
 }
 
-// One player's points: from the ranking while it is fresh, else (or when not ranked) from their player page
-const FRESH_LIST_MS = 10 * 60000;
+// One player's points: the player page (same number as Profile); the ranking only if that page is unavailable
 async function myPoints(app, range, uuid, players) {
-  const listed = players.find(p => p.uuid === uuid) || null;
-  if (listed && (app.playersAge && app.playersAge[range]) <= FRESH_LIST_MS) return listed;
-  return (await playerPagePoints(uuid, range)) || listed;
+  return (await playerPagePoints(uuid, range)) || players.find(p => p.uuid === uuid) || null;
 }
 
 async function findPlayer(app, range, uuid) {

@@ -8474,10 +8474,11 @@
     // Progress of a points task from the live clan list of its period
     function playerPagePoints(profile, range) {
       if (!profile) return 0;
-      const stat = profile.stats && profile.stats[range] && profile.stats[range].points;
-      if (stat != null) return Number(stat) || 0;
+      // Same order as Profile: last_seen first, then the ranking stats
       const seen = profile.activity && profile.activity.last_seen;
-      return seen && seen[range + '_points'] != null ? Number(seen[range + '_points']) || 0 : 0;
+      if (seen && seen[range + '_points'] != null) return Number(seen[range + '_points']) || 0;
+      const stat = profile.stats && profile.stats[range] && profile.stats[range].points;
+      return stat != null ? Number(stat) || 0 : 0;
     }
 
     function getTaskProgress(t) {
