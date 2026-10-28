@@ -7458,6 +7458,7 @@
       renderRewardsList();
     }
 
+    let rewardClaimBusy = false; // one claim at a time, so a second tap does not send it twice
     async function claimRewardById(rewardId) {
       const rw = rewardsList.find(r => r.id === rewardId && !r.deleted);
       if (!rw) return;
@@ -7497,7 +7498,11 @@
         paidPoints: cost,
         claimedAt: Date.now()
       };
+      if (rewardClaimBusy) return;
+      rewardClaimBusy = true;
+      showCyberToast('⏳ Claiming…');
       const res = await storeRequest('/rewards', { action: 'claim', reward_id: rewardId, claim });
+      rewardClaimBusy = false;
       if (!res.ok) {
         showCyberToast(`⚠️ ${res.error}`);
         loadRewardsData();
@@ -8685,6 +8690,7 @@
       showCyberToast(`✓ Task "${task.title}" added`);
     }
 
+    let taskClaimBusy = false;
     async function claimTaskById(taskId) {
       const t = tasksList.find(x => x.id === taskId);
       if (!t) return;
@@ -8692,8 +8698,12 @@
         showCyberToast('⚠️ Link your Pixel World UUID in Profile first.');
         return;
       }
+      if (taskClaimBusy) return;
+      taskClaimBusy = true;
+      showCyberToast('⏳ Checking…');
       const noteEl = document.getElementById(`tk-note-${taskId}`);
       const res = await storeRequest('/tasks', { action: 'claim', task_id: taskId, note: noteEl ? noteEl.value.trim() : '' });
+      taskClaimBusy = false;
       if (!res.ok) {
         showCyberToast(`⚠️ ${res.error}`);
         return;

@@ -569,11 +569,22 @@ async function rankedPlayers(app, range) {
 
 // Points of one player for a range from the data API's player page: last_seen (what Profile shows,
 // confirmed by Eren to match the game), else the ranking stats
+// One page holds day, week and month, so a claim and the task list after it share one read (10 s)
+const playerPageMemo = new Map();
+function playerPage(uuid) {
+  const hit = playerPageMemo.get(uuid);
+  if (hit && Date.now() - hit.at < 10000) return hit.promise;
+  const promise = fetch(`https://mrktsticker.alwaysdata.net/api/player/${encodeURIComponent(uuid)}`, { headers: { Accept: 'application/json' } })
+    .then(res => (res.ok ? res.json() : null)).catch(() => null);
+  if (playerPageMemo.size > 500) playerPageMemo.clear();
+  playerPageMemo.set(uuid, { at: Date.now(), promise });
+  return promise;
+}
+
 async function playerPagePoints(uuid, range) {
   try {
-    const res = await fetch(`https://mrktsticker.alwaysdata.net/api/player/${encodeURIComponent(uuid)}`, { headers: { Accept: 'application/json' } });
-    if (!res.ok) return null;
-    const d = await res.json();
+    const d = await playerPage(uuid);
+    if (!d) return null;
     const stat = d && d.stats && d.stats[range] && d.stats[range].points;
     const seen = d && d.activity && d.activity.last_seen;
     const points = seen && seen[range + '_points'] != null ? Number(seen[range + '_points']) : stat != null ? Number(stat) : null;
@@ -607,6 +618,17 @@ async function getMembership(app, link) {
     team_id: player ? player.team_id : link.team_id,
     clan_name: player ? player.clan_name : link.clan_name
   };
+}
+
+// Points wallet only (three sums, no game data): what spending checks need
+async function pointsWallet(db, userId) {
+  const [earned, gw, rw] = await Promise.all([
+    db.prepare("SELECT COALESCE(SUM(points), 0) AS s FROM task_claims WHERE user_id = ? AND status = 'done'").bind(userId).first(),
+    db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM giveaway_participants WHERE user_id = ? AND joined_at >= ?").bind(userId, HGY_SPEND_SINCE).first(),
+    db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM reward_claims WHERE user_id = ? AND claimed_at >= ?").bind(userId, HGY_SPEND_SINCE).first()
+  ]);
+  const sum = r => Number(r && r.s) || 0;
+  return Math.max(0, sum(earned) - sum(gw) - sum(rw));
 }
 
 async function getBalance(app, link) {
@@ -750,9 +772,11 @@ async function postGiveaway(app, body) {
     if (cost > 0 || restricted) {
       // Clan-only giveaways need the linked player's clan; HGY points need no link
       if (restricted && !link) return { error: 'Link your Pixel World UUID in Profile first' };
-      const bal = await getBalance(app, link);
+      const bal = { balance: await pointsWallet(db, user.id), clan_name: link ? link.clan_name : '' };
+      const inClan = () => String(bal.clan_name).toLowerCase() === String(gw.eligibleClan).toLowerCase();
+      if (restricted && !inClan()) Object.assign(bal, await getMembership(app, link));
       clanName = bal.clan_name;
-      if (restricted && String(bal.clan_name).toLowerCase() !== String(gw.eligibleClan).toLowerCase()) {
+      if (restricted && !inClan()) {
         return { error: `Only ${gw.eligibleClan} members can join this giveaway` };
       }
       if (cost > bal.balance) {
@@ -877,7 +901,10 @@ async function postReward(app, body) {
   if (body.action === 'claim') {
     const link = await getLink(db, user.id);
     if (!link) return { error: 'Link your Pixel World UUID in Profile first' };
-    const bal = await getBalance(app, link);
+    // The stored clan is kept current by every app open; the game ranking is read only when it does not match
+    // (reading it here made the button wait for the whole ranking)
+    const bal = { balance: await pointsWallet(db, user.id), team_id: link.team_id, clan_name: link.clan_name };
+    if (bal.team_id !== clanId) Object.assign(bal, await getMembership(app, link));
     if (bal.team_id !== clanId) return { error: 'This reward is for members of its clan only' };
     if (rw.cost > bal.balance) return { error: `Not enough points: you have ${bal.balance}, this reward costs ${rw.cost}` };
     const claim = {
@@ -1276,9 +1303,12 @@ async function postTask(app, body) {
     const data = { name: displayName(user), uuid: link ? link.uuid : '' };
     if (task.kind === 'clan_points') {
       // Only this period's list is read: one request may build one list at most
-      const players = await rankedPlayers(app, PERIOD_RANGE[task.period]);
-      // The ranking lists only the top players and may be a few minutes old; the player page fills both gaps
-      const me = task.scope === 'clan' ? players.find(p => p.uuid === link.uuid) : await myPoints(app, PERIOD_RANGE[task.period], link.uuid, players);
+      const range = PERIOD_RANGE[task.period];
+      // Player tasks: the player page first (one quick read, same number as Profile); the whole ranking
+      // only for clan totals or when that page is unavailable
+      const page = task.scope === 'clan' ? null : await playerPagePoints(link.uuid, range);
+      const players = page ? null : await rankedPlayers(app, range);
+      const me = page || players.find(p => p.uuid === link.uuid) || null;
       if ((me ? me.team_id : link.team_id) !== task.clanId) return notMember;
       const value = task.scope === 'clan'
         ? players.filter(p => p.team_id === task.clanId).reduce((s, p) => s + p.points, 0)
