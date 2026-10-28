@@ -247,6 +247,7 @@ async function platform(app, url, body) {
     balance
   };
   if (app.inspect) out.inspect = app.inspect;
+  if (app.taskReport) out.task_report = app.taskReport;
   if (app.isSuper) {
     out.announce = await getAnnouncement(app.db);
     out.announce.broadcast = await broadcastStatus(app.db);
@@ -290,6 +291,13 @@ async function postPlatform(app, body) {
   }
   if (action === 'unlink') {
     await db.prepare('DELETE FROM user_links WHERE user_id = ?').bind(app.user.id).run();
+    return {};
+  }
+
+  // Main admin: every clan; clan admins and task staff: their own clans' tasks
+  if (action === 'task_report') {
+    app.taskReport = await taskReport(app, body.range);
+    if (app.taskReport.error) return app.taskReport;
     return {};
   }
 
@@ -885,6 +893,70 @@ export function periodKey(period, at = new Date(), offsetMin = 0) {
   }
   if (period === 'season') return day.toISOString().slice(0, 7);
   return 'once';
+}
+
+// When the current game day / week / month began (ms), matching periodKey
+export function periodStartMs(period, at = new Date(), offsetMin = 0) {
+  const key = periodKey(period, at, offsetMin).replace(/^W/, '');
+  const [y, m, d] = key.split('-').map(Number);
+  return Date.UTC(y, m - 1, d || 1) - offsetMin * 60000;
+}
+
+// Completed tasks since the start of this game day / week / month, grouped by Telegram user
+async function taskReport(app, range) {
+  const period = { day: 'daily', week: 'weekly', month: 'season' }[range];
+  if (!period) return { error: 'range must be day, week or month' };
+  const perms = await getPerms(app);
+  const allowed = app.isSuper ? null : new Set(Object.keys(perms).filter(id => perms[id].tasks).map(Number));
+  if (allowed && !allowed.size) return { error: 'Only clan admins can see this', status: 403 };
+  const since = periodStartMs(period, new Date(), await getPeriodOffset(app));
+  const rows = (await app.db.prepare(
+    `SELECT c.user_id, c.points, c.data, COALESCE(c.decided_at, c.created_at) AS at, t.clan_id, t.data AS task,
+            l.nickname, l.team_id, l.clan_name, u.data AS seen
+       FROM task_claims c JOIN tasks t ON t.id = c.task_id
+       LEFT JOIN user_links l ON l.user_id = c.user_id
+       LEFT JOIN users_seen u ON u.user_id = c.user_id
+      WHERE c.status = 'done' AND COALESCE(c.decided_at, c.created_at) >= ?
+      ORDER BY at DESC`
+  ).bind(since).all()).results || [];
+  const clans = new Map((await listClans(app.db)).map(c => [c.team_id, c.name]));
+  const users = new Map();
+  for (const r of rows) {
+    const clanId = Number(r.clan_id);
+    if (allowed && !allowed.has(clanId)) continue;
+    const task = JSON.parse(r.task || '{}');
+    const data = JSON.parse(r.data || '{}');
+    let seen = {};
+    try { seen = JSON.parse(r.seen || '{}'); } catch (e) { /* no row */ }
+    const u = users.get(r.user_id) || {
+      user_id: r.user_id,
+      name: data.name || seen.first_name || r.user_id,
+      username: seen.username || '',
+      nickname: r.nickname || '',
+      clan_name: r.clan_name || '',
+      points: 0,
+      tasks: []
+    };
+    u.points += Number(r.points) || 0;
+    u.tasks.push({
+      title: task.title || '',
+      clan: clanId === 0 ? 'All Clans' : clans.get(clanId) || '#' + clanId,
+      reward: Number(r.points) || 0,
+      kind: task.kind,
+      period: task.period,
+      game_points: data.value != null ? Number(data.value) : null,
+      at: r.at
+    });
+    users.set(r.user_id, u);
+  }
+  const list = [...users.values()].sort((a, b) => b.points - a.points || b.tasks.length - a.tasks.length);
+  return {
+    range,
+    since,
+    total_points: list.reduce((s, u) => s + u.points, 0),
+    total_tasks: list.reduce((s, u) => s + u.tasks.length, 0),
+    users: list.slice(0, 300)
+  };
 }
 
 async function tasks(app, url, body) {
