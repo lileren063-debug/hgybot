@@ -267,6 +267,13 @@
     border-radius: 50%;
     -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 71%);
     mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 71%);
+    animation: spinLogo 2.4s linear infinite;
+  }
+
+  /* Turns around its own vertical axis while the app loads */
+  @keyframes spinLogo {
+    from { transform: perspective(800px) rotateY(0deg); }
+    to { transform: perspective(800px) rotateY(360deg); }
   }
 
   @keyframes floatWolf {
