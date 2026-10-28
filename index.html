@@ -8903,6 +8903,12 @@
             <button type="button" class="pf-manage-btn" style="background:rgba(91,141,239,0.15); color:#5b8def;" onclick="adminInspectPlayer()">🔎</button>
           </div>
           <div id="pf-inspect-result" style="font-size:11.5px; color:#cfd8e6; margin-top:8px; line-height:1.55;"></div>
+          <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+            <button type="button" class="pf-manage-btn" style="background:rgba(91,141,239,0.15); color:#5b8def;" onclick="adminClaimsFix(false)">🧮 Find over-claimed tasks</button>
+            <button type="button" class="pf-manage-btn" style="background:rgba(224,90,90,0.15); color:#e05a5a;" onclick="adminClaimsFix(true)">↩️ Take back over-claimed tasks</button>
+          </div>
+          <div style="font-size:10.5px; color:#8faac4; margin-top:4px;">Uses the box above for one player; empty box = every player. Taken back tasks give 0 Points and can be tried again.</div>
+          <div id="pf-claims-fix-result" style="font-size:11.5px; color:#cfd8e6; margin-top:8px; line-height:1.55;"></div>
         </div>
 
         <div class="pf-section-title">🔗 Reset a player link</div>
@@ -9054,7 +9060,7 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
         <b>Linked player:</b> ${r.link ? `${escapeHtml(r.link.nickname || '')} • ${escapeHtml(r.link.uuid)} • ${escapeHtml(r.link.clan_name || 'no clan')} • ${d(r.link.linked_at)}` : 'not linked'}<br>
         ${r.ranking ? `<b>Game today:</b> ${rank(r.ranking.day)}<br><b>Week:</b> ${rank(r.ranking.week)}<br><b>Month:</b> ${rank(r.ranking.month)}<br>` : ''}
         ${r.points ? `<b>Points:</b> ${r.points.balance} (earned ${r.points.earned}, spent ${r.points.spent})<br>` : ''}
-        ${r.tasks && r.tasks.length ? `<b>Tasks:</b><br>${r.tasks.map(t => `• ${escapeHtml(t.task)} • ${escapeHtml(t.status)} • +${t.points} • ${d(t.at)}`).join('<br>')}<br>` : ''}
+        ${r.tasks && r.tasks.length ? `<b>Tasks:</b><br>${r.tasks.map(t => `• ${escapeHtml(t.task)} • ${escapeHtml(t.status)} • +${t.points}${t.value != null ? ` • read ${t.value} PTS${t.used_before ? `, ${t.used_before} already used` : ''}` : ''} • ${d(t.at)}`).join('<br>')}<br>` : ''}
         ${r.giveaways && r.giveaways.length ? `<b>Giveaways joined:</b> ${r.giveaways.length}<br>` : ''}
         ${r.rewards && r.rewards.length ? `<b>Rewards claimed:</b> ${r.rewards.length}<br>` : ''}`;
     }
@@ -9102,6 +9108,20 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
             ${u.tasks.map(t => `• ${escapeHtml(t.title)} <span style="color:#8faac4;">(${escapeHtml(t.clan)})</span> <b style="color:#d4af37;">+${t.reward}</b>${t.game_points != null ? ` <span style="color:#5b8def;">• ${t.game_points} PTS in game</span>` : ''} <span style="color:#8faac4;">• ${time(t.at)}</span>`).join('<br>')}
           </div>
         </details>`).join('');
+    }
+
+    async function adminClaimsFix(apply) {
+      const q = (document.getElementById('pf-inspect-q') || {}).value || '';
+      const out = document.getElementById('pf-claims-fix-result');
+      if (apply && !confirm(`Take back over-claimed points tasks of ${q.trim() || 'EVERY player'}?`)) return;
+      if (out) out.textContent = 'Checking…';
+      const res = await storeRequest('/platform', { action: 'claims_fix', value: q.trim(), apply });
+      const r = res.ok && res.data.claims_fix;
+      if (!r) { if (out) out.textContent = `⚠️ ${res.error || 'Check failed'}`; return; }
+      if (!out) return;
+      if (!r.tasks) { out.innerHTML = '<span style="color:#3fbf7f;">✅ No over-claimed tasks</span>'; return; }
+      out.innerHTML = `${r.applied ? '↩️ Taken back' : '⚠️ Over-claimed'}: <b>${r.tasks}</b> tasks • <b style="color:#d4af37;">${r.points} Points</b><br>` +
+        r.users.map(u => `• ${escapeHtml(u.name)} (ID ${escapeHtml(u.user_id)}): ${u.tasks} tasks, ${u.points} Points`).join('<br>');
     }
 
     async function adminSetupBot(btn) {

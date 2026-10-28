@@ -248,6 +248,7 @@ async function platform(app, url, body) {
   };
   if (app.inspect) out.inspect = app.inspect;
   if (app.taskReport) out.task_report = app.taskReport;
+  if (app.claimsFix) out.claims_fix = app.claimsFix;
   if (app.isSuper) {
     out.announce = await getAnnouncement(app.db);
     out.announce.broadcast = await broadcastStatus(app.db);
@@ -379,6 +380,36 @@ async function postPlatform(app, body) {
     return {};
   }
 
+  // Over-claimed points tasks: one player (value = id/@username/uuid) or everyone; apply = take them back
+  if (action === 'claims_fix') {
+    const q = cleanText(body.value, 64).replace(/^@/, '');
+    let userId = null;
+    if (q) {
+      const r = await inspectPlayer(app, q);
+      if (!r.telegram_id) return { error: 'Player not found' };
+      userId = r.telegram_id;
+    }
+    const extra = await overClaims(db, userId);
+    if (body.apply && extra.length) {
+      await revokeClaims(app, extra);
+      notifyAdmins(app, `↩️ <b>Fazla alınan görevler geri alındı</b>\n${extra.length} görev • ${extra.reduce((s, c) => s + c.points, 0)} Points`, true);
+    }
+    const byUser = new Map();
+    for (const c of extra) {
+      const u = byUser.get(c.user_id) || { user_id: c.user_id, tasks: 0, points: 0 };
+      u.tasks++;
+      u.points += c.points;
+      byUser.set(c.user_id, u);
+    }
+    for (const u of byUser.values()) {
+      const seen = await db.prepare('SELECT data FROM users_seen WHERE user_id = ?').bind(u.user_id).first();
+      const d = seen ? JSON.parse(seen.data || '{}') : {};
+      u.name = d.username ? '@' + d.username : d.first_name || u.user_id;
+    }
+    app.claimsFix = { applied: Boolean(body.apply), tasks: extra.length, points: extra.reduce((s, c) => s + c.points, 0), users: [...byUser.values()].sort((a, b) => b.points - a.points) };
+    return {};
+  }
+
   if (action === 'link_reset') {
     const v = cleanText(body.value, 64);
     if (!v) return { error: 'Enter a Telegram id or player UUID' };
@@ -476,7 +507,7 @@ async function inspectPlayer(app, q) {
   if (userId) {
     const since = HGY_SPEND_SINCE;
     const [claims, entries, rclaims, earned, gwSpent, rwSpent] = await Promise.all([
-      db.prepare('SELECT task_id, period_key, status, points, created_at FROM task_claims WHERE user_id = ? ORDER BY created_at DESC LIMIT 20').bind(userId).all(),
+      db.prepare('SELECT task_id, period_key, status, points, data, created_at FROM task_claims WHERE user_id = ? ORDER BY created_at DESC LIMIT 40').bind(userId).all(),
       db.prepare('SELECT giveaway_id, data, joined_at FROM giveaway_participants WHERE user_id = ? ORDER BY joined_at DESC LIMIT 20').bind(userId).all(),
       db.prepare('SELECT reward_id, data, claimed_at FROM reward_claims WHERE user_id = ? ORDER BY claimed_at DESC LIMIT 20').bind(userId).all(),
       db.prepare("SELECT COALESCE(SUM(points), 0) AS s FROM task_claims WHERE user_id = ? AND status = 'done'").bind(userId).first(),
@@ -486,9 +517,14 @@ async function inspectPlayer(app, q) {
     const titles = new Map((await db.prepare('SELECT id, data FROM tasks').all()).results.map(r => [r.id, JSON.parse(r.data).title]));
     out.points = { earned: Number(earned.s) || 0, spent: (Number(gwSpent.s) || 0) + (Number(rwSpent.s) || 0) };
     out.points.balance = out.points.earned - out.points.spent;
-    out.tasks = claims.results.map(c => ({ task: titles.get(c.task_id) || c.task_id, period: c.period_key, status: c.status, points: c.points, at: c.created_at }));
+    out.tasks = claims.results.map(c => { const d = JSON.parse(c.data || '{}'); return { task: titles.get(c.task_id) || c.task_id, period: c.period_key, status: c.status, points: c.points, value: d.value != null ? Number(d.value) : null, used_before: d.used_before != null ? Number(d.used_before) : null, at: c.created_at }; });
     out.giveaways = entries.results.map(e => ({ id: e.giveaway_id, paid: JSON.parse(e.data).paidPoints || 0, at: e.joined_at }));
     out.rewards = rclaims.results.map(e => ({ id: e.reward_id, paid: JSON.parse(e.data).paidPoints || 0, at: e.claimed_at }));
+  }
+
+  if (userId) {
+    const extra = await overClaims(db, userId);
+    if (extra.length) out.problems.push(`${extra.length} points tasks (${extra.reduce((s, c) => s + c.points, 0)} Points) were completed without enough game points. Use "Take back over-claimed tasks" below.`);
   }
 
   // Common causes, in plain words
@@ -1084,11 +1120,59 @@ async function usedPlayerPoints(db, userId) {
   return used;
 }
 
-// Points used by earlier claims. The game's own day/week may reset at another hour than our UTC period:
-// points only grow within one game period, so a claim made with more points than the player has now
-// belongs to the previous game period and must not use up today's points.
+// Points used by earlier claims. The game's own day/week may reset at another hour than our period:
+// points only grow within one game period, so a claim made with far more points than the player has now
+// (current under half of it: a reset) belongs to the previous game period and must not use up today's points.
+// A small drop is only two sources disagreeing for a moment; it used to free every earlier claim.
 function usedFor(claims, current) {
-  return (claims || []).filter(c => c.value <= current).reduce((sum, c) => sum + c.target, 0);
+  return (claims || []).filter(c => current * 2 >= c.value).reduce((sum, c) => sum + c.target, 0);
+}
+
+// Player points task claims beyond what the player's points allowed (from before the stacking fix, or two taps
+// at once): per clan/period, claims in order while their targets fit the most points the player ever had then
+async function overClaims(db, userId) {
+  const rows = (await db.prepare(
+    "SELECT c.user_id, c.task_id, c.period_key, c.points, c.data AS claim, c.created_at, t.clan_id, t.data FROM task_claims c JOIN tasks t ON t.id = c.task_id " +
+    "WHERE c.status = 'done' AND json_extract(t.data, '$.kind') = 'clan_points'" + (userId ? ' AND c.user_id = ?' : '') + ' ORDER BY c.created_at'
+  ).bind(...(userId ? [userId] : [])).all()).results;
+  const groups = new Map();
+  for (const r of rows) {
+    const t = JSON.parse(r.data);
+    if (t.scope === 'clan') continue;
+    const k = r.user_id + '|' + stackKey(Number(r.clan_id), t.period, r.period_key);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push({ user_id: r.user_id, task_id: r.task_id, period_key: r.period_key, points: Number(r.points) || 0, title: t.title, target: Number(t.target) || 0, value: Number(JSON.parse(r.claim || '{}').value) || 0, at: r.created_at });
+  }
+  const extra = [];
+  for (const list of groups.values()) {
+    // A reading under half of the earlier ones is a game reset inside our period (same rule as usedFor)
+    const runs = [];
+    for (const c of list) {
+      const run = runs[runs.length - 1];
+      if (run && c.value * 2 >= run.top) {
+        run.claims.push(c);
+        run.top = Math.max(run.top, c.value);
+      } else runs.push({ top: c.value, claims: [c] });
+    }
+    for (const run of runs) {
+      let used = 0;
+      for (const c of run.claims) {
+        used += c.target;
+        if (used > run.top) extra.push(c);
+      }
+    }
+  }
+  return extra;
+}
+
+// Takes back over-claimed tasks: status 'rejected' and 0 Points, so the player may try them again under the fixed check
+async function revokeClaims(app, extra) {
+  const now = Date.now();
+  for (let i = 0; i < extra.length; i += 50) {
+    await app.db.batch(extra.slice(i, i + 50).map(c => app.db.prepare(
+      "UPDATE task_claims SET status = 'rejected', points = 0, decided_at = ?, data = json_set(data, '$.note', ?) WHERE task_id = ? AND user_id = ? AND period_key = ? AND status = 'done'"
+    ).bind(now, `Taken back: needed ${c.target} more PTS than the player had`, c.task_id, c.user_id, c.period_key)));
+  }
 }
 
 async function getTask(db, id) {
@@ -1221,6 +1305,14 @@ async function postTask(app, body) {
     // A rejected request may be sent again
     await db.prepare('INSERT OR REPLACE INTO task_claims (task_id, user_id, period_key, status, points, data, created_at, decided_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(task.id, user.id, key, status, status === 'done' ? task.reward : 0, JSON.stringify(data), now, status === 'done' ? now : null).run();
+    // Two taps at once both passed the check before either was saved: count again with every saved claim
+    if (task.kind === 'clan_points' && task.scope !== 'clan') {
+      const all = (await usedPlayerPoints(db, user.id)).get(stackKey(task.clanId, task.period, key)) || [];
+      if (usedFor(all, data.value) > data.value) {
+        await db.prepare('DELETE FROM task_claims WHERE task_id = ? AND user_id = ? AND period_key = ?').bind(task.id, user.id, key).run();
+        return { error: 'Your points are already used by your other tasks, try again in a moment' };
+      }
+    }
     notifyAdmins(app, status === 'done'
       ? `🎯 <b>Görev tamamladı</b>\n${who(user)}\n${esc(task.title)} (+${task.reward} Points) • ${esc(clan.name)}`
       : `⏳ <b>Görev onayı bekliyor</b>\n${who(user)}\n${esc(task.title)} • ${esc(clan.name)}${data.note ? '\nNot: ' + esc(data.note) : ''}`);
