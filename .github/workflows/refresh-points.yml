@@ -1,5 +1,6 @@
 # Reads the daily ranking every 15 minutes, so the server notices the moment the game resets
-# daily points and can start daily/weekly/season tasks at that time. Read-only, public data. (Clan 192: clan 5 may be served from pw.game instead.)
+# daily points and can start daily/weekly/season tasks at that time. Read-only, public data.
+# It also asks for the hourly task report. (Clan 192: clan 5 may be served from pw.game instead.)
 name: Refresh game points
 on:
   schedule:
@@ -10,3 +11,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: curl -fsS -o /dev/null https://hgybot.pages.dev/api/clans/192/members?range=day
+      # Hourly task report to Eren on Telegram (the server sends at most one per hour, only when there is new activity)
+      - run: curl -fsS https://hgybot.pages.dev/api/cron/report

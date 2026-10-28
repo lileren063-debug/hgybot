@@ -52,7 +52,7 @@ let schemaReady = false;
 export async function handleStore(request, env, ctx) {
   const url = new URL(request.url);
   const kind = url.pathname.replace(/\/+$/, '');
-  const handlers = { '/api/platform': platform, '/api/giveaways': giveaways, '/api/rewards': rewards, '/api/tasks': tasks, '/api/cron/daily': cronDaily, '/api/leaderboard': leaderboard };
+  const handlers = { '/api/platform': platform, '/api/giveaways': giveaways, '/api/rewards': rewards, '/api/tasks': tasks, '/api/cron/daily': cronDaily, '/api/cron/report': hourlyReport, '/api/leaderboard': leaderboard };
   const handler = handlers[kind];
   if (kind === '/api/announce-image' && env.DB) return serveAnnouncementImage(env.DB);
   if (!handler) return null;
@@ -69,7 +69,7 @@ export async function handleStore(request, env, ctx) {
   app.notifyIds = String(env.NOTIFY_IDS || DEFAULT_SUPER_ADMIN_IDS).split(',').map(s => s.trim()).filter(Boolean);
   if (user) await noteFirstVisit(app);
   // Any visit may post today's announcement once it is due; /api/cron/daily is the hourly backup
-  if (ctx && ctx.waitUntil && kind !== '/api/cron/daily') ctx.waitUntil(sendDailyAnnouncement(app).catch(() => null));
+  if (ctx && ctx.waitUntil && !kind.startsWith('/api/cron/')) ctx.waitUntil(sendDailyAnnouncement(app).catch(() => null));
 
   let body = null;
   if (request.method === 'POST') {
@@ -903,11 +903,11 @@ export function periodStartMs(period, at = new Date(), offsetMin = 0) {
 }
 
 // Completed tasks since the start of this game day / week / month, grouped by Telegram user
-async function taskReport(app, range) {
+async function taskReport(app, range, all = false) {
   const period = { day: 'daily', week: 'weekly', month: 'season' }[range];
   if (!period) return { error: 'range must be day, week or month' };
   const perms = await getPerms(app);
-  const allowed = app.isSuper ? null : new Set(Object.keys(perms).filter(id => perms[id].tasks).map(Number));
+  const allowed = app.isSuper || all ? null : new Set(Object.keys(perms).filter(id => perms[id].tasks).map(Number));
   if (allowed && !allowed.size) return { error: 'Only clan admins can see this', status: 403 };
   const since = periodStartMs(period, new Date(), await getPeriodOffset(app));
   const rows = (await app.db.prepare(
@@ -1386,6 +1386,55 @@ async function continueBroadcast(app) {
       .bind(JSON.stringify({ ...st, sent: st.sent + sent, failed: st.failed + failed }), cur.value).run();
   }
   return { done: next.done, sent, failed };
+}
+
+// Once an hour (called every 15 min by the "Refresh game points" GitHub job): today's task activity to Eren,
+// only when someone completed a task since the last report
+async function hourlyReport(app) {
+  const hour = new Date().toISOString().slice(0, 13);
+  const row = await app.db.prepare("SELECT value FROM meta WHERE key = 'task_report_hour_v1'").first();
+  const last = row ? JSON.parse(row.value) : { hour: '', at: 0 };
+  if (last.hour === hour) return { sent: false, reason: 'already this hour' };
+  const now = Date.now();
+  await app.db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('task_report_hour_v1', ?)").bind(JSON.stringify({ hour, at: now })).run();
+  const day = await taskReport(app, 'day', true);
+  const fresh = day.users.reduce((n, u) => n + u.tasks.filter(t => t.at > last.at).length, 0);
+  if (!fresh) return { sent: false, reason: 'no new tasks' };
+  const [week, month] = [await taskReport(app, 'week', true), await taskReport(app, 'month', true)];
+  const token = app.env.BOT_TOKEN;
+  if (!token) return { sent: false, reason: 'no BOT_TOKEN' };
+  const html = taskReportMessage(day, week, month, fresh);
+  await Promise.all(app.notifyIds.map(chatId => fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true })
+  }).catch(() => null)));
+  return { sent: true, fresh };
+}
+
+// A table in a monospace block, so it reads like an image in the chat (Telegram limit 4096 characters)
+export function taskReportMessage(day, week, month, fresh) {
+  const tr = ms => new Date(ms + 3 * 3600000).toISOString().slice(11, 16); // Türkiye time
+  const cut = (v, n) => { const t = String(v); return t.length > n ? t.slice(0, n - 1) + '…' : t.padEnd(n); };
+  const clans = new Map();
+  for (const u of day.users) for (const t of u.tasks) clans.set(t.clan, (clans.get(t.clan) || 0) + t.reward);
+  const lines = day.users.slice(0, 25).map((u, i) => {
+    const who = u.username ? '@' + u.username : u.name;
+    const pts = u.tasks.filter(t => t.game_points != null).reduce((m, t) => Math.max(m, t.game_points), 0);
+    return `${cut(i + 1 + '.', 3)} ${cut(who, 15)} ${String(u.tasks.length).padStart(2)} ${String(u.points).padStart(5)}${pts ? ' ' + String(pts).padStart(5) : ''}`;
+  });
+  return [
+    `📊 <b>Görev raporu</b> • ${tr(Date.now())} (TR)`,
+    `Bugün (oyun günü ${tr(day.since)}'den beri): <b>${day.users.length}</b> oyuncu • <b>${day.total_tasks}</b> görev • <b>${day.total_points}</b> Points`,
+    `Son rapordan beri: ${fresh} yeni görev`,
+    '',
+    `<pre>${esc(['#   Oyuncu         Gör Point  Oyun', ...lines].join('\n'))}</pre>`,
+    day.users.length > 25 ? `…ve ${day.users.length - 25} oyuncu daha (admin paneli → Task activity)` : '',
+    clans.size ? '🏰 ' + [...clans.entries()].sort((a, b) => b[1] - a[1]).map(([c, p]) => `${esc(c)} ${p}`).join(' • ') : '',
+    `📅 Bu hafta: ${week.users.length} oyuncu • ${week.total_tasks} görev • ${week.total_points} Points`,
+    `🗓 Bu ay: ${month.users.length} oyuncu • ${month.total_tasks} görev • ${month.total_points} Points`,
+    '<i>Gör = görev sayısı, Point = kazanılan Points, Oyun = görevde okunan en yüksek oyun puanı</i>'
+  ].filter(Boolean).join('\n');
 }
 
 async function cronDaily(app) {
