@@ -7495,7 +7495,7 @@
         return;
       }
       const myClan = getMyPlatformClanId();
-      if (myClan && rw.clanId && myClan !== rw.clanId) {
+      if (rw.clanId !== 0 && myClan && rw.clanId && myClan !== rw.clanId) {
         showCyberToast(`⚠️ This reward is for ${rw.clanName || 'its clan'} members only.`);
         return;
       }
@@ -7536,7 +7536,7 @@
     function renderRewardsList() {
       const box = document.getElementById('rewards-list');
       if (!box) return;
-      const visible = rewardsList.filter(r => !r.deleted && isInSelectedPlatformClan(r.clanId));
+      const visible = rewardsList.filter(r => !r.deleted && (r.clanId === 0 || isInSelectedPlatformClan(r.clanId)));
       if (!visible.length) {
         box.innerHTML = '<div class="glass-card" style="text-align:center; color:#8faac4; font-size:13px;">No rewards in the shop yet.</div>';
         return;
@@ -7566,7 +7566,7 @@
           <div class="rw-card ${soldOut ? 'sold-out' : ''}">
             ${rw.image ? `<img src="${escapeHtml(rw.image)}" alt="" onerror="this.style.visibility='hidden'">` : '<img alt="">'}
             <div class="rw-card-body">
-              ${renderPlatformOwnerPill(rw.clanName, rw.clanAvatar)}
+              ${rw.clanId === 0 ? '<div class="pf-owner-pill" style="color:var(--cyan); border-color:rgba(91, 141, 239,0.45); background:rgba(91, 141, 239,0.1);">🌍 <span>For everyone</span></div>' : renderPlatformOwnerPill(rw.clanName, rw.clanAvatar)}
               <div class="rw-name" title="${escapeHtml(rw.name)}">${escapeHtml(rw.name)}</div>
               <div class="rw-meta">
                 <span>${stockLeft === Infinity ? '∞ in stock' : `${stockLeft} left`}</span>
@@ -7740,7 +7740,7 @@
       if (subTab === 'rewards') {
         const rwForm = document.getElementById('rw-admin-form');
         if (rwForm) rwForm.style.display = isCurrentUserGiveawayAdmin() ? 'block' : 'none';
-        fillPlatformClanSelect('rw-owner-clan-select', 'giveaways');
+        fillPlatformClanSelect('rw-owner-clan-select', 'giveaways', '🌍 All clans (public shop)');
         renderRewardsList();
       } else if (subTab === 'tasks') {
         renderTasksView();
@@ -8264,6 +8264,8 @@
 
     function getPlatformPerm(clanId, feature) {
       const me = platformState.me;
+      // Public tasks and the public shop (clan 0) belong to the main admin
+      if (Number(clanId) === 0) return Boolean(me && me.is_super);
       const p = me && me.perms && me.perms[clanId];
       return Boolean(p && p[feature]);
     }
@@ -8317,7 +8319,7 @@
       const now = Date.now();
       const count = (list, id, test) => (list || []).filter(x => Number(x.clanId) === id && test(x)).length;
       const rows = platformState.clans.map(c => ({ id: c.team_id, name: c.name, avatar: c.avatar }));
-      if (tasksList.some(t => t.clanId === 0)) rows.unshift({ id: 0, name: 'For Everyone', avatar: '' });
+      if (tasksList.some(t => t.clanId === 0) || rewardsList.some(w => w.clanId === 0 && !w.deleted)) rows.unshift({ id: 0, name: 'For Everyone', avatar: '' });
       if (!rows.length) {
         box.innerHTML = `<div style="text-align:center; color:#8faac4; font-size:12.5px; padding:10px;">${platformLoadPromise ? 'No clans yet.' : 'Loading clans…'}</div>`;
         return;
@@ -8325,7 +8327,7 @@
       box.innerHTML = rows.map(r => {
         const gws = r.id === 0 ? 0 : count(giveawaysList, r.id, g => !g.ended && g.endsAtMs > now);
         const tks = count(tasksList, r.id, t => t.myStatus !== 'done');
-        const rws = r.id === 0 ? 0 : count(rewardsList, r.id, w => !w.deleted && getRewardStockLeft(w) > 0);
+        const rws = count(rewardsList, r.id, w => !w.deleted && getRewardStockLeft(w) > 0);
         const pill = (n, label) => `<span class="gw-pill ${n ? '' : 'zero'}">${label} ${n}</span>`;
         return `
           <div class="home-clan-card ${gws || tks ? 'has-active' : ''}" onclick="openClanFromHome(${r.id}, ${gws ? "'join'" : (tks ? "'tasks'" : "'rewards'")})">
@@ -8386,16 +8388,16 @@
       renderRewardsList();
       if (currentGwSubTab === 'tasks') renderTasksView();
       if (currentGwSubTab === 'create') fillPlatformClanSelect('gw-owner-clan-select', 'giveaways');
-      if (currentGwSubTab === 'rewards') fillPlatformClanSelect('rw-owner-clan-select', 'giveaways');
+      if (currentGwSubTab === 'rewards') fillPlatformClanSelect('rw-owner-clan-select', 'giveaways', '🌍 All clans (public shop)');
     }
 
     // Clan picker of a create form: only clans this user may manage, the filtered clan first
-    function fillPlatformClanSelect(selectId, feature) {
+    function fillPlatformClanSelect(selectId, feature, publicLabel) {
       const sel = document.getElementById(selectId);
       if (!sel) return;
       const clans = getManageablePlatformClans(feature);
-      // The main admin may also add tasks for every user (clan 0)
-      if (feature === 'tasks' && platformState.me && platformState.me.is_super) clans.unshift({ team_id: 0, name: '🌍 Everyone (all clans)' });
+      // The main admin may also add tasks and rewards for every user (clan 0)
+      if (publicLabel && platformState.me && platformState.me.is_super) clans.unshift({ team_id: 0, name: publicLabel });
       const keep = Number(sel.value) || selectedPlatformClanId;
       sel.innerHTML = clans.map(c => `<option value="${c.team_id}">${escapeHtml(c.name)}</option>`).join('');
       if (clans.some(c => c.team_id === keep)) sel.value = String(keep);
@@ -8509,10 +8511,10 @@
       // Prefer the server's number: it is exactly what Check Progress is judged on
       if (t.progressValue != null) {
         const raw = Number(t.progressValue) || 0;
-        const used = t.scope === 'clan' ? 0 : (t.usedClaims || []).filter(c => c.value <= raw).reduce((sum, c) => sum + c.target, 0);
+        const used = t.scope === 'clan' ? 0 : (t.usedClaims || []).filter(c => raw * 2 >= c.value).reduce((sum, c) => sum + c.target, 0);
         return { loading: false, value: Math.max(0, raw - used), target: t.target, used };
       }
-      const cached = taskRosterCache[`${t.clanId}|${range}`];
+      const cached = t.clanId === 0 ? { items: [] } : taskRosterCache[`${t.clanId}|${range}`];
       if (!cached) return { loading: true, value: 0, target: t.target };
       let value;
       let used = 0;
@@ -8522,10 +8524,10 @@
         const uuid = botUserProfileData && botUserProfileData.uuid;
         const me = uuid ? cached.items.find(p => p.uuid === uuid) : null;
         // Points already used by the player's other finished tasks of this clan and period don't count again
-        // (claims made with more points than now belong to the game's previous day/week and are ignored)
+        // (only claims made with over twice the points of now, i.e. before a game reset, are ignored)
         // Players below the ranking's top ~900 are not in the list: use their own player page (as Profile does)
         const current = me ? Number(me.points) || 0 : playerPagePoints(botUserProfileData, range);
-        used = (t.usedClaims || []).filter(c => c.value <= current).reduce((sum, c) => sum + c.target, 0);
+        used = (t.usedClaims || []).filter(c => current * 2 >= c.value).reduce((sum, c) => sum + c.target, 0);
         value = Math.max(0, current - used);
       }
       return { loading: false, value, target: t.target, used };
@@ -8534,7 +8536,7 @@
     async function fetchTaskRosters(list) {
       const wanted = new Set();
       list.forEach(t => {
-        if (t.kind === 'clan_points') wanted.add(`${t.clanId}|${TASK_PERIOD_RANGE[t.period] || 'day'}`);
+        if (t.kind === 'clan_points' && t.clanId !== 0) wanted.add(`${t.clanId}|${TASK_PERIOD_RANGE[t.period] || 'day'}`);
       });
       const stale = [...wanted].filter(k => !taskRosterCache[k] || Date.now() - taskRosterCache[k].at > 120000);
       if (!stale.length) return;
@@ -8552,7 +8554,7 @@
       const form = document.getElementById('tk-admin-form');
       const canCreate = getManageablePlatformClans('tasks').length > 0;
       if (form) form.style.display = canCreate ? 'block' : 'none';
-      if (canCreate) fillPlatformClanSelect('tk-owner-clan-select', 'tasks');
+      if (canCreate) fillPlatformClanSelect('tk-owner-clan-select', 'tasks', '🌍 Everyone (all clans)');
 
       const pendingBox = document.getElementById('tk-pending-box');
       const pending = tasksPending.filter(p => p.clan_id === 0 || isInSelectedPlatformClan(p.clan_id));

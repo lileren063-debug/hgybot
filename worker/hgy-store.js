@@ -215,6 +215,10 @@ async function canManageTasks(app, teamId) {
   return Number(teamId) === 0 ? app.isSuper : can(app, teamId, 'tasks');
 }
 
+async function canManageRewards(app, teamId) {
+  return Number(teamId) === 0 ? app.isSuper : can(app, teamId, 'giveaways');
+}
+
 async function can(app, teamId, feature) {
   const p = (await getPerms(app))[Number(teamId)];
   return Boolean(p && p[feature]);
@@ -833,7 +837,7 @@ async function listRewards(db, clanFilter) {
   const clanId = Number(clanFilter) || 0;
   const [rws, claims, clanList] = await Promise.all([
     clanId
-      ? db.prepare('SELECT data, deleted, clan_id FROM rewards WHERE clan_id = ? ORDER BY created_at DESC LIMIT 200').bind(clanId).all()
+      ? db.prepare('SELECT data, deleted, clan_id FROM rewards WHERE clan_id IN (?, 0) ORDER BY created_at DESC LIMIT 200').bind(clanId).all()
       : db.prepare('SELECT data, deleted, clan_id FROM rewards ORDER BY created_at DESC LIMIT 200').all(),
     db.prepare('SELECT reward_id, data FROM reward_claims ORDER BY claimed_at').all(),
     listClans(db)
@@ -846,7 +850,7 @@ async function listRewards(db, clanFilter) {
   }
   return rws.results.map(row => {
     const rw = JSON.parse(row.data);
-    const clan = clans.get(Number(row.clan_id));
+    const clan = Number(row.clan_id) === 0 ? GLOBAL_CLAN : clans.get(Number(row.clan_id));
     rw.clanId = Number(row.clan_id);
     rw.clanName = clan ? clan.name : '';
     rw.clanAvatar = clan ? clan.avatar : '';
@@ -862,9 +866,10 @@ async function postReward(app, body) {
   const now = Date.now();
 
   if (body.action === 'create') {
-    const clan = await getClan(db, body.clan_id);
+    // clan 0 = public shop: any linked player of any clan may claim; only the main admin adds there
+    const clan = Number(body.clan_id) === 0 ? GLOBAL_CLAN : await getClan(db, body.clan_id);
     if (!clan) return { error: 'Choose the clan this reward belongs to' };
-    if (!(await can(app, clan.team_id, 'giveaways'))) return { error: `You cannot add rewards for ${clan.name}`, status: 403 };
+    if (!(await canManageRewards(app, clan.team_id))) return { error: `You cannot add rewards for ${clan.name}`, status: 403 };
     const r = body.reward || {};
     const name = cleanText(r.name, 120);
     const cost = Math.floor(Number(r.cost) || 0);
@@ -891,7 +896,7 @@ async function postReward(app, body) {
   const clanId = Number(row.clan_id);
 
   if (body.action === 'delete') {
-    if (!(await can(app, clanId, 'giveaways'))) return { error: "You cannot manage this clan's rewards", status: 403 };
+    if (!(await canManageRewards(app, clanId))) return { error: "You cannot manage this clan's rewards", status: 403 };
     // Soft delete: claims stay, so points already spent stay counted
     await db.prepare('UPDATE rewards SET deleted = 1 WHERE id = ?').bind(rw.id).run();
     notifyAdmins(app, `🗑 <b>Ödül silindi</b> • ${esc(await clanLabel(db, clanId))}\n${who(user)}\n${esc(rw.name)}`);
@@ -904,8 +909,8 @@ async function postReward(app, body) {
     // The stored clan is kept current by every app open; the game ranking is read only when it does not match
     // (reading it here made the button wait for the whole ranking)
     const bal = { balance: await pointsWallet(db, user.id), team_id: link.team_id, clan_name: link.clan_name };
-    if (bal.team_id !== clanId) Object.assign(bal, await getMembership(app, link));
-    if (bal.team_id !== clanId) return { error: 'This reward is for members of its clan only' };
+    if (clanId !== 0 && bal.team_id !== clanId) Object.assign(bal, await getMembership(app, link));
+    if (clanId !== 0 && bal.team_id !== clanId) return { error: 'This reward is for members of its clan only' };
     if (rw.cost > bal.balance) return { error: `Not enough points: you have ${bal.balance}, this reward costs ${rw.cost}` };
     const claim = {
       id: user.id,
@@ -1228,7 +1233,6 @@ async function postTask(app, body) {
     const t = body.task || {};
     const kind = TASK_KINDS.includes(t.kind) ? t.kind : '';
     if (!kind) return { error: 'Choose a task type' };
-    if (clan.team_id === 0 && kind === 'clan_points') return { error: 'Points targets need a clan; choose a clan for this task' };
     const title = cleanText(t.title, 120);
     if (!title) return { error: 'Task title is required' };
     const reward = Math.floor(Number(t.reward) || 0);
@@ -1246,7 +1250,8 @@ async function postTask(app, body) {
     };
     if (kind === 'clan_points') {
       if (!PERIOD_RANGE[period]) period = 'daily';
-      task.scope = t.scope === 'clan' ? 'clan' : 'player';
+      // Public points tasks count each player's own points, whatever their clan
+      task.scope = t.scope === 'clan' && clan.team_id !== 0 ? 'clan' : 'player';
       task.target = Math.floor(Number(t.target) || 0);
       if (task.target <= 0) return { error: 'Enter a points target above 0' };
     } else if (kind === 'telegram_join') {
@@ -1296,7 +1301,7 @@ async function postTask(app, body) {
 
     // Tasks for everyone need no Pixel World link; clan tasks need a linked member of that clan
     const link = await getLink(db, user.id);
-    if (!link && !forEveryone) return { error: 'Link your Pixel World UUID in Profile first' };
+    if (!link && (!forEveryone || task.kind === 'clan_points')) return { error: 'Link your Pixel World UUID in Profile first' };
     const notMember = { error: `This task is for ${clan.name} members only` };
 
     let status = 'done';
@@ -1309,7 +1314,7 @@ async function postTask(app, body) {
       const page = task.scope === 'clan' ? null : await playerPagePoints(link.uuid, range);
       const players = page ? null : await rankedPlayers(app, range);
       const me = page || players.find(p => p.uuid === link.uuid) || null;
-      if ((me ? me.team_id : link.team_id) !== task.clanId) return notMember;
+      if (!forEveryone && (me ? me.team_id : link.team_id) !== task.clanId) return notMember;
       const value = task.scope === 'clan'
         ? players.filter(p => p.team_id === task.clanId).reduce((s, p) => s + p.points, 0)
         : (me ? me.points : 0);
