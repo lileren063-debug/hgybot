@@ -7556,7 +7556,7 @@
         const claimsHtml = isAdmin ? `
           <div class="rw-admin-claims">
             ${(rw.claims || []).length
-              ? rw.claims.map(c => `<div>• ${escapeHtml(c.name)} (${escapeHtml(c.clan || '')}) – ${new Date(c.claimedAt).toLocaleString()}</div>`).join('')
+              ? rw.claims.map(c => `<div>• ${escapeHtml(c.name)} (${escapeHtml(c.clan || '')}) – ${new Date(c.claimedAt).toLocaleString()}${platformState.me && platformState.me.is_super ? ` <button type="button" class="pf-manage-btn" style="padding:2px 7px; font-size:11px; background:rgba(212,175,55,0.15); color:#d4af37;" onclick="adminAnnounceClaim(${jsArg(rw.id)}, ${jsArg(c.id)})">📣 Announce</button>` : ''}</div>`).join('')
               : 'No claims yet'}
           </div>
           <button type="button" class="rw-admin-delete" onclick="adminDeleteReward(${jsArg(rw.id)})">🗑 Delete</button>
@@ -9042,6 +9042,24 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
     }
 
     // Private messages go out in batches; the admin's open panel keeps pushing them until all are sent
+    // "X claimed Y" as an ad: the announcement channels, and if chosen every bot user privately
+    async function adminAnnounceClaim(rewardId, userId) {
+      const a = platformState.announce || {};
+      const chats = (a.chats || []).join(', ');
+      const toUsers = confirm(`Announce this claim${chats ? ` in ${chats}` : ''}.\n\nOK = also send privately to ALL bot users\nCancel = ${chats ? 'channels only' : 'choose again'}`);
+      if (!toUsers && !chats) { showCyberToast('⚠️ Add a channel in Profile → Admin → Daily announcement first'); return; }
+      if (!confirm(toUsers ? 'Send it to every bot user now? This cannot be undone.' : `Post it in ${chats} now?`)) return;
+      showCyberToast('📣 Sending…');
+      const res = await storeRequest('/platform', { action: 'claim_announce', reward_id: rewardId, user_id: userId, to_users: toUsers });
+      if (!res.ok) { showCyberToast(`⚠️ ${res.error}`); return; }
+      if (res.data.warning) showCyberToast(`⚠️ ${res.data.warning}`);
+      if (toUsers) {
+        await pumpAnnounceBroadcast();
+        const b = platformState.announce && platformState.announce.broadcast;
+        showCyberToast(b ? `📣 Sent to ${b.sent} users${b.failed ? `, ${b.failed} failed` : ''}${chats ? ' and the channels' : ''}` : '📣 Sent');
+      } else showCyberToast(`📣 Posted in ${chats}`);
+    }
+
     async function pumpAnnounceBroadcast() {
       for (let i = 0; i < 200; i++) {
         const res = await storeRequest('/cron/daily');

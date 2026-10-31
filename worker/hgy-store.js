@@ -55,6 +55,7 @@ export async function handleStore(request, env, ctx) {
   const handlers = { '/api/platform': platform, '/api/giveaways': giveaways, '/api/rewards': rewards, '/api/tasks': tasks, '/api/cron/daily': cronDaily, '/api/cron/report': hourlyReport, '/api/leaderboard': leaderboard };
   const handler = handlers[kind];
   if (kind === '/api/announce-image' && env.DB) return serveAnnouncementImage(env.DB);
+  if (kind === '/api/reward-image' && env.DB) return serveRewardImage(env.DB, url.searchParams.get('id'));
   if (!handler) return null;
 
   if (!env.DB) {
@@ -308,6 +309,37 @@ async function postPlatform(app, body) {
 
   // Everything else belongs to the main admin
   if (!app.isSuper) return { error: 'Only the main admin can do this', status: 403 };
+
+  // Advertise one reward claim: "X claimed Y" with the reward picture, to the channels and/or every bot user
+  if (action === 'claim_announce') {
+    const rwRow = await db.prepare('SELECT data, clan_id FROM rewards WHERE id = ?').bind(String(body.reward_id || '')).first();
+    const claimRow = rwRow && await db.prepare('SELECT data FROM reward_claims WHERE reward_id = ? AND user_id = ? ORDER BY claimed_at DESC LIMIT 1').bind(String(body.reward_id), String(body.user_id || '')).first();
+    if (!claimRow) return { error: 'Claim not found' };
+    const rw = JSON.parse(rwRow.data);
+    const claim = JSON.parse(claimRow.data);
+    const link = await getLink(db, String(body.user_id));
+    const a = await getAnnouncement(db);
+    const toChats = body.to_chats !== false && a.chats.length > 0;
+    const toUsers = Boolean(body.to_users);
+    if (!toChats && !toUsers) return { error: 'Add a channel in Daily announcement, or choose all bot users' };
+    if (toUsers && !(await broadcastStatus(db)).done) return { error: 'Another private broadcast is still being sent, try again later' };
+    const player = (link && link.nickname) || claim.name || 'A player';
+    const clan = (link && link.clan_name) || claim.clan || '';
+    const msg = {
+      chats: toChats ? a.chats : [],
+      image: /^https:\/\//.test(rw.image || '') ? rw.image : /^data:image\//.test(rw.image || '') ? `${app.origin}/api/reward-image?id=${encodeURIComponent(rw.id)}` : '',
+      text: `🏆 ${player}${clan ? ` (${clan})` : ''} claimed "${rw.name}"!\n\n` +
+        `${Number(claim.paidPoints || rw.cost).toLocaleString('en-US')} Points earned by completing tasks in the clan app.\n` +
+        `🎯 Complete tasks, collect Points and claim rewards too!\n👉 https://t.me/PWCLANapp`
+    };
+    if (toUsers) await startBroadcast(app, msg, 'claim ' + new Date().toISOString().slice(0, 16).replace('T', ' '));
+    if (toChats) {
+      const failed = (await postAnnouncement(app, msg)).filter(r => !r.ok).map(f => `${f.chat}: ${f.error}`).join(' • ');
+      if (failed && !toUsers) return { error: failed };
+      if (failed) app.warning = failed;
+    }
+    return {};
+  }
 
   if (action === 'announce_save' || action === 'announce_send_now') {
     const a = body.announce || {};
@@ -1393,6 +1425,15 @@ async function saveAnnouncementImage(app, value, previous) {
     return `${app.origin}/api/announce-image?v=${Date.now()}`;
   }
   return '';
+}
+
+// Uploaded reward pictures are data URLs; Telegram needs a link to send them as a photo
+async function serveRewardImage(db, id) {
+  const row = await db.prepare('SELECT data FROM rewards WHERE id = ?').bind(String(id || '')).first();
+  const m = row && String(JSON.parse(row.data).image || '').match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
+  if (!m) return new Response('Not found', { status: 404 });
+  const bytes = Uint8Array.from(atob(m[2]), c => c.charCodeAt(0));
+  return new Response(bytes, { headers: { 'Content-Type': m[1], 'Cache-Control': 'public, max-age=86400' } });
 }
 
 async function serveAnnouncementImage(db) {
