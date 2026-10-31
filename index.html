@@ -8989,6 +8989,7 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
           ${bc && bc.date ? `<div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">Last broadcast ${escapeHtml(bc.date)}: ${bc.sent} delivered, ${bc.failed} failed${bc.done ? '' : ' • sending…'}</div>` : ''}
           <label class="pf-label">Also post to channels/groups (optional, @channel or id, comma separated; not the bot itself)</label>
           <input type="text" id="pf-ann-chats" class="search-input" style="padding:9px; font-size:12.5px; margin-bottom:8px;" placeholder="@hegemonyprivate" value="${escapeHtml((a.chats || []).join(', '))}">
+          <label class="pf-check"><input type="checkbox" id="pf-ann-claims" ${a.claims_post !== false ? 'checked' : ''}> 🏆 Post in these channels when someone claims a shop reward</label>
           <label class="pf-label">Image (optional)</label>
           ${a.image ? `<img id="pf-ann-img-preview" src="${escapeHtml(a.image)}" alt="" style="width:100%; max-height:150px; object-fit:cover; border-radius:10px; margin-bottom:6px;" onerror="this.style.display='none'">` : '<img id="pf-ann-img-preview" alt="" style="display:none; width:100%; max-height:150px; object-fit:cover; border-radius:10px; margin-bottom:6px;">'}
           <input type="file" accept="image/*" style="margin-bottom:6px; font-size:12px; color:#fff; width:100%;" onchange="handleAnnounceImageUpload(this)">
@@ -9057,6 +9058,7 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
       const urlField = document.getElementById('pf-ann-image').value.trim();
       const announce = {
         to_users: users,
+        claims_post: document.getElementById('pf-ann-claims').checked,
         image: urlField || announceImageValue,
         chats: document.getElementById('pf-ann-chats').value,
         hour: Number(document.getElementById('pf-ann-hour').value) || 0,

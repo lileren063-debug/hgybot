@@ -316,6 +316,7 @@ async function postPlatform(app, body) {
       enabled: Boolean(a.enabled),
       chats: cleanText(a.chats, 300).split(/[\s,]+/).filter(c => /^(@[A-Za-z0-9_]{4,64}|-?\d{5,20})$/.test(c)).slice(0, 5),
       to_users: Boolean(a.to_users),
+      claims_post: a.claims_post !== false,
       image: await saveAnnouncementImage(app, a.image, prev.image),
       text: cleanText(a.text, 3500),
       hour: Math.min(23, Math.max(0, Math.floor(Number(a.hour) || 0))),
@@ -926,6 +927,8 @@ async function postReward(app, body) {
       'SELECT ?, ?, ?, ? WHERE ? IS NULL OR (SELECT COUNT(*) FROM reward_claims WHERE reward_id = ?) < ?'
     ).bind(rw.id, user.id, JSON.stringify(claim), now, rw.stock, rw.id, rw.stock).run();
     if (!res.meta || !res.meta.changes) return { error: 'This reward is sold out' };
+    const shout = announceRewardClaim(app, rw, link, clanId).catch(() => null);
+    if (app.ctx && app.ctx.waitUntil) app.ctx.waitUntil(shout);
     notifyAdmins(app, `🏆 <b>Ödül aldı</b>\n${who(user)}\n${esc(rw.name)} (−${rw.cost} Points)\nPixel World: ${esc(link.nickname || link.uuid)}${bal.clan_name ? ' (' + esc(bal.clan_name) + ')' : ''}`);
     return {};
   }
@@ -1377,7 +1380,7 @@ async function isChatMember(botToken, chat, userId) {
 
 // ---------------------------------------------------------------- daily announcement
 
-const ANNOUNCE_DEFAULT = { enabled: false, chats: [], to_users: false, image: '', text: '', hour: 12, last_sent: '' };
+const ANNOUNCE_DEFAULT = { enabled: false, chats: [], to_users: false, claims_post: true, image: '', text: '', hour: 12, last_sent: '' };
 
 // An uploaded photo is kept in D1 and served from our own URL, because Telegram fetches photos by URL
 async function saveAnnouncementImage(app, value, previous) {
@@ -1443,6 +1446,25 @@ async function sendDailyAnnouncement(app) {
   if (a.to_users) await startBroadcast(app, a, today);
   await postAnnouncement(app, a);
   return { sent: true };
+}
+
+// "X claimed Y": posted to the announcement channels/groups (not privately to every user, per Eren)
+async function announceRewardClaim(app, rw, link, clanId) {
+  const token = app.env.BOT_TOKEN;
+  const a = await getAnnouncement(app.db);
+  if (!token || a.claims_post === false || !a.chats.length) return;
+  const clan = clanId === 0 ? '' : await clanLabel(app.db, clanId);
+  const text = `🏆 <b>${esc(link.nickname || 'A player')}</b>${link.clan_name ? ` (${esc(link.clan_name)})` : ''} claimed <b>${esc(rw.name)}</b> for ${Number(rw.cost).toLocaleString('en-US')} Points!\n` +
+    `${clan ? `🛍 ${esc(clan)} shop • ` : '🌍 Public shop • '}Complete tasks in the app to earn Points too.`;
+  const button = { reply_markup: { inline_keyboard: [[{ text: '🎁 Open the app', url: 'https://t.me/PWCLANapp' }]] } };
+  const photo = /^https:\/\//.test(rw.image || '') ? rw.image : '';
+  await Promise.all(a.chats.map(chat => fetch(`https://api.telegram.org/bot${token}/${photo ? 'sendPhoto' : 'sendMessage'}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(photo
+      ? { chat_id: chat, photo, caption: text, parse_mode: 'HTML', ...button }
+      : { chat_id: chat, text, parse_mode: 'HTML', disable_web_page_preview: true, ...button })
+  }).catch(() => null)));
 }
 
 async function postAnnouncement(app, a) {
