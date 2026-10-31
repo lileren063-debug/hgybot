@@ -116,6 +116,10 @@ async function ensureSchema(db) {
     } catch (e) { /* column already there */ }
   }
   try {
+    // Clans whose members' Points start over every month (0 = never; else the first month start it applies from)
+    await db.prepare('ALTER TABLE clans ADD COLUMN monthly_reset_from INTEGER NOT NULL DEFAULT 0').run();
+  } catch (e) { /* column already there */ }
+  try {
     // Users who blocked the bot are skipped by the daily broadcast
     await db.prepare('ALTER TABLE users_seen ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0').run();
   } catch (e) { /* column already there */ }
@@ -154,6 +158,14 @@ async function ensureSchema(db) {
       db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('seeded_global_tasks_v1', ?)").bind(String(now))
     ]);
   }
+  // Eren, 2026-10-31: HEGEMONY Points start over on the 1st of every month at 03:00 TR (00:00 UTC), from November
+  const resetSeed = await db.prepare("SELECT value FROM meta WHERE key = 'monthly_reset_seed_v1'").first();
+  if (!resetSeed) {
+    await db.batch([
+      db.prepare('UPDATE clans SET monthly_reset_from = ? WHERE team_id = 5 AND monthly_reset_from = 0').bind(Date.UTC(2026, 10, 1)),
+      db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('monthly_reset_seed_v1', '1')")
+    ]);
+  }
   schemaReady = true;
 }
 
@@ -165,17 +177,18 @@ function clanFromRow(c) {
     name: c.name,
     avatar: c.avatar || '',
     giveaways_enabled: Boolean(c.giveaways_enabled),
-    tasks_enabled: Boolean(c.tasks_enabled)
+    tasks_enabled: Boolean(c.tasks_enabled),
+    monthly_reset_from: Number(c.monthly_reset_from) || 0
   };
 }
 
 async function listClans(db) {
-  const res = await db.prepare('SELECT team_id, name, avatar, giveaways_enabled, tasks_enabled FROM clans ORDER BY created_at').all();
+  const res = await db.prepare('SELECT team_id, name, avatar, giveaways_enabled, tasks_enabled, monthly_reset_from FROM clans ORDER BY created_at').all();
   return res.results.map(clanFromRow);
 }
 
 async function getClan(db, teamId) {
-  const c = await db.prepare('SELECT team_id, name, avatar, giveaways_enabled, tasks_enabled FROM clans WHERE team_id = ?').bind(Number(teamId) || 0).first();
+  const c = await db.prepare('SELECT team_id, name, avatar, giveaways_enabled, tasks_enabled, monthly_reset_from FROM clans WHERE team_id = ?').bind(Number(teamId) || 0).first();
   return c ? clanFromRow(c) : null;
 }
 
@@ -376,6 +389,15 @@ async function postPlatform(app, body) {
     ).bind(teamId, name, cleanImage(c.avatar), c.giveaways_enabled ? 1 : 0, c.tasks_enabled ? 1 : 0, now).run();
     return {};
   }
+  // Monthly Points reset for a clan's members, from the next 1st (03:00 TR) so nobody loses this month's Points early
+  if (action === 'clan_monthly_reset') {
+    const teamId = Number(body.team_id) || 0;
+    const d = new Date(now);
+    const from = body.on ? Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) : 0;
+    const res = await db.prepare('UPDATE clans SET monthly_reset_from = ? WHERE team_id = ?').bind(from, teamId).run();
+    if (!res.meta || !res.meta.changes) return { error: 'Clan not found' };
+    return {};
+  }
   if (action === 'clan_remove') {
     const teamId = Number(body.team_id) || 0;
     // Giveaways, rewards and tasks stay stored; without the clan only the main admin can manage them
@@ -454,6 +476,7 @@ async function postPlatform(app, body) {
 async function leaderboard(app) {
   const db = app.db;
   const since = HGY_SPEND_SINCE;
+  // Members of clans with a monthly reset count only this month (st = their wallet start)
   const rows = (await db.prepare(`
     WITH ids AS (
       SELECT user_id FROM task_claims WHERE status = 'done'
@@ -461,15 +484,16 @@ async function leaderboard(app) {
       UNION SELECT user_id FROM reward_claims
     )
     SELECT ids.user_id AS user_id,
-      (SELECT COALESCE(SUM(points), 0) FROM task_claims t WHERE t.user_id = ids.user_id AND t.status = 'done') AS earned,
-      (SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) FROM giveaway_participants g WHERE g.user_id = ids.user_id AND g.joined_at >= ?) +
-      (SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) FROM reward_claims r WHERE r.user_id = ids.user_id AND r.claimed_at >= ?) AS spent,
-      (SELECT COUNT(*) FROM task_claims t WHERE t.user_id = ids.user_id AND t.status = 'done') AS tasks,
+      (SELECT COALESCE(SUM(points), 0) FROM task_claims t WHERE t.user_id = ids.user_id AND t.status = 'done' AND COALESCE(t.decided_at, t.created_at) >= COALESCE(w.st, 0)) AS earned,
+      (SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) FROM giveaway_participants g WHERE g.user_id = ids.user_id AND g.joined_at >= MAX(?, COALESCE(w.st, 0))) +
+      (SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) FROM reward_claims r WHERE r.user_id = ids.user_id AND r.claimed_at >= MAX(?, COALESCE(w.st, 0))) AS spent,
+      (SELECT COUNT(*) FROM task_claims t WHERE t.user_id = ids.user_id AND t.status = 'done' AND COALESCE(t.decided_at, t.created_at) >= COALESCE(w.st, 0)) AS tasks,
       l.nickname AS nickname, l.team_id AS team_id, l.clan_name AS clan_name, s.data AS tg
     FROM ids
     LEFT JOIN user_links l ON l.user_id = ids.user_id
     LEFT JOIN users_seen s ON s.user_id = ids.user_id
-  `).bind(since, since).all()).results;
+    LEFT JOIN (SELECT team_id, CASE WHEN monthly_reset_from > 0 AND monthly_reset_from <= ? THEN MAX(monthly_reset_from, ?) ELSE 0 END AS st FROM clans) w ON w.team_id = l.team_id
+  `).bind(since, since, Date.now(), monthStartMs()).all()).results;
 
   const clans = new Map((await listClans(db)).map(c => [c.team_id, c]));
   const players = rows.map(r => {
@@ -534,17 +558,14 @@ async function inspectPlayer(app, q) {
   }
 
   if (userId) {
-    const since = HGY_SPEND_SINCE;
-    const [claims, entries, rclaims, earned, gwSpent, rwSpent] = await Promise.all([
+    const [claims, entries, rclaims, w] = await Promise.all([
       db.prepare('SELECT task_id, period_key, status, points, data, created_at FROM task_claims WHERE user_id = ? ORDER BY created_at DESC LIMIT 40').bind(userId).all(),
       db.prepare('SELECT giveaway_id, data, joined_at FROM giveaway_participants WHERE user_id = ? ORDER BY joined_at DESC LIMIT 20').bind(userId).all(),
       db.prepare('SELECT reward_id, data, claimed_at FROM reward_claims WHERE user_id = ? ORDER BY claimed_at DESC LIMIT 20').bind(userId).all(),
-      db.prepare("SELECT COALESCE(SUM(points), 0) AS s FROM task_claims WHERE user_id = ? AND status = 'done'").bind(userId).first(),
-      db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM giveaway_participants WHERE user_id = ? AND joined_at >= ?").bind(userId, since).first(),
-      db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM reward_claims WHERE user_id = ? AND claimed_at >= ?").bind(userId, since).first()
+      walletSums(db, userId)
     ]);
     const titles = new Map((await db.prepare('SELECT id, data FROM tasks').all()).results.map(r => [r.id, JSON.parse(r.data).title]));
-    out.points = { earned: Number(earned.s) || 0, spent: (Number(gwSpent.s) || 0) + (Number(rwSpent.s) || 0) };
+    out.points = { earned: w.earned, spent: w.spent, since: w.since || null };
     out.points.balance = out.points.earned - out.points.spent;
     out.tasks = claims.results.map(c => { const d = JSON.parse(c.data || '{}'); return { task: titles.get(c.task_id) || c.task_id, period: c.period_key, status: c.status, points: c.points, value: d.value != null ? Number(d.value) : null, used_before: d.used_before != null ? Number(d.used_before) : null, at: c.created_at }; });
     out.giveaways = entries.results.map(e => ({ id: e.giveaway_id, paid: JSON.parse(e.data).paidPoints || 0, at: e.joined_at }));
@@ -649,31 +670,47 @@ async function getMembership(app, link) {
   };
 }
 
-// Points wallet only (three sums, no game data): what spending checks need
-async function pointsWallet(db, userId) {
+// Start of the current UTC month (= 03:00 Türkiye time on the 1st)
+export function monthStartMs(now = Date.now()) {
+  const d = new Date(now);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+}
+
+// When this clan's members' Points started counting: the month start for clans with a monthly reset, else 0
+export function walletStartFor(resetFrom, now = Date.now()) {
+  if (!resetFrom || now < resetFrom) return 0;
+  return Math.max(resetFrom, monthStartMs(now));
+}
+
+// Earned and spent Points of one user since their clan's last monthly reset (stored clan of the linked player)
+async function walletSums(db, userId) {
+  const clan = await db.prepare('SELECT c.monthly_reset_from AS f FROM user_links l JOIN clans c ON c.team_id = l.team_id WHERE l.user_id = ?').bind(userId).first();
+  const start = walletStartFor(clan ? Number(clan.f) : 0);
+  const spendSince = Math.max(HGY_SPEND_SINCE, start);
   const [earned, gw, rw] = await Promise.all([
-    db.prepare("SELECT COALESCE(SUM(points), 0) AS s FROM task_claims WHERE user_id = ? AND status = 'done'").bind(userId).first(),
-    db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM giveaway_participants WHERE user_id = ? AND joined_at >= ?").bind(userId, HGY_SPEND_SINCE).first(),
-    db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM reward_claims WHERE user_id = ? AND claimed_at >= ?").bind(userId, HGY_SPEND_SINCE).first()
+    db.prepare("SELECT COALESCE(SUM(points), 0) AS s FROM task_claims WHERE user_id = ? AND status = 'done' AND COALESCE(decided_at, created_at) >= ?").bind(userId, start).first(),
+    db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM giveaway_participants WHERE user_id = ? AND joined_at >= ?").bind(userId, spendSince).first(),
+    db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM reward_claims WHERE user_id = ? AND claimed_at >= ?").bind(userId, spendSince).first()
   ]);
   const sum = r => Number(r && r.s) || 0;
-  return Math.max(0, sum(earned) - sum(gw) - sum(rw));
+  return { earned: sum(earned), spent: sum(gw) + sum(rw), since: start };
+}
+
+// Points wallet only (three sums, no game data): what spending checks need
+async function pointsWallet(db, userId) {
+  const w = await walletSums(db, userId);
+  return Math.max(0, w.earned - w.spent);
 }
 
 async function getBalance(app, link) {
   const db = app.db;
   const userId = app.user.id;
-  const since = HGY_SPEND_SINCE;
   const membership = await getMembership(app, link);
   const player = membership.player;
-  const [earned, gw, rw] = await Promise.all([
-    db.prepare("SELECT COALESCE(SUM(points), 0) AS s FROM task_claims WHERE user_id = ? AND status = 'done'").bind(userId).first(),
-    db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM giveaway_participants WHERE user_id = ? AND joined_at >= ?").bind(userId, since).first(),
-    db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM reward_claims WHERE user_id = ? AND claimed_at >= ?").bind(userId, since).first()
-  ]);
+  const w = await walletSums(db, userId);
   const monthPoints = player ? player.points : 0;
-  const taskPoints = Number(earned.s) || 0;
-  const spent = (Number(gw.s) || 0) + (Number(rw.s) || 0);
+  const taskPoints = w.earned;
+  const spent = w.spent;
   let rank = null;
   if (player) {
     rank = (await rankedPlayers(app, 'month')).filter(p => p.team_id === player.team_id && p.points > player.points).length + 1;
@@ -683,6 +720,7 @@ async function getBalance(app, link) {
     task_points: taskPoints,
     spent,
     balance: Math.max(0, taskPoints - spent),
+    points_since: w.since || null,
     team_id: membership.team_id,
     clan_name: membership.clan_name,
     rank_in_clan: rank

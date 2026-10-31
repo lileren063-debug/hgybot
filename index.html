@@ -8850,8 +8850,10 @@
           <div style="display:flex; gap:5px; flex-wrap:wrap;">
             <button type="button" class="pf-toggle ${c.giveaways_enabled ? 'on' : ''}" onclick="toggleClanFeature(${c.team_id}, 'giveaways_enabled')">🎁 ${c.giveaways_enabled ? 'ON' : 'OFF'}</button>
             <button type="button" class="pf-toggle ${c.tasks_enabled ? 'on' : ''}" onclick="toggleClanFeature(${c.team_id}, 'tasks_enabled')">🎯 ${c.tasks_enabled ? 'ON' : 'OFF'}</button>
+            <button type="button" class="pf-toggle ${c.monthly_reset_from ? 'on' : ''}" title="Members' Points start over on the 1st of every month at 03:00 TR" onclick="toggleClanMonthlyReset(${c.team_id})">🔄 ${c.monthly_reset_from ? 'Monthly' : 'Keep'}</button>
             <button type="button" class="pf-manage-btn" onclick="adminRemoveClan(${c.team_id})">🗑</button>
           </div>
+          ${c.monthly_reset_from ? `<div class="pf-row-sub" style="width:100%;">🔄 Points reset every 1st at 03:00 TR${c.monthly_reset_from > Date.now() ? `, first on ${new Date(c.monthly_reset_from).toISOString().slice(0, 10)}` : ''}</div>` : ''}
         </div>`).join('');
 
       const known = getKnownGameClans().filter(k => !getPlatformClan(k.team_id));
@@ -9206,6 +9208,16 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
       loadTasksData();
       if (okMsg) showCyberToast(okMsg);
       return true;
+    }
+
+    function toggleClanMonthlyReset(teamId) {
+      const c = getPlatformClan(teamId);
+      if (!c) return;
+      const on = !c.monthly_reset_from;
+      if (!confirm(on
+        ? `${c.name}: members' Points will start over on the 1st of every month at 03:00 TR (first time: next 1st). Continue?`
+        : `${c.name}: stop the monthly reset? Members' Points from earlier months will count again.`)) return;
+      platformAdminAction({ action: 'clan_monthly_reset', team_id: teamId, on }, on ? '🔄 Monthly reset on' : 'Monthly reset off');
     }
 
     function toggleClanFeature(teamId, flag) {
