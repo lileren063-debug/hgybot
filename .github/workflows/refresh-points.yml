@@ -1,6 +1,7 @@
 # Reads the daily ranking every 15 minutes, so the server notices the moment the game resets
 # daily points and can start daily/weekly/season tasks at that time. Read-only, public data.
-# It also asks for the hourly task report. (Clan 192: clan 5 may be served from pw.game instead.)
+# It also asks for the hourly task report and sends queued private messages (reward claim
+# announcements to all bot users go out in batches of 22). (Clan 192: clan 5 may be served from pw.game instead.)
 name: Refresh game points
 on:
   schedule:
@@ -13,3 +14,10 @@ jobs:
       - run: curl -fsS -o /dev/null https://hgybot.pages.dev/api/clans/192/members?range=day
       # Hourly task report to Eren on Telegram (the server sends at most one per hour, only when there is new activity)
       - run: curl -fsS https://hgybot.pages.dev/api/cron/report
+      # Private broadcasts: keep calling until the server says every queued message is sent
+      - run: |
+          for i in $(seq 1 60); do
+            out=$(curl -fsS https://hgybot.pages.dev/api/cron/broadcast) || exit 1
+            echo "$out" | grep -q '"done":true' && break
+            sleep 2
+          done

@@ -52,7 +52,7 @@ let schemaReady = false;
 export async function handleStore(request, env, ctx) {
   const url = new URL(request.url);
   const kind = url.pathname.replace(/\/+$/, '');
-  const handlers = { '/api/platform': platform, '/api/giveaways': giveaways, '/api/rewards': rewards, '/api/tasks': tasks, '/api/cron/daily': cronDaily, '/api/cron/report': hourlyReport, '/api/leaderboard': leaderboard };
+  const handlers = { '/api/platform': platform, '/api/giveaways': giveaways, '/api/rewards': rewards, '/api/tasks': tasks, '/api/cron/daily': cronDaily, '/api/cron/report': hourlyReport, '/api/cron/broadcast': cronBroadcast, '/api/leaderboard': leaderboard };
   const handler = handlers[kind];
   if (kind === '/api/announce-image' && env.DB) return serveAnnouncementImage(env.DB);
   if (kind === '/api/reward-image' && env.DB) return serveRewardImage(env.DB, url.searchParams.get('id'));
@@ -322,17 +322,8 @@ async function postPlatform(app, body) {
     const toChats = body.to_chats !== false && a.chats.length > 0;
     const toUsers = Boolean(body.to_users);
     if (!toChats && !toUsers) return { error: 'Add a channel in Daily announcement, or choose all bot users' };
-    if (toUsers && !(await broadcastStatus(db)).done) return { error: 'Another private broadcast is still being sent, try again later' };
-    const player = (link && link.nickname) || claim.name || 'A player';
-    const clan = (link && link.clan_name) || claim.clan || '';
-    const msg = {
-      chats: toChats ? a.chats : [],
-      image: /^https:\/\//.test(rw.image || '') ? rw.image : /^data:image\//.test(rw.image || '') ? `${app.origin}/api/reward-image?id=${encodeURIComponent(rw.id)}` : '',
-      text: `🏆 ${player}${clan ? ` (${clan})` : ''} claimed "${rw.name}"!\n\n` +
-        `${Number(claim.paidPoints || rw.cost).toLocaleString('en-US')} Points earned by completing tasks in the clan app.\n` +
-        `🎯 Complete tasks, collect Points and claim rewards too!\n👉 https://t.me/PWCLANapp`
-    };
-    if (toUsers) await startBroadcast(app, msg, 'claim ' + new Date().toISOString().slice(0, 16).replace('T', ' '));
+    const msg = { ...claimAd(app, rw, claim, link), chats: toChats ? a.chats : [] };
+    if (toUsers) await queueBroadcast(app, msg, 'claim ' + new Date().toISOString().slice(0, 16).replace('T', ' '));
     if (toChats) {
       const failed = (await postAnnouncement(app, msg)).filter(r => !r.ok).map(f => `${f.chat}: ${f.error}`).join(' • ');
       if (failed && !toUsers) return { error: failed };
@@ -349,6 +340,7 @@ async function postPlatform(app, body) {
       chats: cleanText(a.chats, 300).split(/[\s,]+/).filter(c => /^(@[A-Za-z0-9_]{4,64}|-?\d{5,20})$/.test(c)).slice(0, 5),
       to_users: Boolean(a.to_users),
       claims_post: a.claims_post !== false,
+      claims_to_users: a.claims_to_users !== false,
       image: await saveAnnouncementImage(app, a.image, prev.image),
       text: cleanText(a.text, 3500),
       hour: Math.min(23, Math.max(0, Math.floor(Number(a.hour) || 0))),
@@ -363,7 +355,7 @@ async function postPlatform(app, body) {
     }
     await db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('announce_v1', ?)").bind(JSON.stringify(next)).run();
     if (action === 'announce_send_now') {
-      if (next.to_users) await startBroadcast(app, next, next.last_sent);
+      if (next.to_users) await queueBroadcast(app, next, next.last_sent);
       const results = await postAnnouncement(app, next);
       const failed = results.filter(r => !r.ok).map(f => `${f.chat}: ${f.error}`).join(' • ');
       // With private messages running, a bad channel must not stop them; it is reported as a warning
@@ -959,7 +951,7 @@ async function postReward(app, body) {
       'SELECT ?, ?, ?, ? WHERE ? IS NULL OR (SELECT COUNT(*) FROM reward_claims WHERE reward_id = ?) < ?'
     ).bind(rw.id, user.id, JSON.stringify(claim), now, rw.stock, rw.id, rw.stock).run();
     if (!res.meta || !res.meta.changes) return { error: 'This reward is sold out' };
-    const shout = announceRewardClaim(app, rw, link, clanId).catch(() => null);
+    const shout = announceRewardClaim(app, rw, claim, link).catch(() => null);
     if (app.ctx && app.ctx.waitUntil) app.ctx.waitUntil(shout);
     notifyAdmins(app, `🏆 <b>Ödül aldı</b>\n${who(user)}\n${esc(rw.name)} (−${rw.cost} Points)\nPixel World: ${esc(link.nickname || link.uuid)}${bal.clan_name ? ' (' + esc(bal.clan_name) + ')' : ''}`);
     return {};
@@ -1412,7 +1404,7 @@ async function isChatMember(botToken, chat, userId) {
 
 // ---------------------------------------------------------------- daily announcement
 
-const ANNOUNCE_DEFAULT = { enabled: false, chats: [], to_users: false, claims_post: true, image: '', text: '', hour: 12, last_sent: '' };
+const ANNOUNCE_DEFAULT = { enabled: false, chats: [], to_users: false, claims_post: true, claims_to_users: true, image: '', text: '', hour: 12, last_sent: '' };
 
 // An uploaded photo is kept in D1 and served from our own URL, because Telegram fetches photos by URL
 async function saveAnnouncementImage(app, value, previous) {
@@ -1489,23 +1481,51 @@ async function sendDailyAnnouncement(app) {
   return { sent: true };
 }
 
-// "X claimed Y": posted to the announcement channels/groups (not privately to every user, per Eren)
-async function announceRewardClaim(app, rw, link, clanId) {
-  const token = app.env.BOT_TOKEN;
+// "X claimed Y" as an ad, with the reward picture (uploaded pictures are served by /api/reward-image)
+function claimAd(app, rw, claim, link) {
+  const player = (link && link.nickname) || claim.name || 'A player';
+  const clan = (link && link.clan_name) || claim.clan || '';
+  return {
+    image: /^https:\/\//.test(rw.image || '') ? rw.image : /^data:image\//.test(rw.image || '') ? `${app.origin}/api/reward-image?id=${encodeURIComponent(rw.id)}` : '',
+    text: `🏆 ${player}${clan ? ` (${clan})` : ''} claimed "${rw.name}"!\n\n` +
+      `${Number(claim.paidPoints || rw.cost).toLocaleString('en-US')} Points earned by completing tasks in the clan app.\n` +
+      `🎯 Complete tasks, collect Points and claim rewards too!\n👉 https://t.me/PWCLANapp`
+  };
+}
+
+// Every claim: the announcement channels and (Eren's choice, 2026-10-31) every bot user privately
+async function announceRewardClaim(app, rw, claim, link) {
+  if (!app.env.BOT_TOKEN) return;
   const a = await getAnnouncement(app.db);
-  if (!token || a.claims_post === false || !a.chats.length) return;
-  const clan = clanId === 0 ? '' : await clanLabel(app.db, clanId);
-  const text = `🏆 <b>${esc(link.nickname || 'A player')}</b>${link.clan_name ? ` (${esc(link.clan_name)})` : ''} claimed <b>${esc(rw.name)}</b> for ${Number(rw.cost).toLocaleString('en-US')} Points!\n` +
-    `${clan ? `🛍 ${esc(clan)} shop • ` : '🌍 Public shop • '}Complete tasks in the app to earn Points too.`;
-  const button = { reply_markup: { inline_keyboard: [[{ text: '🎁 Open the app', url: 'https://t.me/PWCLANapp' }]] } };
-  const photo = /^https:\/\//.test(rw.image || '') ? rw.image : '';
-  await Promise.all(a.chats.map(chat => fetch(`https://api.telegram.org/bot${token}/${photo ? 'sendPhoto' : 'sendMessage'}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(photo
-      ? { chat_id: chat, photo, caption: text, parse_mode: 'HTML', ...button }
-      : { chat_id: chat, text, parse_mode: 'HTML', disable_web_page_preview: true, ...button })
-  }).catch(() => null)));
+  const ad = claimAd(app, rw, claim, link);
+  if (a.claims_post !== false && a.chats.length) await postAnnouncement(app, { ...ad, chats: a.chats });
+  if (a.claims_to_users !== false) await queueBroadcast(app, ad, 'claim ' + new Date().toISOString().slice(0, 16).replace('T', ' '));
+}
+
+// Private broadcasts go one at a time: a new one starts at once when none is running, else waits in a queue
+// that /api/cron/daily (GitHub job every 15 minutes) works through. The first batch goes out right away.
+async function queueBroadcast(app, ad, label) {
+  if ((await broadcastStatus(app.db)).done) {
+    await startBroadcast(app, ad, label);
+  } else {
+    const row = await app.db.prepare("SELECT value FROM meta WHERE key = 'announce_bc_queue'").first();
+    const queue = row ? JSON.parse(row.value) : [];
+    queue.push({ ...ad, label });
+    await app.db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('announce_bc_queue', ?)").bind(JSON.stringify(queue.slice(-20))).run();
+  }
+  // One batch here (22 messages) keeps the request under the 50 outgoing calls of the free plan
+  await continueBroadcast(app);
+}
+
+async function nextQueuedBroadcast(app) {
+  const row = await app.db.prepare("SELECT value FROM meta WHERE key = 'announce_bc_queue'").first();
+  const queue = row ? JSON.parse(row.value) : [];
+  if (!queue.length) return false;
+  const [next, ...rest] = queue;
+  const taken = await app.db.prepare("UPDATE meta SET value = ? WHERE key = 'announce_bc_queue' AND value = ?").bind(JSON.stringify(rest), row.value).run();
+  if (!taken.meta || !taken.meta.changes) return false;
+  await startBroadcast(app, next, next.label);
+  return true;
 }
 
 async function postAnnouncement(app, a) {
@@ -1580,7 +1600,77 @@ async function continueBroadcast(app) {
 
 // Once an hour (called every 15 min by the "Refresh game points" GitHub job): today's task activity to Eren,
 // only when someone completed a task since the last report
+// Once a day after 20:00 UTC (23:00 TR): who claimed which shop reward in the last 24 hours, to Eren only
+const REWARD_REPORT_HOUR_UTC = 20;
+async function dailyRewardReport(app) {
+  const now = new Date();
+  const day = now.toISOString().slice(0, 10);
+  if (now.getUTCHours() < REWARD_REPORT_HOUR_UTC) return { sent: false, reason: 'not yet' };
+  const row = await app.db.prepare("SELECT value FROM meta WHERE key = 'reward_report_day_v1'").first();
+  if (row && row.value === day) return { sent: false, reason: 'already today' };
+  const taken = row
+    ? await app.db.prepare("UPDATE meta SET value = ? WHERE key = 'reward_report_day_v1' AND value = ?").bind(day, row.value).run()
+    : await app.db.prepare("INSERT OR IGNORE INTO meta (key, value) VALUES ('reward_report_day_v1', ?)").bind(day).run();
+  if (!taken.meta || !taken.meta.changes) return { sent: false, reason: 'already today' };
+  const since = now.getTime() - 86400000;
+  const rows = (await app.db.prepare(
+    `SELECT c.user_id, c.data, c.claimed_at, r.data AS reward, r.clan_id, l.nickname, u.data AS seen
+       FROM reward_claims c JOIN rewards r ON r.id = c.reward_id
+       LEFT JOIN user_links l ON l.user_id = c.user_id
+       LEFT JOIN users_seen u ON u.user_id = c.user_id
+      WHERE c.claimed_at >= ? ORDER BY c.claimed_at`
+  ).bind(since).all()).results || [];
+  const token = app.env.BOT_TOKEN;
+  if (!token) return { sent: false, reason: 'no BOT_TOKEN' };
+  const html = rewardReportMessage(rows.map(r => {
+    const claim = JSON.parse(r.data || '{}');
+    let seen = {};
+    try { seen = JSON.parse(r.seen || '{}'); } catch (e) { /* none */ }
+    return {
+      player: r.nickname || claim.name || r.user_id,
+      username: seen.username || '',
+      reward: JSON.parse(r.reward || '{}').name || '',
+      points: Number(claim.paidPoints) || 0,
+      clan: claim.clan || '',
+      shop: Number(r.clan_id) === 0 ? 'Public' : claim.clan || '',
+      at: r.claimed_at
+    };
+  }), day);
+  await Promise.all(app.notifyIds.map(chatId => fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true })
+  }).catch(() => null)));
+  return { sent: true, claims: rows.length };
+}
+
+export function rewardReportMessage(items, day) {
+  const tr = ms => new Date(ms + 3 * 3600000).toISOString().slice(11, 16);
+  const cut = (v, n) => { const t = String(v); return t.length > n ? t.slice(0, n - 1) + '…' : t.padEnd(n); };
+  const total = items.reduce((s, x) => s + x.points, 0);
+  if (!items.length) return `🛍 <b>Günlük ödül raporu</b> • ${day}\nSon 24 saatte ödül alınmadı.`;
+  const lines = items.slice(-40).map(x => `${tr(x.at)} ${cut(x.player, 14)} ${cut(x.reward, 12)} ${String(x.points).padStart(6)}`);
+  const shops = new Map();
+  for (const x of items) shops.set(x.shop || '?', (shops.get(x.shop || '?') || 0) + 1);
+  return [
+    `🛍 <b>Günlük ödül raporu</b> • ${day}`,
+    `Son 24 saatte: <b>${items.length}</b> ödül • <b>${total.toLocaleString('en-US')}</b> Points harcandı`,
+    '',
+    `<pre>${esc(['Saat  Oyuncu         Ödül          Points', ...lines].join('\n'))}</pre>`,
+    items.length > 40 ? `…ve ${items.length - 40} ödül daha` : '',
+    '🏪 ' + [...shops.entries()].map(([k, n]) => `${esc(k)} ${n}`).join(' • '),
+    items.some(x => x.username) ? '👤 ' + [...new Set(items.filter(x => x.username).map(x => '@' + x.username))].map(esc).join(' ') : '',
+    '<i>Saatler Türkiye saati</i>'
+  ].filter(Boolean).join('\n');
+}
+
 async function hourlyReport(app) {
+  const rewardsDaily = await dailyRewardReport(app).catch(() => null);
+  const tasks = await hourlyTaskReport(app);
+  return { ...tasks, rewards: rewardsDaily };
+}
+
+async function hourlyTaskReport(app) {
   const hour = new Date().toISOString().slice(0, 13);
   const row = await app.db.prepare("SELECT value FROM meta WHERE key = 'task_report_hour_v1'").first();
   const last = row ? JSON.parse(row.value) : { hour: '', at: 0 };
@@ -1629,8 +1719,15 @@ export function taskReportMessage(day, week, month, fresh) {
 
 async function cronDaily(app) {
   const daily = await sendDailyAnnouncement(app);
-  const broadcast = await continueBroadcast(app);
-  return { sent: daily.sent, broadcast };
+  return { sent: daily.sent, broadcast: (await cronBroadcast(app)).broadcast };
+}
+
+// Only sends what is already queued (no daily announcement): the 15-minute GitHub job calls this
+async function cronBroadcast(app) {
+  let broadcast = await continueBroadcast(app);
+  // Finished: start the next queued claim announcement, if any
+  if (broadcast.done && (await broadcastStatus(app.db)).done && await nextQueuedBroadcast(app)) broadcast = { done: false };
+  return { broadcast };
 }
 
 // ---------------------------------------------------------------- activity messages
