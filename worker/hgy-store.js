@@ -107,7 +107,9 @@ async function ensureSchema(db) {
     db.prepare('CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, clan_id INTEGER NOT NULL, data TEXT NOT NULL, created_at INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0)'),
     db.prepare('CREATE TABLE IF NOT EXISTS task_claims (task_id TEXT NOT NULL, user_id TEXT NOT NULL, period_key TEXT NOT NULL, status TEXT NOT NULL, points INTEGER NOT NULL DEFAULT 0, data TEXT NOT NULL, created_at INTEGER NOT NULL, decided_at INTEGER, PRIMARY KEY (task_id, user_id, period_key))'),
     db.prepare('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)'),
-    db.prepare('CREATE TABLE IF NOT EXISTS users_seen (user_id TEXT PRIMARY KEY, data TEXT NOT NULL, first_seen INTEGER NOT NULL)')
+    db.prepare('CREATE TABLE IF NOT EXISTS users_seen (user_id TEXT PRIMARY KEY, data TEXT NOT NULL, first_seen INTEGER NOT NULL)'),
+    // One Pixel World player per Telegram account for good: kept after unlinking, removed only by the main admin's reset
+    db.prepare('CREATE TABLE IF NOT EXISTS user_link_lock (user_id TEXT PRIMARY KEY, uuid TEXT NOT NULL UNIQUE, locked_at INTEGER NOT NULL)')
   ]);
   // Giveaways and rewards from before the multi-clan version belong to HEGEMONY
   for (const table of ['giveaways', 'rewards']) {
@@ -164,6 +166,15 @@ async function ensureSchema(db) {
     await db.batch([
       db.prepare('UPDATE clans SET monthly_reset_from = ? WHERE team_id = 5 AND monthly_reset_from = 0').bind(Date.UTC(2026, 10, 1)),
       db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('monthly_reset_seed_v1', '1')")
+    ]);
+  }
+  const lockSeed = await db.prepare("SELECT value FROM meta WHERE key = 'link_lock_seed_v1'").first();
+  if (!lockSeed) {
+    await db.batch([
+      db.prepare('INSERT OR IGNORE INTO user_link_lock (user_id, uuid, locked_at) SELECT user_id, uuid, linked_at FROM user_links'),
+      // Accounts not linked right now keep the first player they earned tasks with
+      db.prepare("INSERT OR IGNORE INTO user_link_lock (user_id, uuid, locked_at) SELECT user_id, json_extract(data, '$.uuid'), MIN(created_at) FROM task_claims WHERE json_extract(data, '$.uuid') != '' GROUP BY user_id"),
+      db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('link_lock_seed_v1', '1')")
     ]);
   }
   schemaReady = true;
@@ -299,12 +310,29 @@ async function postPlatform(app, body) {
     if (owner && owner.user_id !== app.user.id) {
       return { error: 'This Pixel World player is already linked to another Telegram account. Ask the main admin to reset it.', status: 409 };
     }
+    // Switching players used to be free, so one account could earn tasks with many players' points
+    const mine = await db.prepare('SELECT uuid FROM user_link_lock WHERE user_id = ?').bind(app.user.id).first();
+    const taken = await db.prepare('SELECT user_id FROM user_link_lock WHERE uuid = ? AND user_id != ?').bind(uuid, app.user.id).first();
+    if ((mine && mine.uuid !== uuid) || taken) {
+      const attempt = await db.prepare("SELECT value FROM meta WHERE key = ?").bind('link_block_note:' + app.user.id).first();
+      if (!attempt || Date.now() - Number(attempt.value) > 3600000) {
+        await db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').bind('link_block_note:' + app.user.id, String(now)).run();
+        notifyAdmins(app, `🚫 <b>Başka oyuncu bağlamaya çalıştı</b>\n${who(app.user)}\nDenediği UUID: <code>${esc(uuid)}</code>${mine ? `\nKendi oyuncusu: <code>${esc(mine.uuid)}</code>` : ''}`, true);
+      }
+      return { error: mine && mine.uuid !== uuid
+        ? 'Your Telegram account is tied to another Pixel World player. Each account can link one player only; ask the main admin if you need to change it.'
+        : 'This Pixel World player belongs to another Telegram account. Ask the main admin if it is yours.', status: 409 };
+    }
     let player = null;
     try {
       player = await findPlayer(app, 'month', uuid);
     } catch (e) { /* link anyway; the clan is filled in on the next balance check */ }
-    await db.prepare('INSERT OR REPLACE INTO user_links (user_id, uuid, nickname, team_id, clan_name, linked_at) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(app.user.id, uuid, cleanText(player ? player.nickname : body.nickname, 60), player ? player.team_id : 0, player ? player.clan_name : '', now).run();
+    await db.batch([
+      db.prepare('INSERT OR REPLACE INTO user_links (user_id, uuid, nickname, team_id, clan_name, linked_at) VALUES (?, ?, ?, ?, ?, ?)')
+        .bind(app.user.id, uuid, cleanText(player ? player.nickname : body.nickname, 60), player ? player.team_id : 0, player ? player.clan_name : '', now),
+      db.prepare('INSERT OR IGNORE INTO user_link_lock (user_id, uuid, locked_at) VALUES (?, ?, ?)').bind(app.user.id, uuid, now)
+    ]);
+    if (mine) return {}; // relinking the same player after unlinking: nothing new to report
     notifyAdmins(app, `🔗 <b>Oyuncu bağladı</b>\n${who(app.user)}\nPixel World: ${esc(player ? player.nickname : body.nickname || uuid)}${player && player.clan_name ? ' (' + esc(player.clan_name) + ')' : ''}`);
     return {};
   }
@@ -465,7 +493,8 @@ async function postPlatform(app, body) {
     const v = cleanText(body.value, 64);
     if (!v) return { error: 'Enter a Telegram id or player UUID' };
     const res = await db.prepare('DELETE FROM user_links WHERE user_id = ? OR uuid = ?').bind(v, v).run();
-    if (!res.meta || !res.meta.changes) return { error: 'No link found for that id or UUID', status: 404 };
+    const lock = await db.prepare('DELETE FROM user_link_lock WHERE user_id = ? OR uuid = ?').bind(v, v).run();
+    if ((!res.meta || !res.meta.changes) && (!lock.meta || !lock.meta.changes)) return { error: 'No link found for that id or UUID', status: 404 };
     return {};
   }
 
