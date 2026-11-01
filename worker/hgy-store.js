@@ -75,6 +75,10 @@ export async function handleStore(request, env, ctx) {
   let body = null;
   if (request.method === 'POST') {
     if (!user) return json({ ok: false, error: 'Open the app from Telegram to do this' }, 401);
+    // Blocked by the main admin: can look, cannot link, claim, join or create anything
+    if (!app.isSuper && await env.DB.prepare('SELECT 1 AS x FROM banned_users WHERE user_id = ?').bind(user.id).first()) {
+      return json({ ok: false, error: 'Your account is blocked from this app. Contact the clan admin.' }, 403);
+    }
     try {
       body = await request.json();
     } catch (e) {
@@ -109,6 +113,7 @@ async function ensureSchema(db) {
     db.prepare('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)'),
     db.prepare('CREATE TABLE IF NOT EXISTS users_seen (user_id TEXT PRIMARY KEY, data TEXT NOT NULL, first_seen INTEGER NOT NULL)'),
     // One Pixel World player per Telegram account for good: kept after unlinking, removed only by the main admin's reset
+    db.prepare("CREATE TABLE IF NOT EXISTS banned_users (user_id TEXT PRIMARY KEY, label TEXT NOT NULL DEFAULT '', reason TEXT NOT NULL DEFAULT '', banned_by TEXT, banned_at INTEGER NOT NULL)"),
     db.prepare('CREATE TABLE IF NOT EXISTS user_link_lock (user_id TEXT PRIMARY KEY, uuid TEXT NOT NULL UNIQUE, locked_at INTEGER NOT NULL)')
   ]);
   // Giveaways and rewards from before the multi-clan version belong to HEGEMONY
@@ -283,6 +288,7 @@ async function platform(app, url, body) {
     out.announce.broadcast = await broadcastStatus(app.db);
     const reset = await app.db.prepare("SELECT value FROM meta WHERE key = 'game_reset_v1'").first();
     out.game_reset_minute = resetMinuteOfDay(reset ? JSON.parse(reset.value) : null);
+    out.banned = (await app.db.prepare('SELECT user_id, label, reason, banned_at FROM banned_users ORDER BY banned_at DESC').all()).results;
     const staff = await app.db.prepare('SELECT team_id, user_key, label, role, can_giveaways, can_tasks, added_at FROM clan_staff ORDER BY team_id, added_at').all();
     out.staff = staff.results.map(s => ({
       team_id: Number(s.team_id),
@@ -489,6 +495,27 @@ async function postPlatform(app, body) {
     return {};
   }
 
+  // Block a Telegram account (value = id, @username or player UUID); take_back = its task Points go to 0
+  if (action === 'ban') {
+    const r = await inspectPlayer(app, cleanText(body.value, 64).replace(/^@/, ''));
+    if (!r.telegram_id) return { error: 'Player not found' };
+    if (app.notifyIds.includes(r.telegram_id)) return { error: 'You cannot block a main admin' };
+    const label = (r.telegram && r.telegram.username ? '@' + r.telegram.username : '') || (r.link && r.link.nickname) || r.telegram_id;
+    await db.prepare('INSERT OR REPLACE INTO banned_users (user_id, label, reason, banned_by, banned_at) VALUES (?, ?, ?, ?, ?)')
+      .bind(r.telegram_id, cleanText(label, 60), cleanText(body.reason, 200), app.user.id, now).run();
+    let taken = 0;
+    if (body.take_back) {
+      const res = await db.prepare("UPDATE task_claims SET status = 'rejected', points = 0, decided_at = ?, data = json_set(data, '$.note', 'Taken back: account blocked') WHERE user_id = ? AND status = 'done'").bind(now, r.telegram_id).run();
+      taken = (res.meta && res.meta.changes) || 0;
+    }
+    notifyAdmins(app, `⛔ <b>Kullanıcı engellendi</b>\n${esc(label)} • ID <code>${esc(r.telegram_id)}</code>${taken ? `\n${taken} görev geri alındı` : ''}`, true);
+    return {};
+  }
+  if (action === 'unban') {
+    await db.prepare('DELETE FROM banned_users WHERE user_id = ?').bind(cleanText(body.value, 30)).run();
+    return {};
+  }
+
   if (action === 'link_reset') {
     const v = cleanText(body.value, 64);
     if (!v) return { error: 'Enter a Telegram id or player UUID' };
@@ -517,12 +544,13 @@ async function leaderboard(app) {
       (SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) FROM giveaway_participants g WHERE g.user_id = ids.user_id AND g.joined_at >= MAX(?, COALESCE(w.st, 0))) +
       (SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) FROM reward_claims r WHERE r.user_id = ids.user_id AND r.claimed_at >= MAX(?, COALESCE(w.st, 0))) AS spent,
       (SELECT COUNT(*) FROM task_claims t WHERE t.user_id = ids.user_id AND t.status = 'done' AND COALESCE(t.decided_at, t.created_at) >= COALESCE(w.st, 0)) AS tasks,
-      l.nickname AS nickname, l.team_id AS team_id, l.clan_name AS clan_name, s.data AS tg
+      l.nickname AS nickname, l.team_id AS team_id, l.clan_name AS clan_name, s.data AS tg, b.user_id AS banned
     FROM ids
     LEFT JOIN user_links l ON l.user_id = ids.user_id
     LEFT JOIN users_seen s ON s.user_id = ids.user_id
+    LEFT JOIN banned_users b ON b.user_id = ids.user_id
     LEFT JOIN (SELECT team_id, CASE WHEN monthly_reset_from > 0 AND monthly_reset_from <= ? THEN MAX(monthly_reset_from, ?) ELSE 0 END AS st FROM clans) w ON w.team_id = l.team_id
-  `).bind(since, since, Date.now(), monthStartMs()).all()).results;
+  `).bind(since, since, Date.now(), monthStartMs()).all()).results.filter(r => !r.banned);
 
   const clans = new Map((await listClans(db)).map(c => [c.team_id, c]));
   const players = rows.map(r => {

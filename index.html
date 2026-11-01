@@ -8229,7 +8229,7 @@
 
     function applyPlatformState(data) {
       if (!data) return;
-      platformState = { clans: data.clans || [], me: data.me || null, staff: data.staff || [], announce: data.announce || null, gameResetMinute: data.game_reset_minute == null ? null : Number(data.game_reset_minute) };
+      platformState = { clans: data.clans || [], me: data.me || null, staff: data.staff || [], announce: data.announce || null, banned: data.banned || [], gameResetMinute: data.game_reset_minute == null ? null : Number(data.game_reset_minute) };
       if (selectedPlatformClanId && !getPlatformClan(selectedPlatformClanId)) selectedPlatformClanId = 0;
       renderPlatformClanFilter();
       renderPlatformAdminEntry();
@@ -8942,6 +8942,23 @@
           <div id="pf-claims-fix-result" style="font-size:11.5px; color:#cfd8e6; margin-top:8px; line-height:1.55;"></div>
         </div>
 
+        <div class="pf-section-title">⛔ Block a user (${(platformState.banned || []).length})</div>
+        <div class="glass-card" style="padding:11px; margin-bottom:8px;">
+          <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">A blocked account can still open the app but cannot link, claim, join or create anything. Tick the box to also take back the Points from its tasks.</div>
+          <input type="text" id="pf-ban-q" class="search-input" style="padding:9px; font-size:12.5px; margin-bottom:8px;" placeholder="Telegram ID, @username or player UUID">
+          <input type="text" id="pf-ban-reason" class="search-input" style="padding:9px; font-size:12px; margin-bottom:8px;" placeholder="Reason (optional, only you see it)">
+          <label class="pf-check"><input type="checkbox" id="pf-ban-takeback" checked> ↩️ Also take back all Points from their tasks</label>
+          <button type="button" class="unlink-account-btn" style="display:flex;" onclick="adminBanUser()">⛔ Block</button>
+          ${(platformState.banned || []).map(b => `
+            <div class="pf-row">
+              <div style="min-width:0; flex:1;">
+                <div class="pf-row-name">${escapeHtml(b.label || b.user_id)}</div>
+                <div class="pf-row-sub">ID ${escapeHtml(b.user_id)} • ${new Date(b.banned_at).toISOString().slice(0, 10)}${b.reason ? ' • ' + escapeHtml(b.reason) : ''}</div>
+              </div>
+              <button type="button" class="pf-manage-btn" onclick="adminUnbanUser(${jsArg(b.user_id)})">Unblock</button>
+            </div>`).join('')}
+        </div>
+
         <div class="pf-section-title">🔗 Reset a player link</div>
         <div class="glass-card" style="padding:11px;">
           <div style="font-size:10.5px; color:#8faac4; margin-bottom:8px;">If someone linked a Pixel World player that is not theirs, reset it so the real owner can link it.</div>
@@ -9208,6 +9225,19 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
       loadTasksData();
       if (okMsg) showCyberToast(okMsg);
       return true;
+    }
+
+    function adminBanUser() {
+      const value = document.getElementById('pf-ban-q').value.trim();
+      if (!value) { showCyberToast('⚠️ Enter a Telegram ID, @username or UUID'); return; }
+      const takeBack = document.getElementById('pf-ban-takeback').checked;
+      if (!confirm(`Block ${value}?${takeBack ? '\nTheir task Points will be taken back.' : ''}`)) return;
+      platformAdminAction({ action: 'ban', value, reason: document.getElementById('pf-ban-reason').value.trim(), take_back: takeBack }, `⛔ ${value} blocked`);
+    }
+
+    function adminUnbanUser(userId) {
+      if (!confirm('Unblock this account?')) return;
+      platformAdminAction({ action: 'unban', value: userId }, 'Unblocked');
     }
 
     function toggleClanMonthlyReset(teamId) {
