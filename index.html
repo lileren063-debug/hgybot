@@ -412,6 +412,31 @@
     overflow-y: auto;
   }
 
+  /* Wide screens (Telegram desktop, full screen): use the whole width, cards side by side */
+  @media (min-width: 760px) {
+    .views-wrapper {
+      max-width: 1200px;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+    #giveaways-active-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+    #giveaways-active-list > .gw-card {
+      margin: 0;
+    }
+    #giveaways-active-list > .glass-card {
+      grid-column: 1 / -1;
+    }
+    .rw-grid {
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 14px;
+    }
+  }
+
   .view-panel {
     display: none;
     flex-direction: column;
