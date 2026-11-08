@@ -2808,10 +2808,12 @@
   .rw-card.sold-out {
     opacity: 0.55;
   }
+  /* Square, whole picture: gift images are square cards with their name at the bottom */
   .rw-card img {
     width: 100%;
-    height: 96px;
-    object-fit: cover;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
     display: block;
     background: #071320;
   }
