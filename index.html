@@ -3275,6 +3275,45 @@
   @media (min-width: 760px) {
     .home-feat-card { flex-basis: 170px; }
   }
+
+  /* ==================== Depth between the pages and the bottom menu ==================== */
+  .nav-wrapper::before {
+    content: ''; position: fixed; left: 0; right: 0; bottom: 0; height: 150px; pointer-events: none; z-index: -1;
+    background: linear-gradient(to top, rgba(4, 7, 12, 0.97) 0%, rgba(5, 9, 16, 0.85) 35%, rgba(6, 10, 18, 0.45) 70%, transparent 100%);
+  }
+  .nav-wrapper::after {
+    content: ''; position: fixed; left: 50%; bottom: 0; width: min(560px, 90vw); height: 90px; transform: translateX(-50%);
+    pointer-events: none; z-index: -1;
+    background: radial-gradient(ellipse at 50% 100%, rgba(224, 180, 76, 0.16), transparent 70%);
+  }
+  .button-container {
+    position: relative;
+    background: linear-gradient(180deg, rgba(20, 28, 44, 0.94) 0%, rgba(6, 10, 18, 0.96) 100%);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid rgba(224, 180, 76, 0.28);
+    box-shadow:
+      0 -6px 24px rgba(0, 0, 0, 0.55),
+      0 18px 40px rgba(0, 0, 0, 0.9),
+      0 0 28px rgba(224, 180, 76, 0.1),
+      inset 0 1px 0 rgba(255, 227, 154, 0.22),
+      inset 0 -10px 20px rgba(0, 0, 0, 0.35);
+  }
+  .button-container::before {
+    content: ''; position: absolute; left: 14%; right: 14%; top: -1px; height: 1px; pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255, 227, 154, 0.9), transparent);
+  }
+  .button.active { color: var(--gold); background: radial-gradient(circle at 50% 40%, rgba(224, 180, 76, 0.18) 0%, transparent 75%); }
+  .button.active .icon { filter: drop-shadow(0 0 8px rgba(224, 180, 76, 0.8)); }
+  .button.active .nav-label { color: var(--gold); text-shadow: 0 0 8px rgba(224, 180, 76, 0.5); }
+  .button.active::after {
+    content: ''; position: absolute; bottom: 2px; left: 50%; width: 18px; height: 3px; border-radius: 3px; transform: translateX(-50%);
+    background: var(--gold); box-shadow: 0 0 8px var(--gold);
+  }
+  .views-wrapper { padding-bottom: 120px !important; }
+  /* Do next rows never run past the page edge */
+  #home-todo { max-width: 100%; overflow: hidden; }
+  .home-todo-row { max-width: 100%; box-sizing: border-box; }
 </style>
 </head>
 <body>
