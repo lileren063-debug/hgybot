@@ -419,18 +419,6 @@
       padding-left: 24px;
       padding-right: 24px;
     }
-    #giveaways-active-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-      gap: 14px;
-      align-items: start;
-    }
-    #giveaways-active-list > .gw-card {
-      margin: 0;
-    }
-    #giveaways-active-list > .glass-card {
-      grid-column: 1 / -1;
-    }
   }
 
   .view-panel {
@@ -2831,6 +2819,30 @@
     justify-content: center;
     gap: 5px;
   }
+  /* Compact giveaway cards in a grid, same rhythm as tasks and rewards */
+  #giveaways-active-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 8px; align-items: stretch; }
+  #giveaways-active-list > .glass-card { grid-column: 1 / -1; }
+  #giveaways-active-list .gw-card { margin: 0; padding: 9px 10px; border-radius: 13px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; }
+  #giveaways-active-list .gw-card > div:first-child { margin-bottom: 4px !important; }
+  #giveaways-active-list .gw-card .pf-owner-pill { margin-bottom: 3px; font-size: 9.5px; padding: 1px 6px; }
+  #giveaways-active-list .gw-card h3 { font-size: 13.5px !important; margin: 0 0 1px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #giveaways-active-list .gw-card h3 + div { font-size: 10px !important; margin-bottom: 1px !important; }
+  #giveaways-active-list .gw-card p { font-size: 11px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #giveaways-active-list .gw-card .score-badge { font-size: 10.5px; padding: 3px 7px; flex-shrink: 0; }
+  #giveaways-active-list .gw-prizes-gallery { gap: 6px; padding-bottom: 3px; margin-bottom: 5px; }
+  #giveaways-active-list .gw-prize-item { min-width: 0; width: 76px; max-width: 76px; border-radius: 9px; }
+  #giveaways-active-list .gw-prize-item img { height: 76px; object-fit: contain; cursor: zoom-in; }
+  #giveaways-active-list .gw-prize-meta { padding: 3px 5px; }
+  #giveaways-active-list .gw-prize-name { font-size: 9.5px; }
+  #giveaways-active-list .gw-prize-tag { display: none; }
+  #giveaways-active-list .gw-meta-pills { gap: 4px; margin-bottom: 4px; }
+  #giveaways-active-list .gw-pill { font-size: 9.5px; padding: 2px 6px; }
+  #giveaways-active-list .gw-actions-row { grid-template-columns: 1fr auto; gap: 6px; margin-top: auto; padding-top: 4px; }
+  #giveaways-active-list .gw-join-btn { padding: 7px 8px; font-size: 12px; border-radius: 10px; }
+  #giveaways-active-list .gw-share-btn { padding: 7px 10px; font-size: 12px; border-radius: 10px; }
+  #giveaways-active-list .gw-share-btn span:last-child { display: none; }
+  #giveaways-active-list .pf-manage-btn { padding: 3px 8px; font-size: 10.5px; }
+  #giveaways-active-list .gw-card > div[style*="justify-content:flex-end"] { margin-bottom: 2px !important; }
   /* Rewards shop (fixed point cost) */
   .rw-grid {
     display: grid;
@@ -8329,7 +8341,7 @@
 
         const prizesHtml = (gw.prizes || []).map(pr => `
           <div class="gw-prize-item">
-            <img src="${escapeHtml(pr.image)}" alt="${escapeHtml(pr.name)}">
+            <img src="${escapeHtml(pr.image)}" alt="" title="Tap to enlarge" onclick="openRewardImage(this.src)" onerror="this.style.visibility='hidden'">
             <div class="gw-prize-meta">
               <div class="gw-prize-name">${escapeHtml(pr.name)}</div>
               <div class="gw-prize-tag">${escapeHtml(pr.tag)}</div>
