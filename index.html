@@ -431,10 +431,6 @@
     #giveaways-active-list > .glass-card {
       grid-column: 1 / -1;
     }
-    .rw-grid {
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-      gap: 14px;
-    }
   }
 
   .view-panel {
@@ -2911,6 +2907,26 @@
     max-height: 90px;
     overflow-y: auto;
   }
+  /* Compact reward cards in a grid, same rhythm as the task cards */
+  .rw-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important; gap: 8px !important; }
+  .rw-card { border-radius: 13px; padding: 8px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5); }
+  .rw-row { display: flex; gap: 10px; align-items: stretch; }
+  .rw-card img.rw-thumb, .rw-thumb {
+    width: 92px; height: 92px; flex: 0 0 92px; aspect-ratio: 1 / 1; object-fit: contain;
+    border-radius: 10px; background: #071320; border: 1px solid rgba(91, 141, 239, 0.25); cursor: zoom-in;
+  }
+  .rw-thumb-empty { display: flex; align-items: center; justify-content: center; font-size: 34px; cursor: default; }
+  .rw-card .rw-card-body { padding: 0; gap: 4px; min-width: 0; }
+  .rw-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .rw-head .pf-owner-pill { margin: 0; font-size: 9.5px; padding: 1px 6px; min-width: 0; overflow: hidden; }
+  .rw-cost { flex-shrink: 0; font-size: 11px; font-weight: 900; color: #d9b45a; background: rgba(201, 154, 58, 0.14); border: 1px solid #c99a3a; border-radius: 9px; padding: 2px 7px; }
+  .rw-card .rw-name { font-size: 13px; }
+  .rw-card .rw-claim-btn { padding: 6px; font-size: 12px; }
+  .rw-admin-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-top: 6px; border-top: 1px dashed rgba(91, 141, 239, 0.25); padding-top: 5px; }
+  .rw-admin-row .rw-admin-claims { border-top: none; padding-top: 0; flex: 1; min-width: 0; max-height: 140px; }
+  .rw-admin-claims summary { cursor: pointer; font-weight: 800; color: #9fb3cf; }
+  .rw-lightbox { position: fixed; inset: 0; z-index: 10000; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
+  .rw-lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 12px; }
   .rw-admin-delete {
     background: none;
     border: none;
@@ -7612,33 +7628,53 @@
         const canAfford = balance !== null && balance >= cost;
         const btnLabel = soldOut ? 'Sold Out' : `Claim • ${cost.toLocaleString()} Points`;
         const isAdmin = getPlatformPerm(rw.clanId, 'giveaways');
+        const nClaims = (rw.claims || []).length;
         const claimsHtml = isAdmin ? `
-          <div class="rw-admin-claims">
-            ${(rw.claims || []).length
-              ? rw.claims.map(c => `<div>• ${escapeHtml(c.name)} (${escapeHtml(c.clan || '')}) – ${new Date(c.claimedAt).toLocaleString()}${platformState.me && platformState.me.is_super ? ` <button type="button" class="pf-manage-btn" style="padding:2px 7px; font-size:11px; background:rgba(212,175,55,0.15); color:#d4af37;" onclick="adminAnnounceClaim(${jsArg(rw.id)}, ${jsArg(c.id)})">📣 Announce</button>` : ''}</div>`).join('')
-              : 'No claims yet'}
+          <div class="rw-admin-row">
+            <details class="rw-admin-claims">
+              <summary>📋 ${nClaims} claim${nClaims === 1 ? '' : 's'}</summary>
+              ${nClaims
+                ? rw.claims.map(c => `<div>• ${escapeHtml(c.name)} (${escapeHtml(c.clan || '')}) – ${new Date(c.claimedAt).toLocaleString()}${platformState.me && platformState.me.is_super ? ` <button type="button" class="pf-manage-btn" style="padding:2px 7px; font-size:11px; background:rgba(212,175,55,0.15); color:#d4af37;" onclick="adminAnnounceClaim(${jsArg(rw.id)}, ${jsArg(c.id)})">📣 Announce</button>` : ''}</div>`).join('')
+                : '<div>No claims yet</div>'}
+            </details>
+            <button type="button" class="rw-admin-delete" title="Delete reward" onclick="adminDeleteReward(${jsArg(rw.id)})">🗑</button>
           </div>
-          <button type="button" class="rw-admin-delete" onclick="adminDeleteReward(${jsArg(rw.id)})">🗑 Delete</button>
         ` : '';
 
         return `
           <div class="rw-card ${soldOut ? 'sold-out' : ''}">
-            ${rw.image ? `<img src="${escapeHtml(rw.image)}" alt="" onerror="this.style.visibility='hidden'">` : '<img alt="">'}
-            <div class="rw-card-body">
-              ${rw.clanId === 0 ? '<div class="pf-owner-pill" style="color:var(--cyan); border-color:rgba(91, 141, 239,0.45); background:rgba(91, 141, 239,0.1);">🌍 <span>For everyone</span></div>' : renderPlatformOwnerPill(rw.clanName, rw.clanAvatar)}
-              <div class="rw-name" title="${escapeHtml(rw.name)}">${escapeHtml(rw.name)}</div>
-              <div class="rw-meta">
-                <span>${stockLeft === Infinity ? '∞ in stock' : `${stockLeft} left`}</span>
-                ${myClaims ? `<span style="color:#3fbf7f;">✓ ${myClaims}x claimed</span>` : ''}
+            <div class="rw-row">
+              ${rw.image ? `<img class="rw-thumb" src="${escapeHtml(rw.image)}" alt="" title="Tap to enlarge" onclick="openRewardImage(this.src)" onerror="this.style.visibility='hidden'">` : '<div class="rw-thumb rw-thumb-empty">🎁</div>'}
+              <div class="rw-card-body">
+                <div class="rw-head">
+                  ${rw.clanId === 0 ? '<div class="pf-owner-pill" style="color:var(--cyan); border-color:rgba(91, 141, 239,0.45); background:rgba(91, 141, 239,0.1);">🌍 <span>Everyone</span></div>' : renderPlatformOwnerPill(rw.clanName, rw.clanAvatar)}
+                </div>
+                <div class="rw-name" title="${escapeHtml(rw.name)}">${escapeHtml(rw.name)}</div>
+                <div class="rw-meta">
+                  <span>${stockLeft === Infinity ? '∞ in stock' : `${stockLeft} left`}${myClaims ? ` • <span style="color:#3fbf7f;">✓ ${myClaims}x</span>` : ''}</span>
+                  <span class="rw-cost">${cost.toLocaleString()} Points</span>
+                </div>
+                <button type="button" class="rw-claim-btn" ${soldOut ? 'disabled' : ''} style="${!soldOut && !canAfford ? 'opacity:0.6;' : ''}" onclick="claimRewardById(${jsArg(rw.id)})">${soldOut ? 'Sold Out' : '🎁 Claim'}</button>
               </div>
-              <button type="button" class="rw-claim-btn" ${soldOut ? 'disabled' : ''} style="${!soldOut && !canAfford ? 'opacity:0.6;' : ''}" onclick="claimRewardById(${jsArg(rw.id)})">${btnLabel}</button>
-              ${claimsHtml}
             </div>
+            ${claimsHtml}
           </div>
         `;
       }).join('')}</div>`;
     }
 
+
+    // Full-size reward picture over the page; tap anywhere to close
+    function openRewardImage(src) {
+      if (!src) return;
+      const box = document.createElement('div');
+      box.className = 'rw-lightbox';
+      box.onclick = () => box.remove();
+      const img = document.createElement('img');
+      img.src = src;
+      box.appendChild(img);
+      document.body.appendChild(box);
+    }
 
     // =========================================================================
     // 17. GIVEAWAYS ENGINE V16 (ADMIN-CREATED, SERVER-STORED, CREATOR TRACKING, ACTIVE/ENDED TABS & CLAN AVATARS)
