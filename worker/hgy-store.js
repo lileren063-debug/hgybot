@@ -103,6 +103,9 @@ async function ensureSchema(db) {
   await db.batch([
     db.prepare('CREATE TABLE IF NOT EXISTS giveaways (id TEXT PRIMARY KEY, data TEXT NOT NULL, created_at INTEGER NOT NULL)'),
     db.prepare('CREATE TABLE IF NOT EXISTS giveaway_participants (giveaway_id TEXT NOT NULL, user_id TEXT NOT NULL, data TEXT NOT NULL, joined_at INTEGER NOT NULL, PRIMARY KEY (giveaway_id, user_id))'),
+    // Extra tickets bought after the first entry (the first ticket is the giveaway_participants row)
+    db.prepare('CREATE TABLE IF NOT EXISTS giveaway_tickets (id INTEGER PRIMARY KEY AUTOINCREMENT, giveaway_id TEXT NOT NULL, user_id TEXT NOT NULL, paid INTEGER NOT NULL, bought_at INTEGER NOT NULL)'),
+    db.prepare('CREATE INDEX IF NOT EXISTS giveaway_tickets_user ON giveaway_tickets (user_id)'),
     db.prepare('CREATE TABLE IF NOT EXISTS rewards (id TEXT PRIMARY KEY, data TEXT NOT NULL, created_at INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0)'),
     db.prepare('CREATE TABLE IF NOT EXISTS reward_claims (id INTEGER PRIMARY KEY AUTOINCREMENT, reward_id TEXT NOT NULL, user_id TEXT NOT NULL, data TEXT NOT NULL, claimed_at INTEGER NOT NULL)'),
     db.prepare("CREATE TABLE IF NOT EXISTS clans (team_id INTEGER PRIMARY KEY, name TEXT NOT NULL, avatar TEXT NOT NULL DEFAULT '', giveaways_enabled INTEGER NOT NULL DEFAULT 0, tasks_enabled INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)"),
@@ -553,6 +556,7 @@ async function leaderboard(app) {
     SELECT ids.user_id AS user_id,
       (SELECT COALESCE(SUM(points), 0) FROM task_claims t WHERE t.user_id = ids.user_id AND t.status = 'done' AND COALESCE(t.decided_at, t.created_at) >= COALESCE(w.st, 0)) AS earned,
       (SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) FROM giveaway_participants g WHERE g.user_id = ids.user_id AND g.joined_at >= MAX(?, COALESCE(w.st, 0))) +
+      (SELECT COALESCE(SUM(paid), 0) FROM giveaway_tickets k WHERE k.user_id = ids.user_id AND k.bought_at >= MAX(?, COALESCE(w.st, 0))) +
       (SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) FROM reward_claims r WHERE r.user_id = ids.user_id AND r.claimed_at >= MAX(?, COALESCE(w.st, 0))) AS spent,
       (SELECT COUNT(*) FROM task_claims t WHERE t.user_id = ids.user_id AND t.status = 'done' AND COALESCE(t.decided_at, t.created_at) >= COALESCE(w.st, 0)) AS tasks,
       l.nickname AS nickname, l.team_id AS team_id, l.clan_name AS clan_name, s.data AS tg, b.user_id AS banned
@@ -561,7 +565,7 @@ async function leaderboard(app) {
     LEFT JOIN users_seen s ON s.user_id = ids.user_id
     LEFT JOIN banned_users b ON b.user_id = ids.user_id
     LEFT JOIN (SELECT team_id, CASE WHEN monthly_reset_from > 0 AND monthly_reset_from <= ? THEN MAX(monthly_reset_from, ?) ELSE 0 END AS st FROM clans) w ON w.team_id = l.team_id
-  `).bind(since, since, Date.now(), monthStartMs()).all()).results.filter(r => !r.banned);
+  `).bind(since, since, since, Date.now(), monthStartMs()).all()).results.filter(r => !r.banned);
 
   const clans = new Map((await listClans(db)).map(c => [c.team_id, c]));
   const players = rows.map(r => {
@@ -636,7 +640,9 @@ async function inspectPlayer(app, q) {
     out.points = { earned: w.earned, spent: w.spent, since: w.since || null };
     out.points.balance = out.points.earned - out.points.spent;
     out.tasks = claims.results.map(c => { const d = JSON.parse(c.data || '{}'); return { task: titles.get(c.task_id) || c.task_id, period: c.period_key, status: c.status, points: c.points, value: d.value != null ? Number(d.value) : null, used_before: d.used_before != null ? Number(d.used_before) : null, at: c.created_at }; });
-    out.giveaways = entries.results.map(e => ({ id: e.giveaway_id, paid: JSON.parse(e.data).paidPoints || 0, at: e.joined_at }));
+    const tk = await db.prepare('SELECT giveaway_id, COUNT(*) AS n, SUM(paid) AS paid FROM giveaway_tickets WHERE user_id = ? GROUP BY giveaway_id').bind(userId).all();
+    const tkBy = new Map(tk.results.map(t => [t.giveaway_id, t]));
+    out.giveaways = entries.results.map(e => { const t = tkBy.get(e.giveaway_id); return { id: e.giveaway_id, paid: (JSON.parse(e.data).paidPoints || 0) + (t ? Number(t.paid) : 0), tickets: 1 + (t ? Number(t.n) : 0), at: e.joined_at }; });
     out.rewards = rclaims.results.map(e => ({ id: e.reward_id, paid: JSON.parse(e.data).paidPoints || 0, at: e.claimed_at }));
   }
 
@@ -755,13 +761,14 @@ async function walletSums(db, userId) {
   const clan = await db.prepare('SELECT c.monthly_reset_from AS f FROM user_links l JOIN clans c ON c.team_id = l.team_id WHERE l.user_id = ?').bind(userId).first();
   const start = walletStartFor(clan ? Number(clan.f) : 0);
   const spendSince = Math.max(HGY_SPEND_SINCE, start);
-  const [earned, gw, rw] = await Promise.all([
+  const [earned, gw, rw, tk] = await Promise.all([
     db.prepare("SELECT COALESCE(SUM(points), 0) AS s FROM task_claims WHERE user_id = ? AND status = 'done' AND COALESCE(decided_at, created_at) >= ?").bind(userId, start).first(),
     db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM giveaway_participants WHERE user_id = ? AND joined_at >= ?").bind(userId, spendSince).first(),
-    db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM reward_claims WHERE user_id = ? AND claimed_at >= ?").bind(userId, spendSince).first()
+    db.prepare("SELECT COALESCE(SUM(json_extract(data, '$.paidPoints')), 0) AS s FROM reward_claims WHERE user_id = ? AND claimed_at >= ?").bind(userId, spendSince).first(),
+    db.prepare('SELECT COALESCE(SUM(paid), 0) AS s FROM giveaway_tickets WHERE user_id = ? AND bought_at >= ?').bind(userId, spendSince).first()
   ]);
   const sum = r => Number(r && r.s) || 0;
-  return { earned: sum(earned), spent: sum(gw) + sum(rw), since: start };
+  return { earned: sum(earned), spent: sum(gw) + sum(rw) + sum(tk), since: start };
 }
 
 // Points wallet only (three sums, no game data): what spending checks need
@@ -805,24 +812,29 @@ async function giveaways(app, url, body) {
   if (body) {
     const res = await postGiveaway(app, body);
     if (res.error) return res;
+    if (res.tickets) return { tickets: res.tickets, items: await listGiveaways(app.db, url.searchParams.get('clan')) };
   }
   return { items: await listGiveaways(app.db, url.searchParams.get('clan')) };
 }
 
 async function listGiveaways(db, clanFilter) {
   const clanId = Number(clanFilter) || 0;
-  const [gws, parts, clanList] = await Promise.all([
+  const [gws, parts, clanList, tickets] = await Promise.all([
     clanId
       ? db.prepare('SELECT data, clan_id FROM giveaways WHERE clan_id = ? ORDER BY created_at DESC LIMIT 200').bind(clanId).all()
       : db.prepare('SELECT data, clan_id FROM giveaways ORDER BY created_at DESC LIMIT 200').all(),
     db.prepare('SELECT giveaway_id, data FROM giveaway_participants ORDER BY joined_at').all(),
-    listClans(db)
+    listClans(db),
+    db.prepare('SELECT giveaway_id, user_id, COUNT(*) AS n FROM giveaway_tickets GROUP BY giveaway_id, user_id').all()
   ]);
+  const extra = new Map(tickets.results.map(t => [t.giveaway_id + '|' + t.user_id, Number(t.n)]));
   const clans = new Map(clanList.map(c => [c.team_id, c]));
   const byGiveaway = new Map();
   for (const row of parts.results) {
     if (!byGiveaway.has(row.giveaway_id)) byGiveaway.set(row.giveaway_id, []);
-    byGiveaway.get(row.giveaway_id).push(JSON.parse(row.data));
+    const p = JSON.parse(row.data);
+    p.tickets = 1 + (extra.get(row.giveaway_id + '|' + p.id) || 0);
+    byGiveaway.get(row.giveaway_id).push(p);
   }
   return gws.results.map(row => {
     const gw = JSON.parse(row.data);
@@ -896,6 +908,7 @@ async function postGiveaway(app, body) {
     // Entries go too, so points paid to join are given back
     await db.batch([
       db.prepare('DELETE FROM giveaway_participants WHERE giveaway_id = ?').bind(gw.id),
+      db.prepare('DELETE FROM giveaway_tickets WHERE giveaway_id = ?').bind(gw.id),
       db.prepare('DELETE FROM giveaways WHERE id = ?').bind(gw.id)
     ]);
     notifyAdmins(app, `🗑 <b>Çekiliş silindi</b> • ${esc(await clanLabel(db, clanId))}\n${who(user)}\n${esc(gw.title)}`);
@@ -906,9 +919,26 @@ async function postGiveaway(app, body) {
     if (gw.ended || gw.endsAtMs <= now) return { error: 'This giveaway has ended' };
     if (gw.startsAtMs > now) return { error: 'This giveaway opens on ' + trTime(gw.startsAtMs) + ' (TR time)' };
     const already = await db.prepare('SELECT 1 AS x FROM giveaway_participants WHERE giveaway_id = ? AND user_id = ?').bind(gw.id, user.id).first();
+    const cost = gw.entryMode === 'points' ? Math.max(0, Number(gw.minPoints) || 0) : 0;
+    // Points giveaways sell tickets: one more ticket per price paid, each ticket one chance in the draw
+    if (already && cost > 0) {
+      const balance = await pointsWallet(db, user.id);
+      if (cost > balance) return { error: `Not enough points: you have ${balance}, a ticket costs ${cost}` };
+      const owned = await db.prepare('SELECT COUNT(*) AS n FROM giveaway_tickets WHERE giveaway_id = ? AND user_id = ?').bind(gw.id, user.id).first();
+      if (Number(owned && owned.n) + 1 >= MAX_GIVEAWAY_TICKETS) return { error: `You can hold at most ${MAX_GIVEAWAY_TICKETS} tickets` };
+      await db.prepare('INSERT INTO giveaway_tickets (giveaway_id, user_id, paid, bought_at) VALUES (?, ?, ?, ?)').bind(gw.id, user.id, cost, now).run();
+      // Two taps at once could both pass the balance check: drop this ticket again if the wallet went below zero
+      const after = await walletSums(db, user.id);
+      if (after.earned - after.spent < 0) {
+        await db.prepare('DELETE FROM giveaway_tickets WHERE id = (SELECT MAX(id) FROM giveaway_tickets WHERE giveaway_id = ? AND user_id = ?)').bind(gw.id, user.id).run();
+        return { error: 'Not enough points' };
+      }
+      const n = Number(owned && owned.n) + 2;
+      notifyAdmins(app, `🎟 <b>Çekiliş bileti aldı</b> (${n}. bilet)\n${who(user)}\n${esc(gw.title)} (−${cost} Points)`);
+      return { tickets: n };
+    }
     if (already) return { error: 'You have already joined this giveaway' };
 
-    const cost = gw.entryMode === 'points' ? Math.max(0, Number(gw.minPoints) || 0) : 0;
     const restricted = gw.eligibleClan && gw.eligibleClan !== 'ALL';
     const link = await getLink(db, user.id);
     let clanName = link ? link.clan_name : '';
@@ -946,15 +976,21 @@ async function postGiveaway(app, body) {
     if (gw.endsAtMs > now) return { error: 'This giveaway has not ended yet' };
     const parts = await db.prepare('SELECT data FROM giveaway_participants WHERE giveaway_id = ?').bind(gw.id).all();
     const list = parts.results.map(r => JSON.parse(r.data));
+    const extra = await db.prepare('SELECT user_id, COUNT(*) AS n FROM giveaway_tickets WHERE giveaway_id = ? GROUP BY user_id').bind(gw.id).all();
+    const extraBy = new Map(extra.results.map(t => [String(t.user_id), Number(t.n)]));
+    // Every ticket is one chance: a player with 3 tickets is 3 times as likely to win
+    const pool = list.flatMap(p => Array(1 + (extraBy.get(String(p.id)) || 0)).fill(p));
     gw.ended = true;
-    gw.winner = list.length ? list[randomIndex(list.length)] : { name: 'No Participants', clan: '—' };
+    gw.winner = pool.length ? { ...pool[randomIndex(pool.length)] } : { name: 'No Participants', clan: '—' };
+    if (gw.winner.id) gw.winner.tickets = 1 + (extraBy.get(String(gw.winner.id)) || 0);
+    gw.totalTickets = pool.length;
     gw.drawnAt = now;
     // Only the first draw counts, even when several clients ask at the same moment
     const drawn = await db.prepare("UPDATE giveaways SET data = ? WHERE id = ? AND json_extract(data, '$.ended') = 0")
       .bind(JSON.stringify(gw), gw.id).run();
     if (drawn.meta && drawn.meta.changes) {
       const w = gw.winner;
-      notifyAdmins(app, `🏁 <b>Çekiliş bitti</b> • ${esc(await clanLabel(db, clanId))}\n${esc(gw.title)}\n👥 Katılımcı: ${list.length}\n🥇 Kazanan: ${w && w.id ? `<a href="tg://user?id=${encodeURIComponent(w.id)}">${esc(w.name)}</a> • ID <code>${esc(w.id)}</code>` : 'yok'}`, true);
+      notifyAdmins(app, `🏁 <b>Çekiliş bitti</b> • ${esc(await clanLabel(db, clanId))}\n${esc(gw.title)}\n👥 Katılımcı: ${list.length}${pool.length > list.length ? ` • 🎟 ${pool.length} bilet` : ''}\n🥇 Kazanan: ${w && w.id ? `<a href="tg://user?id=${encodeURIComponent(w.id)}">${esc(w.name)}</a> • ID <code>${esc(w.id)}</code>` : 'yok'}`, true);
     }
     return {};
   }
@@ -1573,6 +1609,7 @@ async function sendAnnouncementTo(token, chatId, a, replyMarkup) {
 }
 // Free Workers plans allow 50 outgoing requests per call, so private messages go out in batches
 const BROADCAST_BATCH = 22;
+const MAX_GIVEAWAY_TICKETS = 500;
 
 async function getAnnouncement(db) {
   const row = await db.prepare("SELECT value FROM meta WHERE key = 'announce_v1'").first();
@@ -1621,7 +1658,7 @@ async function giveawayAd(app, gw, clanId) {
     image: /^https:\/\//.test(img) ? img : /^data:image\//.test(img) ? `${app.origin}/api/reward-image?id=${encodeURIComponent(gw.id)}` : '',
     text: `🎉 ${Number(gw.startsAtMs) > now + 60000 ? 'Upcoming giveaway' : 'New giveaway'}${clan && clan.team_id ? ` by ${clan.name}` : ''}: ${gw.title}\n\n` +
       (prizes ? `🏆 ${prizes}\n` : '') +
-      `🎟 ${gw.entryMode === 'points' ? `${Number(gw.minPoints).toLocaleString('en-US')} Points to join` : 'Free entry'}${gw.eligibleClan && gw.eligibleClan !== 'ALL' ? ` • ${gw.eligibleClan} only` : ''}\n` +
+      `🎟 ${gw.entryMode === 'points' ? `${Number(gw.minPoints).toLocaleString('en-US')} Points per ticket (buy more tickets, more chances)` : 'Free entry'}${gw.eligibleClan && gw.eligibleClan !== 'ALL' ? ` • ${gw.eligibleClan} only` : ''}\n` +
       (Number(gw.startsAtMs) > now + 60000 ? `🕒 Opens: ${trTime(gw.startsAtMs)} (TR)\n` : '') +
       `⏳ Ends: ${trTime(gw.endsAtMs)} (TR)\n\n👉 Join in the app: https://t.me/PWCLANapp`
   };

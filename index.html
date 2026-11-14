@@ -3608,7 +3608,7 @@
               </button>
             </div>
             <div id="gw-min-points-wrap" style="display:none; margin-bottom:10px;">
-              <label style="display:block; font-size:10.5px; font-weight:700; color:#d9b45a; margin-bottom:4px;">Entry Cost (deducted from the player's points on join):</label>
+              <label style="display:block; font-size:10.5px; font-weight:700; color:#d9b45a; margin-bottom:4px;">🎟 Ticket price in Points (players can buy more tickets; each ticket is one chance to win):</label>
               <input type="number" id="gw-min-points-input" class="search-input" style="padding:9px 12px; font-size:13px;" value="1000" min="1">
             </div>
 
@@ -8094,7 +8094,9 @@
 
       const userInfo = getCurrentPlayerClanAndPoints();
 
-      if (gw.participants && gw.participants.some(p => p.id === userInfo.id)) {
+      const myEntry = (gw.participants || []).find(p => p.id === userInfo.id);
+      if (myEntry && getGiveawayEntryCost(gw) > 0) return buyGiveawayTicket(gw, myEntry);
+      if (myEntry) {
         showCyberToast('✓ You have already joined this Giveaway!');
         return;
       }
@@ -8117,7 +8119,7 @@
           showCyberToast(`⚠️ Not enough points: you have ${balance.toLocaleString()}, entry costs ${cost.toLocaleString()}. Earn more in Tasks.`);
           return;
         }
-        const ok = await askUserConfirm(`Joining costs ${cost.toLocaleString()} Points.\nYour points: ${balance.toLocaleString()} → ${(balance - cost).toLocaleString()}.\nJoin this giveaway?`);
+        const ok = await askUserConfirm(`One ticket costs ${cost.toLocaleString()} Points.\nYour points: ${balance.toLocaleString()} → ${(balance - cost).toLocaleString()}.\nBuy your first ticket? You can buy more later; every ticket is one more chance to win.`);
         if (!ok) return;
       }
       userInfo.paidPoints = cost;
@@ -8135,8 +8137,36 @@
       renderGiveawaysList();
       loadPlatformState();
       showCyberToast(cost > 0
-        ? `🎉 Joined! ${cost.toLocaleString()} Points deducted. Good luck!`
+        ? `🎟 Ticket bought! ${cost.toLocaleString()} Points deducted. Good luck!`
         : '🎉 You have entered the Giveaway! Good luck!');
+    }
+
+    // One more ticket in a points giveaway: each ticket is one more chance in the draw
+    let ticketBusy = false;
+    async function buyGiveawayTicket(gw, entry) {
+      if (ticketBusy) return;
+      const cost = getGiveawayEntryCost(gw);
+      const have = Number(entry.tickets) || 1;
+      const balance = getHegemonyPointsBalance();
+      if (balance === null) { showCyberToast('⚠️ Open the app from Telegram to use points.'); return; }
+      if (balance < cost) {
+        showCyberToast(`🎟 You have ${have} ticket${have > 1 ? 's' : ''}. The next one costs ${cost.toLocaleString()} Points, you have ${balance.toLocaleString()}. Earn more in Tasks.`);
+        return;
+      }
+      const ok = await askUserConfirm(`You have ${have} ticket${have > 1 ? 's' : ''}.\nBuy one more for ${cost.toLocaleString()} Points?\nYour points: ${balance.toLocaleString()} → ${(balance - cost).toLocaleString()}.`);
+      if (!ok) return;
+      ticketBusy = true;
+      try {
+        const res = await storeRequest('/giveaways', { action: 'join', giveaway_id: gw.id });
+        if (!res.ok) { showCyberToast(`⚠️ ${res.error}`); loadGiveawaysData(); return; }
+        giveawaysList = res.items;
+        try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
+        renderGiveawaysList();
+        loadPlatformState();
+        showCyberToast(`🎟 Ticket bought! You now have ${res.data.tickets || have + 1} tickets.`);
+      } finally {
+        ticketBusy = false;
+      }
     }
 
     function shareGiveawayDirectLink(gwId) {
@@ -8273,14 +8303,14 @@
 
             <div class="gw-meta-pills">
               <span class="gw-pill ${gw.entryMode === 'points' ? 'pts-pill' : 'free-pill'}">
-                ${gw.entryMode === 'points' ? `⭐ Cost ${Number(gw.minPoints).toLocaleString()} Points` : '🎁 FREE ENTRY'}
+                ${gw.entryMode === 'points' ? `🎟 ${Number(gw.minPoints).toLocaleString()} Points / ticket` : '🎁 FREE ENTRY'}
               </span>
               <span class="gw-pill" style="display:inline-flex; align-items:center; gap:5px;">
                 ${clanAvatarUrl ? `<img src="${escapeHtml(clanAvatarUrl)}" style="width:15px;height:15px;border-radius:50%;object-fit:cover;border:1px solid var(--cyan);" alt="">` : '🌍'}
                 <span>${gw.eligibleClan === 'ALL' ? 'All Clans' : escapeHtml(gw.eligibleClan) + ' Only'}</span>
               </span>
               <span class="gw-pill">
-                👥 ${(gw.participants || []).length} Joined
+                👥 ${(gw.participants || []).length} Joined${gw.entryMode === 'points' ? ` • 🎟 ${(gw.participants || []).reduce((n, p) => n + (Number(p.tickets) || 1), 0)} tickets` : ''}
               </span>
             </div>
 
@@ -8294,6 +8324,7 @@
               <div style="background:rgba(212, 175, 55,0.14); border:1.5px solid #d4af37; border-radius:12px; padding:10px; text-align:center; margin-top:8px;">
                 <div style="font-size:11px; color:#d4af37; font-weight:800; text-transform:uppercase;">🏆 Winner Selected</div>
                 <div style="font-size:15px; font-weight:900; color:#fff; margin-top:2px;">🎉 ${escapeHtml(gw.winner.name)} (${escapeHtml(gw.winner.clan || 'Player')})</div>
+                ${gw.winner.tickets ? `<div style="font-size:11px; color:#d4af37; margin-top:2px;">🎟 won with ${gw.winner.tickets} of ${gw.totalTickets} tickets</div>` : ''}
               </div>
             ` : `
               <div class="gw-actions-row">
@@ -8302,10 +8333,15 @@
                   <span>🕒</span>
                   <span>Opens ${escapeHtml(new Date(gw.startsAtMs).toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>
                 </button>` : `
+                ${isJoined && getGiveawayEntryCost(gw) > 0 ? `
+                <button type="button" class="gw-join-btn" onclick="joinGiveawayById(${jsArg(gw.id)})">
+                  <span>🎟</span>
+                  <span>Buy ticket (−${getGiveawayEntryCost(gw).toLocaleString()}) • you have ${Number((gw.participants.find(p => p.id === curUser.id) || {}).tickets) || 1}</span>
+                </button>` : `
                 <button type="button" class="gw-join-btn ${isJoined ? 'joined' : ''}" onclick="joinGiveawayById(${jsArg(gw.id)})">
-                  <span>${isJoined ? '✓' : '🎉'}</span>
-                  <span>${isJoined ? 'Joined' : (getGiveawayEntryCost(gw) > 0 ? `Join (−${getGiveawayEntryCost(gw).toLocaleString()} Points)` : 'Join Giveaway')}</span>
-                </button>`}
+                  <span>${isJoined ? '✓' : (getGiveawayEntryCost(gw) > 0 ? '🎟' : '🎉')}</span>
+                  <span>${isJoined ? 'Joined' : (getGiveawayEntryCost(gw) > 0 ? `Buy ticket (−${getGiveawayEntryCost(gw).toLocaleString()} Points)` : 'Join Giveaway')}</span>
+                </button>`}`}
                 <button type="button" class="gw-share-btn" onclick="shareGiveawayDirectLink(${jsArg(gw.id)})">
                   <span>📤</span>
                   <span>Share</span>
