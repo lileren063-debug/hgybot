@@ -2633,6 +2633,26 @@
   }
   .tk-status.done { color: #3fbf7f; background: rgba(63, 191, 127, 0.1); border: 1px solid rgba(63, 191, 127, 0.45); }
   .tk-status.pending { color: #d9b45a; background: rgba(201, 154, 58, 0.1); border: 1px solid rgba(201, 154, 58, 0.45); }
+  /* Compact task cards: many tasks on one screen */
+  #tasks-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+  #tasks-list > .glass-card { grid-column: 1 / -1; }
+  #tasks-list .tk-card { padding: 9px 10px; margin-bottom: 0; border-radius: 13px; display: flex; flex-direction: column; }
+  #tasks-list .tk-top { margin-bottom: 3px; align-items: center; }
+  #tasks-list .tk-head { min-width: 0; display: flex; align-items: center; gap: 6px; }
+  #tasks-list .tk-head .pf-owner-pill { margin: 0; flex-shrink: 0; font-size: 9.5px; padding: 1px 6px; }
+  #tasks-list .tk-head .pf-owner-pill img { width: 12px; height: 12px; }
+  #tasks-list .tk-title { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #tasks-list .tk-reward { font-size: 11px; padding: 2px 7px; }
+  #tasks-list .tk-desc { font-size: 11px; margin: 0 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #tasks-list .tk-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  #tasks-list .tk-meta .gw-pill { font-size: 10px; padding: 2px 7px; }
+  #tasks-list .tk-countdown { font-size: 10px; padding: 2px 7px; margin: 0; }
+  #tasks-list .tk-progress { height: 6px; margin: 6px 0 2px; }
+  #tasks-list .tk-progress-label { font-size: 9.5px; }
+  #tasks-list .tk-actions { margin-top: auto; padding-top: 6px; gap: 6px; }
+  #tasks-list .tk-actions .gw-join-btn, #tasks-list .tk-actions .gw-share-btn { padding: 7px 8px; font-size: 12px; border-radius: 10px; }
+  #tasks-list .tk-status { padding: 6px; font-size: 11.5px; border-radius: 10px; }
+  #tasks-list .tk-del { flex: 0 0 auto; padding: 4px 9px; }
   .pf-row {
     display: flex;
     align-items: center;
@@ -8761,21 +8781,22 @@
         }
         return `
           <div class="tk-card ${done ? 'done' : ''}">
-            ${t.clanId === 0 ? '<div class="pf-owner-pill" style="color:var(--cyan); border-color:rgba(91, 141, 239,0.45); background:rgba(91, 141, 239,0.1);">🌍 <span>For everyone</span></div>' : renderPlatformOwnerPill(t.clanName, t.clanAvatar)}
             <div class="tk-top">
-              <div class="tk-title">${escapeHtml(t.title)}</div>
-              <div class="tk-reward">+${Number(t.reward).toLocaleString()} Points</div>
+              <div class="tk-head">
+                ${t.clanId === 0 ? '<div class="pf-owner-pill" style="color:var(--cyan); border-color:rgba(91, 141, 239,0.45); background:rgba(91, 141, 239,0.1);">🌍 <span>For everyone</span></div>' : renderPlatformOwnerPill(t.clanName, t.clanAvatar)}
+                <div class="tk-title" title="${escapeHtml(t.title)}">${escapeHtml(t.title)}</div>
+              </div>
+              <div class="tk-reward">+${Number(t.reward).toLocaleString()}</div>
             </div>
-            ${t.description ? `<p class="tk-desc">${escapeHtml(t.description)}</p>` : ''}
-            <div class="gw-meta-pills" style="margin-bottom:4px;">
+            ${t.description ? `<p class="tk-desc" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</p>` : ''}
+            <div class="tk-meta">
               <span class="gw-pill">${TASK_PERIOD_LABEL[t.period] || ''}</span>
               <span class="gw-pill">${escapeHtml(taskTypeLabel(t))}</span>
+              ${taskPeriodEndMs(t.period) ? `<span class="tk-countdown" data-ends="${taskPeriodEndMs(t.period)}" data-done="${done ? 1 : 0}">${formatTaskCountdown(taskPeriodEndMs(t.period), done)}</span>` : ''}
             </div>
-            ${taskPeriodEndMs(t.period) ? `<div class="tk-countdown" data-ends="${taskPeriodEndMs(t.period)}" data-done="${done ? 1 : 0}">${formatTaskCountdown(taskPeriodEndMs(t.period), done)}</div>` : ''}
             ${progressHtml}
-            ${t.kind === 'manual' && !done && !pend && !otherClan ? `<input type="text" id="tk-note-${escapeHtml(t.id)}" class="search-input" style="padding:8px 11px; font-size:12px; margin-top:8px;" placeholder="Note for the admin (optional)">` : ''}
-            <div class="tk-actions">${actions}</div>
-            ${t.canManage ? `<div style="display:flex; justify-content:flex-end; margin-top:8px;"><button type="button" class="pf-manage-btn" onclick="adminDeleteTask(${jsArg(t.id)})">🗑 Delete task</button></div>` : ''}
+            ${t.kind === 'manual' && !done && !pend && !otherClan ? `<input type="text" id="tk-note-${escapeHtml(t.id)}" class="search-input" style="padding:6px 10px; font-size:12px; margin-top:6px;" placeholder="Note for the admin (optional)">` : ''}
+            <div class="tk-actions">${actions}${t.canManage ? `<button type="button" class="pf-manage-btn tk-del" title="Delete task" onclick="adminDeleteTask(${jsArg(t.id)})">🗑</button>` : ''}</div>
           </div>`;
       }).join('');
 
