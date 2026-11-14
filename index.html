@@ -3636,6 +3636,13 @@
             </div>
             <div id="gw-draft-prizes-list" style="margin-bottom:10px;"></div>
 
+            <label style="display:block; font-size:11px; font-weight:800; color:var(--cyan); text-transform:uppercase; margin-bottom:6px;">Start Date &amp; Time (optional)</label>
+            <div style="display:flex; gap:8px; margin-bottom:4px;">
+              <input type="datetime-local" id="gw-start-input" class="search-input" style="padding:9px; flex:1; min-width:0;" oninput="updateGwLaunchLabel()">
+              <button type="button" class="pf-manage-btn" onclick="document.getElementById('gw-start-input').value=''; updateGwLaunchLabel();">Now</button>
+            </div>
+            <div style="font-size:10.5px; color:#8faac4; margin-bottom:12px;">Leave empty to start right away. Players can join only after the start; the duration counts from the start.</div>
+
             <label style="display:block; font-size:11px; font-weight:800; color:var(--cyan); text-transform:uppercase; margin-bottom:6px;">Giveaway Duration (Days / Hours / Mins)</label>
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;">
               <div>
@@ -3654,7 +3661,7 @@
 
             <button type="button" class="done-confirm-btn" style="width:100%; padding:13px; font-size:14px;" onclick="submitAndLaunchGiveaway()">
               <span>🚀</span>
-              <span>Launch Giveaway Now</span>
+              <span id="gw-launch-label">Launch Giveaway Now</span>
             </button>
           </div>
         </div>
@@ -7910,6 +7917,12 @@
       const dHours = Math.max(0, Number(document.getElementById('gw-dur-hours').value || 0));
       const dMins = Math.max(0, Number(document.getElementById('gw-dur-mins').value || 0));
       const totalSec = Math.max(60, dDays * 86400 + dHours * 3600 + dMins * 60);
+      const startsAtMs = getGwStartMs();
+      if (startsAtMs === -1) {
+        showCyberToast('⚠️ The start time is in the past. Pick a later time or press Now.');
+        return;
+      }
+      const startMs = startsAtMs || Date.now();
 
       const prizes = draftGiveawayPrizes.length > 0 ? [...draftGiveawayPrizes] : [
         {
@@ -7930,7 +7943,8 @@
         eligibleClan: clan,
         eligibleClanAvatar: clanAvatar,
         prizes,
-        endsAtMs: Date.now() + totalSec * 1000,
+        startsAtMs: startMs,
+        endsAtMs: startMs + totalSec * 1000,
         participants: [],
         winner: null,
         ended: false
@@ -7949,9 +7963,42 @@
       draftGiveawayPrizes = [];
       document.getElementById('gw-title-input').value = '';
       document.getElementById('gw-desc-input').value = '';
+      document.getElementById('gw-start-input').value = '';
+      updateGwLaunchLabel();
       currentGwStatusFilter = 'active';
       switchGiveawaySubTab('join');
-      showCyberToast(`🚀 Giveaway Launched by ${creator.username}!`);
+      showCyberToast(startsAtMs ? `🕒 Giveaway scheduled: opens ${new Date(startMs).toLocaleString()}` : `🚀 Giveaway Launched by ${creator.username}!`);
+    }
+
+    // Start time from the form: 0 = now, -1 = in the past, otherwise ms
+    function getGwStartMs() {
+      const el = document.getElementById('gw-start-input');
+      const v = el && el.value;
+      if (!v) return 0;
+      const ms = new Date(v).getTime();
+      if (!isFinite(ms)) return 0;
+      if (ms < Date.now() - 60000) return -1;
+      return ms > Date.now() + 30000 ? ms : 0;
+    }
+
+    function updateGwLaunchLabel() {
+      const el = document.getElementById('gw-launch-label');
+      if (el) el.textContent = getGwStartMs() > 0 ? 'Schedule Giveaway' : 'Launch Giveaway Now';
+    }
+
+    function isGiveawayUpcoming(gw, nowMs = Date.now()) {
+      return !gw.ended && Number(gw.startsAtMs) > nowMs;
+    }
+
+    function formatCountdown(sec) {
+      const d = Math.floor(sec / 86400);
+      return d > 0 ? `${d}d ${formatTime(sec % 86400)}` : formatTime(sec);
+    }
+
+    function giveawayTimerText(gw, nowMs = Date.now()) {
+      if (gw.ended) return '🏁 ENDED';
+      if (isGiveawayUpcoming(gw, nowMs)) return '🕒 Starts in ' + formatCountdown(Math.floor((gw.startsAtMs - nowMs) / 1000));
+      return '⏳ ' + formatCountdown(Math.max(0, Math.floor((gw.endsAtMs - nowMs) / 1000)));
     }
 
     // Stable id: Telegram id, or one guest id kept per browser (a random id per call let guests join repeatedly)
@@ -8025,6 +8072,10 @@
     async function joinGiveawayById(gwId) {
       const gw = giveawaysList.find(g => g.id === gwId);
       if (!gw || gw.ended) return;
+      if (isGiveawayUpcoming(gw)) {
+        showCyberToast(`🕒 This giveaway opens ${new Date(gw.startsAtMs).toLocaleString()}`);
+        return;
+      }
 
       const userInfo = getCurrentPlayerClanAndPoints();
 
@@ -8197,7 +8248,7 @@
                 ${gw.description ? `<p style="margin:0; font-size:12px; color:#9ab3c9;">${escapeHtml(gw.description)}</p>` : ''}
               </div>
               <div class="score-badge" data-gw-timer="${escapeHtml(gw.id)}">
-                ${gw.ended ? '🏁 ENDED' : '⏳ ' + formatTime(remSec)}
+                ${giveawayTimerText(gw, nowMs)}
               </div>
             </div>
 
@@ -8230,10 +8281,15 @@
               </div>
             ` : `
               <div class="gw-actions-row">
+                ${isGiveawayUpcoming(gw, nowMs) ? `
+                <button type="button" class="gw-join-btn" style="opacity:.6;" data-gw-upcoming="${escapeHtml(gw.id)}" onclick="joinGiveawayById(${jsArg(gw.id)})">
+                  <span>🕒</span>
+                  <span>Opens ${escapeHtml(new Date(gw.startsAtMs).toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>
+                </button>` : `
                 <button type="button" class="gw-join-btn ${isJoined ? 'joined' : ''}" onclick="joinGiveawayById(${jsArg(gw.id)})">
                   <span>${isJoined ? '✓' : '🎉'}</span>
                   <span>${isJoined ? 'Joined' : (getGiveawayEntryCost(gw) > 0 ? `Join (−${getGiveawayEntryCost(gw).toLocaleString()} Points)` : 'Join Giveaway')}</span>
-                </button>
+                </button>`}
                 <button type="button" class="gw-share-btn" onclick="shareGiveawayDirectLink(${jsArg(gw.id)})">
                   <span>📤</span>
                   <span>Share</span>
@@ -9325,15 +9381,18 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
 
     function tickGiveawayTimers() {
       const nowMs = Date.now();
+      let needsRender = false;
       giveawaysList.forEach(gw => {
         if (gw.ended) return;
         const remSec = Math.max(0, Math.floor((gw.endsAtMs - nowMs) / 1000));
         const el = document.querySelector(`[data-gw-timer="${gw.id}"]`);
-        if (el) el.textContent = '⏳ ' + formatTime(remSec);
+        if (el) el.textContent = giveawayTimerText(gw, nowMs);
+        if (!isGiveawayUpcoming(gw, nowMs) && document.querySelector(`[data-gw-upcoming="${gw.id}"]`)) needsRender = true;
         if (remSec <= 0 && !gw.ended) {
           triggerRandomGiveawayWinner(gw);
         }
       });
+      if (needsRender) renderGiveawaysList();
     }
 
     // =========================================================================

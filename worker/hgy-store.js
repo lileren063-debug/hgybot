@@ -841,6 +841,8 @@ async function postGiveaway(app, body) {
     const g = body.giveaway || {};
     const title = cleanText(g.title, 120);
     if (!title) return { error: 'Title is required' };
+    // Optional scheduled start (at most 90 days ahead); joining opens only then
+    const startsAtMs = Math.min(now + 90 * 86400000, Math.max(now, Math.floor(Number(g.startsAtMs) || 0)));
     const gw = {
       id: 'gw_' + now + '_' + randomIndex(1000),
       title,
@@ -854,7 +856,8 @@ async function postGiveaway(app, body) {
         tag: cleanText(p && p.tag, 40),
         image: cleanImage(p && p.image)
       })),
-      endsAtMs: Math.min(now + 90 * 86400000, Math.max(now + 60000, Number(g.endsAtMs) || 0)),
+      startsAtMs,
+      endsAtMs: Math.min(startsAtMs + 90 * 86400000, Math.max(startsAtMs + 60000, Number(g.endsAtMs) || 0)),
       winner: null,
       ended: false,
       creatorId: user.id,
@@ -865,7 +868,7 @@ async function postGiveaway(app, body) {
     if (data.length > MAX_RECORD_BYTES) return { error: 'Prize images are too large' };
     await db.prepare('INSERT INTO giveaways (id, data, created_at, clan_id) VALUES (?, ?, ?, ?)').bind(gw.id, data, now, clan.team_id).run();
     const prizeList = gw.prizes.map(p => p.name).filter(Boolean).join(', ');
-    notifyAdmins(app, `🎉 <b>Yeni çekiliş</b> • ${esc(clan.name)}\n${who(user)}\n${esc(gw.title)}${prizeList ? '\n🏆 ' + esc(prizeList) : ''}\n🎟 ${gw.entryMode === 'points' ? gw.minPoints + ' Points' : 'Ücretsiz'}${gw.eligibleClan !== 'ALL' ? ' • sadece ' + esc(gw.eligibleClan) : ''}\n⏳ Bitiş: ${new Date(gw.endsAtMs).toISOString().slice(0, 16).replace('T', ' ')} UTC`);
+    notifyAdmins(app, `🎉 <b>Yeni çekiliş</b> • ${esc(clan.name)}\n${who(user)}\n${esc(gw.title)}${prizeList ? '\n🏆 ' + esc(prizeList) : ''}\n🎟 ${gw.entryMode === 'points' ? gw.minPoints + ' Points' : 'Ücretsiz'}${gw.eligibleClan !== 'ALL' ? ' • sadece ' + esc(gw.eligibleClan) : ''}${gw.startsAtMs > now + 60000 ? '\n🕒 Başlangıç: ' + trTime(gw.startsAtMs) + ' (TR)' : ''}\n⏳ Bitiş: ${trTime(gw.endsAtMs)} (TR)`);
     return {};
   }
 
@@ -886,6 +889,7 @@ async function postGiveaway(app, body) {
 
   if (body.action === 'join') {
     if (gw.ended || gw.endsAtMs <= now) return { error: 'This giveaway has ended' };
+    if (gw.startsAtMs > now) return { error: 'This giveaway opens on ' + trTime(gw.startsAtMs) + ' (TR time)' };
     const already = await db.prepare('SELECT 1 AS x FROM giveaway_participants WHERE giveaway_id = ? AND user_id = ?').bind(gw.id, user.id).first();
     if (already) return { error: 'You have already joined this giveaway' };
 
@@ -1935,4 +1939,9 @@ function json(obj, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
   });
+}
+
+// Turkey time (UTC+3, no DST) as 'YYYY-MM-DD HH:MM'
+function trTime(ms) {
+  return new Date(ms + 3 * 3600000).toISOString().slice(0, 16).replace('T', ' ');
 }
