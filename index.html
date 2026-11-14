@@ -3209,6 +3209,72 @@
   /* Legend over the task grid */
   .tk-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 10.5px; font-weight: 800; color: #9fb3cf; margin: 2px 2px 8px; }
   .tk-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+
+  /* ==================== Home: greeting, live giveaways, do next ==================== */
+  .home-hero {
+    position: relative; overflow: hidden; border-radius: 18px; padding: 14px; margin-bottom: 12px;
+    background: radial-gradient(circle at 85% 0%, rgba(224, 180, 76, 0.22), transparent 55%), linear-gradient(160deg, rgba(26, 36, 58, 0.95), rgba(12, 18, 30, 0.96));
+    border: 1.5px solid rgba(224, 180, 76, 0.35);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+  }
+  .home-hero::after {
+    content: ''; position: absolute; right: -30px; bottom: -40px; width: 170px; height: 170px; pointer-events: none;
+    background: var(--wolf-logo, none) center / contain no-repeat; opacity: 0.12; border-radius: 50%;
+  }
+  .home-hero-top { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+  .home-hero-avatar {
+    width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0; font-size: 26px;
+    display: flex; align-items: center; justify-content: center; background: rgba(224, 180, 76, 0.12);
+    border: 2px solid var(--gold); box-shadow: 0 0 14px rgba(224, 180, 76, 0.35);
+  }
+  .home-hero-greet { font-size: 12px; color: #9fb3cf; font-weight: 700; }
+  .home-hero-name { font-family: var(--head-font); font-size: 24px; font-weight: 700; color: #fff; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .home-hero-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; position: relative; z-index: 1; }
+  .home-hero-chip {
+    background: rgba(5, 10, 18, 0.55); border: 1px solid rgba(91, 141, 239, 0.3); border-radius: 12px; padding: 8px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; color: #9fb3cf; font: inherit;
+  }
+  .home-hero-chip b { font-family: var(--head-font); font-size: 22px; color: var(--gold); line-height: 1; }
+  .home-hero-chip span { font-size: 10px; font-weight: 700; text-align: center; }
+  .home-hero-chip.zero b { color: #5d6f88; }
+  .home-section-head { display: flex; justify-content: space-between; align-items: center; margin: 4px 2px 7px; }
+  .home-section-head span { font-family: var(--head-font); font-size: 17px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+  .home-section-head button { background: none; border: none; color: var(--cyan); font-weight: 800; font-size: 12px; cursor: pointer; }
+  #home-featured, #home-todo { margin-bottom: 12px; }
+  .home-feat-strip { display: flex; gap: 9px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .home-feat-strip::-webkit-scrollbar { display: none; }
+  .home-feat-card {
+    flex: 0 0 140px; scroll-snap-align: start; border-radius: 14px; padding: 7px; cursor: pointer; position: relative; overflow: hidden;
+    background: linear-gradient(165deg, rgba(22, 31, 48, 0.95), rgba(13, 19, 31, 0.96)); border: 1.5px solid rgba(63, 191, 127, 0.5);
+  }
+  .home-feat-card.pts { border-color: var(--gold-line); }
+  .home-feat-card.soon { border-color: rgba(168, 121, 240, 0.55); }
+  .home-feat-img { width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; background: #071320; display: flex; align-items: center; justify-content: center; font-size: 38px; overflow: hidden; }
+  .home-feat-img img { width: 100%; height: 100%; object-fit: contain; }
+  .home-feat-title { font-family: var(--head-font); font-size: 14px; font-weight: 700; color: #fff; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .home-feat-meta { font-size: 10.5px; font-weight: 800; color: #d9b45a; }
+  .home-feat-card.free .home-feat-meta { color: #3fbf7f; }
+  .home-feat-card.soon .home-feat-meta { color: #b99af5; }
+  .home-feat-timer { font-size: 10.5px; font-weight: 800; color: #9fb3cf; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .home-todo-row {
+    display: flex; align-items: center; gap: 9px; padding: 10px 11px; margin-bottom: 6px; border-radius: 12px; cursor: pointer;
+    background: linear-gradient(165deg, rgba(22, 31, 48, 0.95), rgba(13, 19, 31, 0.96)); border: 1px solid rgba(91, 141, 239, 0.25);
+    --dot: var(--c-daily);
+  }
+  .home-todo-row[data-period="weekly"] { --dot: var(--c-weekly); }
+  .home-todo-row[data-period="season"] { --dot: var(--c-season); }
+  .home-todo-row[data-period="once"] { --dot: var(--c-once); }
+  .home-todo-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--dot); flex-shrink: 0; box-shadow: 0 0 8px var(--dot); }
+  .home-todo-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 800; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .home-todo-ready { font-size: 10px; font-weight: 900; color: #1a1000; background: var(--gold); border-radius: 7px; padding: 2px 6px; }
+  .home-todo-reward { font-family: var(--head-font); font-size: 14px; font-weight: 700; color: var(--gold); }
+  .home-clan-card { border-radius: 14px; }
+  .home-clan-card.has-active { border-color: var(--gold-line); box-shadow: 0 0 14px rgba(224, 180, 76, 0.15); }
+  .home-clan-avatar { border-color: var(--gold); }
+  .home-clan-name { font-family: var(--head-font); font-size: 17px; font-weight: 700; letter-spacing: 0.4px; }
+  @media (min-width: 760px) {
+    .home-feat-card { flex-basis: 170px; }
+  }
 </style>
 </head>
 <body>
@@ -3330,7 +3396,10 @@
       <div id="view-home" class="view-panel active">
 
         <!-- HGY wallet + every clan with its active giveaways, tasks and rewards (renderHomeClanList) -->
+        <div id="home-hero" class="home-hero"></div>
         <div class="hgy-wallet-card" id="hgy-wallet-home"></div>
+        <div id="home-featured"></div>
+        <div id="home-todo"></div>
         <div class="glass-card">
           <div class="section-header" style="margin-bottom:10px;">
             <div>
@@ -8603,6 +8672,7 @@
 
     // Home: every clan (and tasks for everyone) with what is active right now
     function renderHomeClanList() {
+      try { renderHomeExtras(); } catch (e) { console.warn('home extras', e); }
       const box = document.getElementById('home-clan-list');
       if (!box) return;
       const now = Date.now();
@@ -8632,6 +8702,72 @@
             <span style="color:var(--cyan); font-size:18px; font-weight:900;">›</span>
           </div>`;
       }).join('');
+    }
+
+    // Home extras: greeting with quick counts, live giveaways strip, tasks to do now
+    function renderHomeExtras() {
+      const now = Date.now();
+      const tg = getCurrentTelegramUser();
+      const me = platformState.me;
+      const name = (me && me.link && me.link.nickname) || (tg && (tg.first_name || tg.username)) || 'Player';
+      const hour = new Date().getHours();
+      const greet = hour < 6 ? 'Good night' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+      const liveGws = giveawaysList.filter(g => !g.ended && g.endsAtMs > now).sort((a, b) => (isGiveawayUpcoming(a, now) - isGiveawayUpcoming(b, now)) || a.endsAtMs - b.endsAtMs);
+      const myClan = getMyPlatformClanId();
+      const openTasks = tasksList.filter(t => t.myStatus !== 'done' && t.myStatus !== 'pending' && (t.clanId === 0 || !myClan || t.clanId === myClan));
+      const balance = getHegemonyPointsBalance();
+      const affordable = rewardsList.filter(w => !w.deleted && getRewardStockLeft(w) > 0 && balance !== null && balance >= (Number(w.cost) || 0)).length;
+
+      const hero = document.getElementById('home-hero');
+      if (hero) {
+        const avatar = tg && tg.photo_url ? `<img class="home-hero-avatar" src="${escapeHtml(tg.photo_url)}" alt="" onerror="this.outerHTML='<div class=&quot;home-hero-avatar&quot;>🐺</div>'">` : '<div class="home-hero-avatar">🐺</div>';
+        const chip = (n, label, tab) => `<button type="button" class="home-hero-chip ${n ? '' : 'zero'}" onclick="openClanFromHome(0, '${tab}')"><b>${n}</b><span>${label}</span></button>`;
+        hero.innerHTML = `
+          <div class="home-hero-top">
+            ${avatar}
+            <div style="min-width:0;">
+              <div class="home-hero-greet">${greet},</div>
+              <div class="home-hero-name">${escapeHtml(name)}</div>
+            </div>
+          </div>
+          <div class="home-hero-chips">
+            ${chip(liveGws.length, 'Giveaways', 'join')}
+            ${chip(openTasks.length, 'Open tasks', 'tasks')}
+            ${chip(affordable, 'Rewards you can get', 'rewards')}
+          </div>`;
+      }
+
+      const feat = document.getElementById('home-featured');
+      if (feat) {
+        feat.innerHTML = liveGws.length ? `
+          <div class="home-section-head"><span>🔥 Live giveaways</span><button type="button" onclick="openClanFromHome(0, 'join')">See all ›</button></div>
+          <div class="home-feat-strip">${liveGws.slice(0, 8).map(g => {
+            const img = ((g.prizes || []).find(p => p && p.image) || {}).image || '';
+            const soon = isGiveawayUpcoming(g, now);
+            return `
+              <div class="home-feat-card ${soon ? 'soon' : g.entryMode === 'points' ? 'pts' : 'free'}" onclick="openClanFromHome(0, 'join')">
+                <div class="home-feat-img">${img ? `<img src="${escapeHtml(img)}" alt="" onerror="this.style.visibility='hidden'">` : '🎁'}</div>
+                <div class="home-feat-title">${escapeHtml(g.title)}</div>
+                <div class="home-feat-meta">${soon ? '🕒 Soon' : g.entryMode === 'points' ? `🎟 ${Number(g.minPoints).toLocaleString()}` : '🎁 Free'}</div>
+                <div class="home-feat-timer" data-gw-timer="${escapeHtml(g.id)}-home">${giveawayTimerText(g, now)}</div>
+              </div>`;
+          }).join('')}</div>` : '';
+      }
+
+      const todo = document.getElementById('home-todo');
+      if (todo) {
+        const ready = t => { const p = getTaskProgress(t); return p && !p.loading && p.value >= p.target; };
+        const list = [...openTasks].sort((a, b) => ready(b) - ready(a) || (Number(b.reward) || 0) - (Number(a.reward) || 0)).slice(0, 3);
+        todo.innerHTML = list.length ? `
+          <div class="home-section-head"><span>🎯 Do next</span><button type="button" onclick="openClanFromHome(0, 'tasks')">All tasks ›</button></div>
+          ${list.map(t => `
+            <div class="home-todo-row" data-period="${escapeHtml(t.period || '')}" onclick="openClanFromHome(0, 'tasks')">
+              <span class="home-todo-dot"></span>
+              <span class="home-todo-title">${escapeHtml(t.title)}</span>
+              ${ready(t) ? '<span class="home-todo-ready">Ready!</span>' : ''}
+              <span class="home-todo-reward">+${Number(t.reward).toLocaleString()}</span>
+            </div>`).join('')}` : '';
+      }
     }
 
     function openClanFromHome(teamId, subTab) {
@@ -9612,6 +9748,8 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
         const remSec = Math.max(0, Math.floor((gw.endsAtMs - nowMs) / 1000));
         const el = document.querySelector(`[data-gw-timer="${gw.id}"]`);
         if (el) el.textContent = giveawayTimerText(gw, nowMs);
+        const homeEl = document.querySelector(`[data-gw-timer="${gw.id}-home"]`);
+        if (homeEl) homeEl.textContent = giveawayTimerText(gw, nowMs);
         if (!isGiveawayUpcoming(gw, nowMs) && document.querySelector(`[data-gw-upcoming="${gw.id}"]`)) needsRender = true;
         if (remSec <= 0 && !gw.ended) {
           triggerRandomGiveawayWinner(gw);
