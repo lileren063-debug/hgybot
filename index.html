@@ -3659,6 +3659,11 @@
               </div>
             </div>
 
+            <label id="gw-announce-row" style="display:none; align-items:center; gap:8px; margin-bottom:12px; font-size:12.5px; color:#d4af37; font-weight:800; cursor:pointer;">
+              <input type="checkbox" id="gw-announce-input" style="width:18px; height:18px;">
+              📣 Announce: send it to the channels and every bot user
+            </label>
+
             <button type="button" class="done-confirm-btn" style="width:100%; padding:13px; font-size:14px;" onclick="submitAndLaunchGiveaway()">
               <span>🚀</span>
               <span id="gw-launch-label">Launch Giveaway Now</span>
@@ -7771,6 +7776,8 @@
       });
 
       currentGwSubTab = subTab;
+      const annRow = document.getElementById('gw-announce-row');
+      if (annRow) annRow.style.display = platformState.me && platformState.me.is_super ? 'flex' : 'none';
       if (subTab === 'rewards') {
         const rwForm = document.getElementById('rw-admin-form');
         if (rwForm) rwForm.style.display = isCurrentUserGiveawayAdmin() ? 'block' : 'none';
@@ -7952,10 +7959,18 @@
 
       const ownerSel = document.getElementById('gw-owner-clan-select');
       const ownerClanId = Number(ownerSel && ownerSel.value) || 0;
-      const res = await storeRequest('/giveaways', { action: 'create', clan_id: ownerClanId, giveaway: newGw });
+      const annEl = document.getElementById('gw-announce-input');
+      const announce = Boolean(annEl && annEl.checked && platformState.me && platformState.me.is_super);
+      if (announce && !confirm('Announce this giveaway to every bot user now? This cannot be undone.')) return;
+      const res = await storeRequest('/giveaways', { action: 'create', clan_id: ownerClanId, giveaway: newGw, announce });
       if (!res.ok) {
         showCyberToast(`⚠️ ${res.error}`);
         return;
+      }
+      if (annEl) annEl.checked = false;
+      if (announce) {
+        if (res.data && res.data.warning) showCyberToast(`⚠️ ${res.data.warning}`);
+        pumpAnnounceBroadcast();
       }
       giveawaysList = res.items;
       try { localStorage.setItem(GIVEAWAYS_STORAGE_KEY, JSON.stringify(giveawaysList)); } catch (e) {}
@@ -8270,7 +8285,8 @@
             </div>
 
             ${getPlatformPerm(gw.clanId, 'giveaways') ? `
-              <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+              <div style="display:flex; justify-content:flex-end; gap:6px; margin-bottom:6px;">
+                ${!gw.ended && platformState.me && platformState.me.is_super ? `<button type="button" class="pf-manage-btn" style="background:rgba(212,175,55,0.15); color:#d4af37; border-color:#d4af37;" onclick="adminAnnounceGiveaway(${jsArg(gw.id)})">${gw.announcedAt ? '📣 Announced ✓' : '📣 Announce'}</button>` : ''}
                 <button type="button" class="pf-manage-btn" onclick="adminDeleteGiveaway(${jsArg(gw.id)})">🗑 Delete giveaway</button>
               </div>
             ` : ''}
@@ -9161,6 +9177,22 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
         const b = platformState.announce && platformState.announce.broadcast;
         showCyberToast(b ? `📣 Sent to ${b.sent} users${b.failed ? `, ${b.failed} failed` : ''}${chats ? ' and the channels' : ''}` : '📣 Sent');
       } else showCyberToast(`📣 Posted in ${chats}`);
+    }
+
+    async function adminAnnounceGiveaway(gwId) {
+      const gw = giveawaysList.find(g => g.id === gwId);
+      if (!gw) return;
+      const chats = ((platformState.announce || {}).chats || []).join(', ');
+      if (!confirm(`${gw.announcedAt ? 'Already announced once. Send it again?\n\n' : ''}Announce "${gw.title}" to every bot user${chats ? ` and in ${chats}` : ''}? This cannot be undone.`)) return;
+      showCyberToast('📣 Sending…');
+      const res = await storeRequest('/platform', { action: 'giveaway_announce', giveaway_id: gwId });
+      if (!res.ok) { showCyberToast(`⚠️ ${res.error}`); return; }
+      if (res.data.warning) showCyberToast(`⚠️ ${res.data.warning}`);
+      gw.announcedAt = Date.now();
+      renderGiveawaysList();
+      await pumpAnnounceBroadcast();
+      const b = platformState.announce && platformState.announce.broadcast;
+      showCyberToast(b ? `📣 Sent to ${b.sent} users${b.failed ? `, ${b.failed} failed` : ''}${chats ? ' and the channels' : ''}` : '📣 Sent');
     }
 
     async function pumpAnnounceBroadcast() {

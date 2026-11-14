@@ -379,6 +379,17 @@ async function postPlatform(app, body) {
     return {};
   }
 
+  // Advertise one giveaway (new or scheduled) to the channels and every bot user
+  if (action === 'giveaway_announce') {
+    const row = await db.prepare('SELECT data, clan_id FROM giveaways WHERE id = ?').bind(String(body.giveaway_id || '')).first();
+    if (!row) return { error: 'Giveaway not found' };
+    const gw = JSON.parse(row.data);
+    if (gw.ended || gw.endsAtMs <= Date.now()) return { error: 'This giveaway has ended' };
+    const res = await announceGiveaway(app, gw, row.clan_id);
+    if (res.error) return res;
+    return {};
+  }
+
   if (action === 'announce_save' || action === 'announce_send_now') {
     const a = body.announce || {};
     const prev = await getAnnouncement(db);
@@ -867,6 +878,10 @@ async function postGiveaway(app, body) {
     const data = JSON.stringify(gw);
     if (data.length > MAX_RECORD_BYTES) return { error: 'Prize images are too large' };
     await db.prepare('INSERT INTO giveaways (id, data, created_at, clan_id) VALUES (?, ?, ?, ?)').bind(gw.id, data, now, clan.team_id).run();
+    if (body.announce && app.isSuper) {
+      const res = await announceGiveaway(app, gw, clan.team_id);
+      if (res.error) app.warning = res.error;
+    }
     const prizeList = gw.prizes.map(p => p.name).filter(Boolean).join(', ');
     notifyAdmins(app, `🎉 <b>Yeni çekiliş</b> • ${esc(clan.name)}\n${who(user)}\n${esc(gw.title)}${prizeList ? '\n🏆 ' + esc(prizeList) : ''}\n🎟 ${gw.entryMode === 'points' ? gw.minPoints + ' Points' : 'Ücretsiz'}${gw.eligibleClan !== 'ALL' ? ' • sadece ' + esc(gw.eligibleClan) : ''}${gw.startsAtMs > now + 60000 ? '\n🕒 Başlangıç: ' + trTime(gw.startsAtMs) + ' (TR)' : ''}\n⏳ Bitiş: ${trTime(gw.endsAtMs)} (TR)`);
     return {};
@@ -1520,8 +1535,12 @@ async function saveAnnouncementImage(app, value, previous) {
 
 // Uploaded reward pictures are data URLs; Telegram needs a link to send them as a photo
 async function serveRewardImage(db, id) {
-  const row = await db.prepare('SELECT data FROM rewards WHERE id = ?').bind(String(id || '')).first();
-  const m = row && String(JSON.parse(row.data).image || '').match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
+  id = String(id || '');
+  const isGw = id.startsWith('gw_');
+  const row = await db.prepare(`SELECT data FROM ${isGw ? 'giveaways' : 'rewards'} WHERE id = ?`).bind(id).first();
+  const d = row ? JSON.parse(row.data) : {};
+  const img = isGw ? ((d.prizes || []).find(p => p && p.image) || {}).image : d.image;
+  const m = row && String(img || '').match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
   if (!m) return new Response('Not found', { status: 404 });
   const bytes = Uint8Array.from(atob(m[2]), c => c.charCodeAt(0));
   return new Response(bytes, { headers: { 'Content-Type': m[1], 'Cache-Control': 'public, max-age=86400' } });
@@ -1590,6 +1609,36 @@ function claimAd(app, rw, claim, link) {
       `${Number(claim.paidPoints || rw.cost).toLocaleString('en-US')} Points earned by completing tasks in the clan app.\n` +
       `🎯 Complete tasks, collect Points and claim rewards too!\n👉 https://t.me/PWCLANapp`
   };
+}
+
+// "New giveaway" ad: first prize picture, prizes, entry, start and end in Turkey time
+async function giveawayAd(app, gw, clanId) {
+  const clan = await getClan(app.db, clanId);
+  const img = ((gw.prizes || []).find(p => p && p.image) || {}).image || '';
+  const prizes = (gw.prizes || []).map(p => p.name).filter(Boolean).join(', ');
+  const now = Date.now();
+  return {
+    image: /^https:\/\//.test(img) ? img : /^data:image\//.test(img) ? `${app.origin}/api/reward-image?id=${encodeURIComponent(gw.id)}` : '',
+    text: `🎉 ${Number(gw.startsAtMs) > now + 60000 ? 'Upcoming giveaway' : 'New giveaway'}${clan && clan.team_id ? ` by ${clan.name}` : ''}: ${gw.title}\n\n` +
+      (prizes ? `🏆 ${prizes}\n` : '') +
+      `🎟 ${gw.entryMode === 'points' ? `${Number(gw.minPoints).toLocaleString('en-US')} Points to join` : 'Free entry'}${gw.eligibleClan && gw.eligibleClan !== 'ALL' ? ` • ${gw.eligibleClan} only` : ''}\n` +
+      (Number(gw.startsAtMs) > now + 60000 ? `🕒 Opens: ${trTime(gw.startsAtMs)} (TR)\n` : '') +
+      `⏳ Ends: ${trTime(gw.endsAtMs)} (TR)\n\n👉 Join in the app: https://t.me/PWCLANapp`
+  };
+}
+
+async function announceGiveaway(app, gw, clanId) {
+  if (!app.env.BOT_TOKEN) return { error: 'BOT_TOKEN is not set' };
+  const a = await getAnnouncement(app.db);
+  const ad = await giveawayAd(app, gw, clanId);
+  await queueBroadcast(app, ad, 'giveaway ' + new Date().toISOString().slice(0, 16).replace('T', ' '));
+  if (a.chats.length) {
+    const failed = (await postAnnouncement(app, { ...ad, chats: a.chats })).filter(r => !r.ok).map(f => `${f.chat}: ${f.error}`).join(' • ');
+    if (failed) app.warning = failed;
+  }
+  gw.announcedAt = Date.now();
+  await app.db.prepare('UPDATE giveaways SET data = ? WHERE id = ?').bind(JSON.stringify(gw), gw.id).run();
+  return {};
 }
 
 // Every claim: the announcement channels and (Eren's choice, 2026-10-31) every bot user privately
