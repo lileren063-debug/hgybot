@@ -281,7 +281,8 @@ async function platform(app, url, body) {
     is_super: app.isSuper,
     perms: await getPerms(app),
     link,
-    balance
+    balance,
+    activity: await pointsActivity(app.db, app.user.id).catch(() => [])
   };
   if (app.inspect) out.inspect = app.inspect;
   if (app.taskReport) out.task_report = app.taskReport;
@@ -775,6 +776,17 @@ async function walletSums(db, userId) {
 async function pointsWallet(db, userId) {
   const w = await walletSums(db, userId);
   return Math.max(0, w.earned - w.spent);
+}
+
+// Last Points moves of one user for the wallet card: task rewards in, entries/tickets/rewards out
+async function pointsActivity(db, userId) {
+  const rows = await db.prepare(`
+    SELECT 'task' AS kind, task_id AS ref, points AS amount, COALESCE(decided_at, created_at) AS at FROM task_claims WHERE user_id = ?1 AND status = 'done' AND points > 0
+    UNION ALL SELECT 'giveaway', giveaway_id, -COALESCE(json_extract(data, '$.paidPoints'), 0), joined_at FROM giveaway_participants WHERE user_id = ?1 AND COALESCE(json_extract(data, '$.paidPoints'), 0) > 0
+    UNION ALL SELECT 'ticket', giveaway_id, -paid, bought_at FROM giveaway_tickets WHERE user_id = ?1
+    UNION ALL SELECT 'reward', reward_id, -COALESCE(json_extract(data, '$.paidPoints'), 0), claimed_at FROM reward_claims WHERE user_id = ?1
+    ORDER BY at DESC LIMIT 12`).bind(userId).all();
+  return rows.results.map(r => ({ kind: r.kind, ref: r.ref, amount: Number(r.amount) || 0, at: Number(r.at) || 0 }));
 }
 
 async function getBalance(app, link) {

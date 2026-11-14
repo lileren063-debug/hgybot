@@ -3314,6 +3314,79 @@
   /* Do next rows never run past the page edge */
   #home-todo { max-width: 100%; overflow: hidden; }
   .home-todo-row { max-width: 100%; box-sizing: border-box; }
+
+  /* ==================== Home wallet card (Telegram Wallet style, gold) ==================== */
+  .pw-wrap { margin-bottom: 14px; }
+  .pw-card {
+    position: relative; overflow: hidden; border-radius: 22px; aspect-ratio: 1.75 / 1; max-height: 260px; width: 100%;
+    padding: 0 22px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;
+    background:
+      radial-gradient(ellipse at 62% 48%, rgba(255, 246, 214, 0.55) 0%, transparent 38%),
+      conic-gradient(from 210deg at 62% 48%, #f6d47a, #d99a2b, #f2c25a, #b97a1c, #f6d47a),
+      #d9a23a;
+    border: 1.5px solid rgba(255, 236, 170, 0.75);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6), 0 0 34px rgba(224, 180, 76, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -18px 40px rgba(120, 70, 0, 0.25);
+    transform: perspective(900px) rotateX(2deg) rotateY(-3deg);
+  }
+  .pw-card::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.35) 45%, transparent 60%);
+    transform: translateX(-100%); animation: pwShine 5s ease-in-out infinite;
+  }
+  @keyframes pwShine { 0%, 60% { transform: translateX(-100%); } 85%, 100% { transform: translateX(100%); } }
+  .pw-spark { position: absolute; width: 9px; height: 9px; pointer-events: none; animation: pwTwinkle 3s ease-in-out infinite; }
+  .pw-spark::before, .pw-spark::after { content: ''; position: absolute; left: 50%; top: 50%; background: rgba(255, 255, 255, 0.9); transform: translate(-50%, -50%); border-radius: 1px; }
+  .pw-spark::before { width: 9px; height: 1.5px; }
+  .pw-spark::after { width: 1.5px; height: 9px; }
+  @keyframes pwTwinkle { 0%, 100% { opacity: 0.25; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1.1); } }
+  .pw-bal { display: flex; align-items: baseline; gap: 4px 8px; position: relative; z-index: 1; flex-wrap: wrap; padding-right: 100px; }
+  .pw-gem { font-size: 30px; align-self: center; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)); }
+  .pw-bal b { font-family: var(--head-font); font-size: 46px; font-weight: 700; color: #fff; line-height: 1; text-shadow: 0 2px 8px rgba(110, 60, 0, 0.55); }
+  .pw-unit { font-family: var(--head-font); font-size: 26px; font-weight: 700; color: #fff7dc; opacity: 0.85; letter-spacing: 1px; text-shadow: 0 2px 6px rgba(110, 60, 0, 0.4); }
+  .pw-sub { font-size: 12px; font-weight: 800; color: #4a2c00; margin-top: 6px; position: relative; z-index: 1; padding-right: 70px; }
+  .pw-name { position: absolute; left: 22px; bottom: 18px; font-family: 'Courier New', monospace; font-size: 16px; font-weight: 700; letter-spacing: 2px; color: #fffaf0; text-shadow: 0 1px 4px rgba(110, 60, 0, 0.6); z-index: 1; }
+  .pw-chip {
+    position: absolute; right: 52px; top: 50%; transform: translateY(-50%); width: 58px; height: 46px; border-radius: 11px; z-index: 1;
+    display: flex; align-items: center; justify-content: center; font-size: 24px; overflow: hidden;
+    background: linear-gradient(145deg, #ffffff, #c9ced6 55%, #eef1f5); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 #fff;
+  }
+  .pw-chip img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+  .pw-vert {
+    position: absolute; right: 14px; top: 16px; bottom: 16px; writing-mode: vertical-rl; font-family: 'Courier New', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: rgba(90, 50, 0, 0.55); overflow: hidden; z-index: 1;
+  }
+  .pw-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .pw-actions button {
+    border: none; border-radius: 999px; padding: 13px; font-family: var(--head-font); font-size: 17px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer;
+    color: #1d1200; background: linear-gradient(180deg, #f6d47a, #d99a2b); box-shadow: 0 6px 16px rgba(224, 180, 76, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  .pw-actions button:active { transform: scale(0.97); }
+  .pw-note { font-size: 11.5px; color: #9fb3cf; text-align: center; margin-top: 8px; }
+  .pw-activity { margin-top: 12px; border-radius: 18px; overflow: hidden; background: rgba(22, 30, 46, 0.9); border: 1px solid rgba(91, 141, 239, 0.18); }
+  .pw-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; }
+  .pw-row + .pw-row { border-top: 1px solid rgba(255, 255, 255, 0.06); }
+  .pw-ico { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #fff; }
+  .pw-ico.in { background: #3fbf7f; }
+  .pw-ico.out { background: rgba(224, 180, 76, 0.18); border: 1px solid var(--gold-line); }
+  .pw-row-main { flex: 1; min-width: 0; }
+  .pw-row-title { font-size: 14px; font-weight: 800; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pw-row-sub { font-size: 11.5px; color: #8faac4; margin-top: 1px; }
+  .pw-amt { font-family: var(--head-font); font-size: 17px; font-weight: 700; white-space: nowrap; }
+  .pw-amt.in { color: #4fd18b; }
+  .pw-amt.out { color: #e8eef7; }
+  .pw-amt span { font-size: 13px; }
+  .pw-empty { padding: 22px 16px; text-align: center; color: #8faac4; font-size: 12.5px; line-height: 1.6; }
+  @media (max-width: 420px) {
+    .pw-bal b { font-size: 40px; }
+    .pw-unit { font-size: 20px; }
+    .pw-gem { font-size: 26px; }
+    .pw-sub { padding-right: 96px; }
+  }
+  @media (min-width: 760px) {
+    .pw-wrap { display: grid; grid-template-columns: minmax(340px, 460px) 1fr; gap: 0 18px; align-items: start; }
+    .pw-card, .pw-actions, .pw-note { grid-column: 1; }
+    .pw-activity { grid-column: 2; grid-row: 1 / span 3; margin-top: 0; }
+  }
 </style>
 </head>
 <body>
@@ -8693,6 +8766,7 @@
           el.style.display = 'none';
           return;
         }
+        if (id === 'hgy-wallet-home') { renderWalletHome(el, me, b); return; }
         const parts = [`🎯 Earned from tasks +${b.task_points.toLocaleString()}`];
         if (b.spent) parts.push(`🎁 Spent −${b.spent.toLocaleString()}`);
         el.style.display = 'flex';
@@ -8707,6 +8781,47 @@
           </div>
           <div style="font-size:30px; flex-shrink:0;">💎</div>`;
       });
+    }
+
+    // Home wallet: a glossy card like Telegram Wallet, two actions and the latest Points moves
+    function renderWalletHome(el, me, b) {
+      el.className = 'pw-wrap';
+      el.style.display = '';
+      const tg = getCurrentTelegramUser();
+      const name = (me.link && me.link.nickname) || (tg && [tg.first_name, tg.last_name].filter(Boolean).join(' ')) || me.username || 'Player';
+      const clan = platformState.clans.find(c => Number(c.team_id) === Number(b.team_id));
+      const chip = clan && clan.avatar ? `<img src="${escapeHtml(clan.avatar)}" alt="" onerror="this.replaceWith(document.createTextNode('🐺'))">` : '🐺';
+      const vert = [me.link && me.link.uuid ? String(me.link.uuid).toUpperCase().replace(/-/g, ' ') : `ID ${me.id}`].join('');
+      const sparks = [[8, 18], [22, 70], [35, 30], [48, 82], [62, 12], [70, 55], [84, 28], [90, 76], [15, 90], [55, 45]]
+        .map(([x, y], i) => `<i class="pw-spark" style="left:${x}%; top:${y}%; animation-delay:${(i * 0.37) % 3}s;"></i>`).join('');
+      const titleOf = a => {
+        if (a.kind === 'task') { const t = tasksList.find(x => x.id === a.ref); return [t ? t.title : 'Task reward', 'Task completed']; }
+        if (a.kind === 'reward') { const r = rewardsList.find(x => x.id === a.ref); return [r ? r.name : 'Reward', 'Reward claimed']; }
+        const g = giveawaysList.find(x => x.id === a.ref);
+        return [g ? g.title : 'Giveaway', a.kind === 'ticket' ? 'Extra ticket' : 'Giveaway ticket'];
+      };
+      const icon = a => a.amount > 0 ? '<span class="pw-ico in">↓</span>' : `<span class="pw-ico out">${a.kind === 'reward' ? '🎁' : '🎟'}</span>`;
+      const act = (me.activity || []).slice(0, 6);
+      el.innerHTML = `
+        <div class="pw-card">
+          ${sparks}
+          <div class="pw-vert">${escapeHtml(vert)}</div>
+          <div class="pw-chip">${chip}</div>
+          <div class="pw-bal"><span class="pw-gem">💎</span><b>${b.balance.toLocaleString()}</b><span class="pw-unit">POINTS</span></div>
+          <div class="pw-sub">+${b.task_points.toLocaleString()} earned${b.spent ? ` • −${b.spent.toLocaleString()} spent` : ''}${me.link && b.rank_in_clan ? ` • #${b.rank_in_clan} in ${escapeHtml(b.clan_name)}` : ''}</div>
+          <div class="pw-name">${escapeHtml(String(name).toUpperCase())}</div>
+        </div>
+        <div class="pw-actions">
+          <button type="button" onclick="openClanFromHome(0, 'tasks')">Earn Points</button>
+          <button type="button" onclick="openClanFromHome(0, 'rewards')">Spend</button>
+        </div>
+        ${!me.link ? '<div class="pw-note">🔗 Link your Pixel World account in Profile for clan tasks</div>' : ''}
+        ${act.length ? `<div class="pw-activity">${act.map(a => { const [t, sub] = titleOf(a); return `
+          <div class="pw-row">
+            ${icon(a)}
+            <div class="pw-row-main"><div class="pw-row-title">${escapeHtml(t)}</div><div class="pw-row-sub">${sub} • ${new Date(a.at).toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div></div>
+            <div class="pw-amt ${a.amount > 0 ? 'in' : 'out'}">${a.amount > 0 ? '+' : '−'}${Math.abs(a.amount).toLocaleString()} <span>💎</span></div>
+          </div>`; }).join('')}</div>` : '<div class="pw-activity pw-empty">💎 No Points activity yet.<br>Complete a task to earn your first Points.</div>'}`;
     }
 
     // Home: every clan (and tasks for everyone) with what is active right now
