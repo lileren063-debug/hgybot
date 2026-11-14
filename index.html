@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Clan Giveaways & Rewards</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     /* Mystic Night Background Colors */
@@ -3127,9 +3130,75 @@
     border-color: #e05a5a;
   }
 
+
+  /* ==================== Theme v2: gold accent, game headings, colour-coded cards ==================== */
+  :root {
+    --gold: #e0b44c;
+    --gold-soft: rgba(224, 180, 76, 0.14);
+    --gold-line: rgba(224, 180, 76, 0.55);
+    --head-font: 'Rajdhani', 'Inter', 'Segoe UI', sans-serif;
+    --c-daily: #5b8def;
+    --c-weekly: #a879f0;
+    --c-season: #f08a4b;
+    --c-once: #3fbf7f;
+  }
+  #wolf-watermark {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: var(--wolf-logo, none) center 58% / min(70vw, 520px) no-repeat;
+    opacity: 0.045; filter: grayscale(1) contrast(1.3);
+    -webkit-mask-image: radial-gradient(circle at center 58%, #000 30%, transparent 70%);
+            mask-image: radial-gradient(circle at center 58%, #000 30%, transparent 70%);
+  }
+  .section-title {
+    font-family: var(--head-font); font-size: 21px; font-weight: 700; letter-spacing: 1.6px;
+    color: var(--gold); text-shadow: 0 0 14px rgba(224, 180, 76, 0.35);
+  }
+  .gw-card h3, .tk-title, .rw-name, .hgy-wallet-value, .score-badge, .tk-reward, .rw-cost, .gw-tab-btn span:last-child {
+    font-family: var(--head-font); letter-spacing: 0.4px;
+  }
+  .gw-card h3, .tk-title, .rw-name { font-weight: 700; }
+  #giveaways-active-list .gw-card h3 { font-size: 16px !important; }
+  #tasks-list .tk-title, .rw-card .rw-name { font-size: 15px; }
+  .tk-reward, .rw-cost { font-size: 12.5px !important; }
+  .hgy-wallet-value { font-size: 30px; }
+  .gw-tab-btn span:last-child { font-size: 14px; font-weight: 700; }
+  .gw-tab-btn.active {
+    border-color: var(--gold-line) !important;
+    background: linear-gradient(180deg, rgba(224, 180, 76, 0.16), rgba(224, 180, 76, 0.04)) !important;
+    box-shadow: 0 0 0 1px rgba(224, 180, 76, 0.25), 0 6px 18px rgba(224, 180, 76, 0.12) !important;
+    color: #ffe39a !important;
+  }
+  /* Cards: shine line on top, lift on hover */
+  .tk-card, .rw-card { position: relative; overflow: hidden; }
+  .tk-card, .rw-card, .gw-card { transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; }
+  .tk-card::before, .rw-card::before, .gw-card::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; pointer-events: none;
+    background: linear-gradient(90deg, transparent, var(--card-accent, rgba(91, 141, 239, 0.8)), transparent);
+    opacity: 0.85;
+  }
+  @media (hover: hover) {
+    .tk-card:hover, .rw-card:hover, .gw-card:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0, 0, 0, 0.6); }
+  }
+  /* Colour codes: task period */
+  .tk-card[data-period="daily"] { --card-accent: var(--c-daily); border-left: 3px solid var(--c-daily); }
+  .tk-card[data-period="weekly"] { --card-accent: var(--c-weekly); border-left: 3px solid var(--c-weekly); }
+  .tk-card[data-period="season"] { --card-accent: var(--c-season); border-left: 3px solid var(--c-season); }
+  .tk-card[data-period="once"] { --card-accent: var(--c-once); border-left: 3px solid var(--c-once); }
+  .tk-card[data-period] .tk-period-pill { color: var(--card-accent); border-color: var(--card-accent); background: color-mix(in srgb, var(--card-accent) 14%, transparent); }
+  .tk-card.done { --card-accent: var(--c-once); }
+  /* Colour codes: giveaway entry and reward cards */
+  .gw-card.gw-pts { --card-accent: var(--gold); border-color: var(--gold-line); }
+  .gw-card.gw-free { --card-accent: #3fbf7f; border-color: rgba(63, 191, 127, 0.5); }
+  .gw-card.gw-soon { --card-accent: #a879f0; border-color: rgba(168, 121, 240, 0.55); }
+  .rw-card { --card-accent: var(--gold); }
+  .rw-card .rw-claim-btn:not(:disabled) { box-shadow: 0 4px 14px rgba(224, 180, 76, 0.25); }
+  /* Legend over the task grid */
+  .tk-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 10.5px; font-weight: 800; color: #9fb3cf; margin: 2px 2px 8px; }
+  .tk-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
 </style>
 </head>
 <body>
+<div id="wolf-watermark" aria-hidden="true"></div>
 
   <!-- Unified SVG Definition for Cyber Wolf -->
   <svg width="0" height="0" style="position:absolute">
@@ -7844,6 +7913,8 @@
       });
 
       currentGwSubTab = subTab;
+      const headTitle = document.querySelector('#view-giveaways .gw-header-row .section-title');
+      if (headTitle) headTitle.textContent = { join: '🎁 Giveaways', rewards: '🛒 Rewards', tasks: '🎯 Tasks', create: '👑 Create' }[subTab] || '🎁 Giveaways';
       const annRow = document.getElementById('gw-announce-row');
       if (annRow) annRow.style.display = platformState.me && platformState.me.is_super ? 'flex' : 'none';
       if (subTab === 'rewards') {
@@ -8350,7 +8421,7 @@
         `).join('');
 
         return `
-          <div class="gw-card ${gw.ended ? 'ended' : ''}" id="gw-card-${escapeHtml(gw.id)}">
+          <div class="gw-card ${gw.ended ? 'ended' : isGiveawayUpcoming(gw, nowMs) ? 'gw-soon' : gw.entryMode === 'points' ? 'gw-pts' : 'gw-free'}" id="gw-card-${escapeHtml(gw.id)}">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
               <div style="min-width:0; flex:1;">
                 ${renderPlatformOwnerPill(gw.clanName, gw.clanAvatar)}
@@ -8792,7 +8863,9 @@
       const linked = Boolean(getServerPointsBalance());
       const myClan = getMyPlatformClanId();
 
-      box.innerHTML = visible.map(t => {
+      const periods = [...new Set(visible.map(t => t.period))];
+      const legend = periods.length > 1 ? `<div class="tk-legend" style="grid-column:1 / -1;">${['daily', 'weekly', 'season', 'once'].filter(p => periods.includes(p)).map(p => `<span><i style="background:var(--c-${p});"></i>${escapeHtml(String(TASK_PERIOD_LABEL[p] || p).replace(/^\S+\s/, ''))}</span>`).join('')}</div>` : '';
+      box.innerHTML = legend + visible.map(t => {
         const prog = getTaskProgress(t);
         const done = t.myStatus === 'done';
         const pend = t.myStatus === 'pending';
@@ -8828,7 +8901,7 @@
           actions = `<button type="button" class="gw-join-btn" style="${reached ? '' : 'opacity:0.6;'}" onclick="claimTaskById(${jsArg(t.id)})"><span>${reached ? '🎁' : '⚔️'}</span><span>${reached ? 'Claim Reward' : 'Check Progress'}</span></button>`;
         }
         return `
-          <div class="tk-card ${done ? 'done' : ''}">
+          <div class="tk-card ${done ? 'done' : ''}" data-period="${escapeHtml(t.period || '')}">
             <div class="tk-top">
               <div class="tk-head">
                 ${t.clanId === 0 ? '<div class="pf-owner-pill" style="color:var(--cyan); border-color:rgba(91, 141, 239,0.45); background:rgba(91, 141, 239,0.1);">🌍 <span>For everyone</span></div>' : renderPlatformOwnerPill(t.clanName, t.clanAvatar)}
@@ -8838,7 +8911,7 @@
             </div>
             ${t.description ? `<p class="tk-desc" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</p>` : ''}
             <div class="tk-meta">
-              <span class="gw-pill">${TASK_PERIOD_LABEL[t.period] || ''}</span>
+              <span class="gw-pill tk-period-pill">${TASK_PERIOD_LABEL[t.period] || ''}</span>
               <span class="gw-pill">${escapeHtml(taskTypeLabel(t))}</span>
               ${taskPeriodEndMs(t.period) ? `<span class="tk-countdown" data-ends="${taskPeriodEndMs(t.period)}" data-done="${done ? 1 : 0}">${formatTaskCountdown(taskPeriodEndMs(t.period), done)}</span>` : ''}
             </div>
@@ -9885,5 +9958,12 @@ Each clan leader can create and manage their own daily tasks and giveaways. Play
     }
 
   </script>
+<script>
+  // Faint HEGEMONY wolf behind the pages: reuse the loading-screen logo
+  (function () {
+    var logo = document.querySelector('.loading-logo');
+    if (logo && logo.src) document.documentElement.style.setProperty('--wolf-logo', 'url("' + logo.src + '")');
+  })();
+</script>
 </body>
 </html>
