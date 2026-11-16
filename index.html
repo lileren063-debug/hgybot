@@ -3387,6 +3387,53 @@
     .pw-card, .pw-actions, .pw-note { grid-column: 1; }
     .pw-activity { grid-column: 2; grid-row: 1 / span 3; margin-top: 0; }
   }
+
+  /* Live giveaways strip: side arrows on wide screens, drag and wheel scroll */
+  .home-feat-scroller { position: relative; }
+  .home-feat-strip { scroll-snap-type: none; cursor: grab; user-select: none; }
+  .home-feat-strip.dragging { cursor: grabbing; }
+  .home-feat-strip.dragging .home-feat-card { pointer-events: none; }
+  .home-feat-strip img { -webkit-user-drag: none; pointer-events: none; }
+  .home-feat-arrow {
+    position: absolute; top: 50%; z-index: 3; width: 38px; height: 38px; border-radius: 50%; transform: translateY(-50%);
+    border: 1px solid var(--gold-line); background: rgba(8, 13, 22, 0.88); color: var(--gold); font-size: 24px; font-weight: 900; line-height: 1;
+    display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px);
+  }
+  .home-feat-arrow.left { left: -6px; }
+  .home-feat-arrow.right { right: -6px; }
+  .home-feat-scroller.can-left .home-feat-arrow.left, .home-feat-scroller.can-right .home-feat-arrow.right { display: flex; }
+  .home-feat-scroller.can-left::before, .home-feat-scroller.can-right::after {
+    content: ''; position: absolute; top: 0; bottom: 4px; width: 40px; z-index: 2; pointer-events: none;
+  }
+  .home-feat-scroller.can-left::before { left: 0; background: linear-gradient(90deg, rgba(8, 13, 22, 0.9), transparent); }
+  .home-feat-scroller.can-right::after { right: 0; background: linear-gradient(270deg, rgba(8, 13, 22, 0.9), transparent); }
+  @media (hover: none) { .home-feat-arrow { width: 32px; height: 32px; font-size: 20px; } }
+
+  /* Hover: cards glow in their colour and grow a little */
+  .home-feat-strip { padding: 8px 6px 10px; margin: -8px -6px -6px; }
+  .home-feat-card { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; --glow: rgba(63, 191, 127, 0.55); }
+  .home-feat-card.pts { --glow: rgba(224, 180, 76, 0.6); }
+  .home-feat-card.soon { --glow: rgba(168, 121, 240, 0.6); }
+  .home-feat-card::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.2s ease;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.18) 50%, transparent 65%);
+  }
+  @media (hover: hover) {
+    .home-feat-card:hover, .tk-card:hover, .rw-card:hover, .gw-card:hover {
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 22px var(--glow, rgba(91, 141, 239, 0.45));
+    }
+    .home-feat-card:hover { transform: scale(1.05); z-index: 1; border-color: var(--glow); }
+    .home-feat-card:hover::after { opacity: 1; }
+    .home-feat-card:hover .home-feat-img img { transform: scale(1.06); }
+    .tk-card:hover, .rw-card:hover, .gw-card:hover { transform: translateY(-2px) scale(1.015); }
+    .tk-card { --glow: color-mix(in srgb, var(--card-accent, #5b8def) 55%, transparent); }
+    .rw-card { --glow: rgba(224, 180, 76, 0.5); }
+    .gw-card.gw-pts { --glow: rgba(224, 180, 76, 0.5); }
+    .gw-card.gw-free { --glow: rgba(63, 191, 127, 0.45); }
+    .gw-card.gw-soon { --glow: rgba(168, 121, 240, 0.5); }
+    .home-todo-row:hover, .home-clan-card:hover { border-color: var(--gold-line); box-shadow: 0 0 16px rgba(224, 180, 76, 0.2); }
+  }
+  .home-feat-img img { transition: transform 0.25s ease; }
 </style>
 </head>
 <body>
@@ -8895,7 +8942,10 @@
       if (feat) {
         feat.innerHTML = liveGws.length ? `
           <div class="home-section-head"><span>🔥 Live giveaways</span><button type="button" onclick="openClanFromHome(0, 'join')">See all ›</button></div>
-          <div class="home-feat-strip">${liveGws.slice(0, 8).map(g => {
+          <div class="home-feat-scroller">
+          <button type="button" class="home-feat-arrow left" aria-label="Scroll left" onclick="scrollHomeFeat(-1)">‹</button>
+          <button type="button" class="home-feat-arrow right" aria-label="Scroll right" onclick="scrollHomeFeat(1)">›</button>
+          <div class="home-feat-strip" id="home-feat-strip">${liveGws.slice(0, 20).map(g => {
             const img = ((g.prizes || []).find(p => p && p.image) || {}).image || '';
             const soon = isGiveawayUpcoming(g, now);
             return `
@@ -8905,7 +8955,8 @@
                 <div class="home-feat-meta">${soon ? '🕒 Soon' : g.entryMode === 'points' ? `🎟 ${Number(g.minPoints).toLocaleString()}` : '🎁 Free'}</div>
                 <div class="home-feat-timer" data-gw-timer="${escapeHtml(g.id)}-home">${giveawayTimerText(g, now)}</div>
               </div>`;
-          }).join('')}</div>` : '';
+          }).join('')}</div></div>` : '';
+        setupHomeFeatStrip();
       }
 
       const todo = document.getElementById('home-todo');
@@ -8922,6 +8973,42 @@
               <span class="home-todo-reward">+${Number(t.reward).toLocaleString()}</span>
             </div>`).join('')}` : '';
       }
+    }
+
+    // Live giveaways strip: arrow buttons, mouse wheel and drag scroll it sideways
+    function scrollHomeFeat(dir) {
+      const el = document.getElementById('home-feat-strip');
+      if (el) el.scrollBy({ left: dir * Math.max(200, el.clientWidth * 0.8), behavior: 'smooth' });
+    }
+    function updateHomeFeatArrows() {
+      const el = document.getElementById('home-feat-strip');
+      if (!el) return;
+      const box = el.parentElement;
+      box.classList.toggle('can-left', el.scrollLeft > 4);
+      box.classList.toggle('can-right', el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    }
+    function setupHomeFeatStrip() {
+      const el = document.getElementById('home-feat-strip');
+      if (!el) return;
+      el.addEventListener('scroll', updateHomeFeatArrows, { passive: true });
+      el.addEventListener('wheel', e => {
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) {
+          const atEnd = (e.deltaY > 0 && el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) || (e.deltaY < 0 && el.scrollLeft <= 0);
+          if (!atEnd) { e.preventDefault(); el.scrollLeft += e.deltaY; }
+        }
+      }, { passive: false });
+      let down = null;
+      el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') down = { x: e.clientX, left: el.scrollLeft, moved: false }; });
+      el.addEventListener('pointermove', e => {
+        if (!down) return;
+        const dx = e.clientX - down.x;
+        if (Math.abs(dx) > 5) { down.moved = true; el.classList.add('dragging'); el.scrollLeft = down.left - dx; }
+      });
+      const up = () => { if (down && down.moved) { el.dataset.dragged = '1'; setTimeout(() => { delete el.dataset.dragged; }, 50); } down = null; el.classList.remove('dragging'); };
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointerleave', up);
+      el.addEventListener('click', e => { if (el.dataset.dragged) { e.stopPropagation(); e.preventDefault(); } }, true);
+      requestAnimationFrame(updateHomeFeatArrows);
     }
 
     function openClanFromHome(teamId, subTab) {
